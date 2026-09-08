@@ -769,11 +769,10 @@ const firebaseConfig = {
             <!-- Tours réalisés -->
             <div class="input-group" style="margin-bottom:0;min-width:160px;">
                 <label for="lapsDone">🔢 Tours réalisés</label>
-                <input type="number" id="lapsDone" value="0" min="0" step="0.2"
-                       onchange="calcLapTimeFromLaps()"
-                       style="width:100%;padding:10px 12px;border:2px solid rgba(255,255,255,0.2);
-                              border-radius:8px;background:rgba(255,255,255,0.1);color:#fff;font-size:1em;">
-               
+				<input type="number" id="lapsDone" value="0" min="0" step="0.2"
+					onchange="calcLapTimeFromLaps(); if(window._liveModeActive) { setTimeout(recalculateLive, 50); }"
+					style="width:100%;padding:10px 12px;border:2px solid rgba(255,255,255,0.2);
+							border-radius:8px;background:rgba(255,255,255,0.1);color:#fff;font-size:1em;">               
 			   </div>
 			
             <!-- EV actuelle -->
@@ -1827,13 +1826,18 @@ function calcLapTimeFromLaps() {
     const avgSec  = Math.floor(avgLapSec % 60);
     const avgDixi = Math.round((avgLapSec % 1) * 10);
 
+    // ── NOUVEAU : désactiver temporairement la synchronisation Firebase ──
+    const wasSyncing = _isSyncing;
+    _isSyncing = true;
+
     // Pré-remplir les champs du temps au tour réel uniquement
     document.getElementById('livelapMinutes').value = avgMin;
     document.getElementById('livelapSeconds').value = avgSec;
     document.getElementById('livelapMillis').value  = avgDixi;
 
- }
-
+    // ── Rétablir l'état de synchronisation ──
+    _isSyncing = wasSyncing;
+}
 	/* ── Recalcul en cours de course ── */
 
 function recalculateLive() {
