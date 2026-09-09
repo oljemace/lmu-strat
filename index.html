@@ -605,6 +605,10 @@ const firebaseConfig = {
   
 </script>
 
+
+
+<body>
+
 <div id="accessGate" style="
     position:fixed;inset:0;z-index:99999;
     background:linear-gradient(135deg,#1a1a2e,#16213e);
@@ -635,7 +639,6 @@ const firebaseConfig = {
     </div>
 </div>
 
-<body>
 <div class="container">
     <h1>🏎️ Calculateur de Stratégie 🏎</h1>
     <p class="subtitle">Calcul automatique des stints avec timeline de course</p>
@@ -2398,6 +2401,12 @@ let _syncTimeout    = null;   // debounce timer
 
 /* ── Sélecteur de session (à injecter dans le DOM) ── */
 function renderSessionUI() {
+    // Si le body n'est pas encore disponible, on réessaie après le chargement
+    if (!document.body) {
+        window.addEventListener('DOMContentLoaded', renderSessionUI, { once: true });
+        return;
+    }
+
     const existing = document.getElementById('sessionBar');
     if (existing) return;
 
@@ -2430,22 +2439,20 @@ function renderSessionUI() {
         <span id="syncStatus"
             style="margin-left:auto;font-size:0.8em;color:#888;">
             ⬤ Non connecté
-        </span>
-    `; 
-	
-	document.body.prepend(bar);
+        </span>`;
 
-    // Décaler le container principal pour ne pas être caché par la barre
-    document.querySelector('.container').style.marginTop = '52px';
+    document.body.prepend(bar);
 
-    // Charger la liste des sessions existantes
+    // Décaler le container pour ne pas être caché par la barre fixe
+    const container = document.querySelector('.container');
+    if (container) container.style.marginTop = '52px';
+
     loadSessionList();
 
     document.getElementById('sessionSelect').addEventListener('change', function() {
         if (this.value) joinSession(this.value);
     });
 }
-
 /* ── Charger la liste des sessions depuis Firebase ── */
 function loadSessionList() {
     if (!window._firebaseDb) return;
@@ -2467,34 +2474,75 @@ function loadSessionList() {
 }
 
 /* ── Créer une nouvelle session ── */
+
 function createSession() {
-    if (!window._firebaseDb) { alert("Firebase non connecté"); return; }
+    if (!window._firebaseDb) {
+        alert("Firebase non connecté — attendez quelques secondes et réessayez.");
+        return;
+    }
 
     const nameInput = document.getElementById('sessionNameInput');
     const passInput = document.getElementById('sessionPasswordInput');
-    const name      = nameInput.value.trim() || `Session ${new Date().toLocaleTimeString('fr')}`;
-    const password  = passInput.value.trim();
 
-    if (!password) { alert("Un mot de passe est requis pour créer une session"); return; }
+    if (!nameInput || !passInput) {
+        alert("Erreur : barre de session introuvable.");
+        return;
+    }
 
+    const name     = nameInput.value.trim()
+        || `Session ${new Date().toLocaleTimeString('fr')}`;
+    const password = passInput.value.trim();
+
+    if (!password) {
+        alert("Un mot de passe est requis pour créer une session.");
+        passInput.focus();
+        return;
+    }
+
+    // Hash léger (identique à l'existant)
     const hash = Array.from(password).reduce(
         (h, c) => Math.imul(31, h) + c.charCodeAt(0) | 0, 0
     ).toString(16);
     window._sessionPasswordHash = hash;
 
-    const id         = 'sess_' + Date.now();
+    const id = 'sess_' + Date.now();
+
+    // Collecter les données MAINTENANT (DOM disponible)
+    let formData = {};
+    try {
+        formData = collectFormData();
+    } catch(e) {
+        console.warn('collectFormData error:', e);
+    }
+
     const sessionRef = window._firebaseRef(window._firebaseDb, `sessions/${id}`);
+
+    setSyncStatus('🔄 Création…', '#ffaa00');
+
     window._firebaseSet(sessionRef, {
         name,
         passwordHash: hash,
         createdAt:    Date.now(),
-        data:         collectFormData()
-    }).then(() => {
+        data:         formData
+    })
+    .then(() => {
         nameInput.value = '';
         passInput.value = '';
-        joinSession(id, hash);
+        setSyncStatus('✅ Session créée', '#00ff88');
+        // Sélectionner automatiquement la nouvelle session dans le dropdown
+        setTimeout(() => {
+            const sel = document.getElementById('sessionSelect');
+            if (sel) sel.value = id;
+            joinSession(id, hash);
+        }, 500);
+    })
+    .catch(err => {
+        console.error('Erreur création session:', err);
+        setSyncStatus('🔴 Erreur création', '#ff4444');
+        alert('Erreur lors de la création : ' + err.message);
     });
 }
+
 /* ── Rejoindre une session (écoute temps réel) ── */
 let _unsubscribe = null;
 
@@ -2670,16 +2718,28 @@ function hookSyncToInputs() {
 }
 
 /* ── Démarrage ── */
-window.addEventListener('firebaseReady', () => {
-    renderSessionUI();
-    hookSyncToInputs();
-});
+let _firebaseInitDone = false;
+
+function onFirebaseReady() {
+    if (_firebaseInitDone) return;   // ← empêche le double appel
+    _firebaseInitDone = true;
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            renderSessionUI();
+            hookSyncToInputs();
+        }, { once: true });
+    } else {
+        renderSessionUI();
+        hookSyncToInputs();
+    }
+}
+
+window.addEventListener('firebaseReady', onFirebaseReady);
+if (window._firebaseReady) onFirebaseReady();
 
 // Fallback si Firebase déjà prêt avant l'event
-if (window._firebaseReady) {
-    renderSessionUI();
-    hookSyncToInputs();
-}
+if (window._firebaseReady) onFirebaseReady();
 
 /* ── Zoom timeline ── */
 function applyTimelineZoom() {
