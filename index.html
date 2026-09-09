@@ -2449,6 +2449,9 @@ function recalculateLive() {
 		
 	}
 	
+		// ── Pousser l'état live vers Firebase ──
+		pushToFirebase(true);
+	
 		calculate({
         lapTime:      liveLapTime,
         evPerLap:     evPerLapR,
@@ -2714,6 +2717,13 @@ function pushToFirebase(includePitState = false) {
 			form.pitState = JSON.parse(JSON.stringify(pitState));
 		}
 		
+		// ── État live à synchroniser ──
+		form._liveModeActive = window._liveModeActive || false;
+		form._liveLapsDone   = window._liveLapsDone   || 0;
+		form._liveLastEvPct  = window._liveLastEvPct  || 0;
+		form._liveLastNowSec = window._liveLastNowSec || 0;
+		form._liveEvPerSecond= window._liveEvPerSecond|| 0;
+
 		return form;
 	}
 
@@ -2766,8 +2776,23 @@ function pushToFirebase(includePitState = false) {
         pitState = data.pitState;
     }
 
+	// ── Restauration état live ──
+	if (data._liveModeActive !== undefined) {
+		window._liveModeActive  = data._liveModeActive;
+		window._liveLapsDone    = data._liveLapsDone    || 0;
+		window._liveLastEvPct   = data._liveLastEvPct   || 0;
+		window._liveLastNowSec  = data._liveLastNowSec  || 0;
+		window._liveEvPerSecond = data._liveEvPerSecond || 0;
+	}
+
+	// Recalcul dans le bon mode
+	if (data._liveModeActive) {
+		setTimeout(() => recalculateLive(), 50);
+	} else {
 		calculate();
+	}
 }
+
 		
 		/* ── Indicateur de statut ── */
 
