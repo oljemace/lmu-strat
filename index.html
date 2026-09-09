@@ -1587,7 +1587,7 @@ if (window._liveMode) {
                             <input type="checkbox" class="tyre-check"
                                 data-stint="${idx}" data-side="left"
                                 ${st.left ? 'checked' : ''}
-                                onchangeonchange="window._liveModeActive ? recalculateLive() : calculate()"="calculate()"
+                                onchange="window._liveModeActive ? recalculateLive() : calculate()"="calculate()"
                                 title="Changer pneus gauche (+${TYRE_PENALTY}s)">
                         ` : '<span style="color:#333;font-size:0.9em;">—</span>'}
                     </div>
@@ -1641,7 +1641,14 @@ if (window._liveMode) {
             el.style.transform = 'scale(1.1)';
             setTimeout(() => el.style.transform = 'scale(1)', 300);
         });
+		
+		// ── Pousser l'état complet (pitState inclus) vers Firebase ──
+        // Ignoré automatiquement si aucune session active ou pendant une réception (_isSyncing)
+        if (!window._liveMode) {
+		pushToFirebase(true);
+        }
     }
+    
 
 		/* ── Timeline ── */
 	
@@ -2449,7 +2456,10 @@ function recalculateLive() {
 		
 	}
 	
-	calculate({
+		// ── Pousser l'état live vers Firebase ──
+		pushToFirebase(true);
+	
+		calculate({
         lapTime:      liveLapTime,
         evPerLap:     evPerLapR,
         realStart:    realStart,          // ← heure de début originale
@@ -2610,73 +2620,73 @@ function createSession() {
     });
 }
 
-/* ── Rejoindre une session (écoute temps réel) ── */
-let _unsubscribe = null;
+		/* ── Rejoindre une session (écoute temps réel) ── */
+		let _unsubscribe = null;
 
-function joinSession(id, knownHash) {
-    if (_unsubscribe) { _unsubscribe(); _unsubscribe = null; }
+		function joinSession(id, knownHash) {
+			if (_unsubscribe) { _unsubscribe(); _unsubscribe = null; }
 
-    _sessionId = id;
-    setSyncStatus('🟡 Vérification…', '#ffaa00');
+			_sessionId = id;
+			setSyncStatus('🟡 Vérification…', '#ffaa00');
 
-    const sessionRef = window._firebaseRef(window._firebaseDb, `sessions/${id}`);
-    window._firebaseOnValue(sessionRef, snap => {
-        const sessionData = snap.val();
-        if (!sessionData) { setSyncStatus('🔴 Session introuvable', '#ff4444'); return; }
+			const sessionRef = window._firebaseRef(window._firebaseDb, `sessions/${id}`);
+			window._firebaseOnValue(sessionRef, snap => {
+				const sessionData = snap.val();
+				if (!sessionData) { setSyncStatus('🔴 Session introuvable', '#ff4444'); return; }
 
-        const storedHash = sessionData.passwordHash;
+				const storedHash = sessionData.passwordHash;
 
-        if (!knownHash) {
-            const password = prompt(`🔒 Mot de passe pour "${sessionData.name}" :`);
-            if (!password) {
-                setSyncStatus('⬤ Non connecté', '#888');
-                document.getElementById('sessionSelect').value = '';
-                return;
-            }
-            const enteredHash = Array.from(password).reduce(
-                (h, c) => Math.imul(31, h) + c.charCodeAt(0) | 0, 0
-            ).toString(16);
+				if (!knownHash) {
+					const password = prompt(`🔒 Mot de passe pour "${sessionData.name}" :`);
+					if (!password) {
+						setSyncStatus('⬤ Non connecté', '#888');
+						document.getElementById('sessionSelect').value = '';
+						return;
+					}
+					const enteredHash = Array.from(password).reduce(
+						(h, c) => Math.imul(31, h) + c.charCodeAt(0) | 0, 0
+					).toString(16);
 
-            if (enteredHash !== storedHash) {
-                alert('❌ Mot de passe incorrect');
-                setSyncStatus('🔴 Accès refusé', '#ff4444');
-                document.getElementById('sessionSelect').value = '';
-                return;
-            }
-            window._sessionPasswordHash = enteredHash;
-        }
+					if (enteredHash !== storedHash) {
+						alert('❌ Mot de passe incorrect');
+						setSyncStatus('🔴 Accès refusé', '#ff4444');
+						document.getElementById('sessionSelect').value = '';
+						return;
+					}
+					window._sessionPasswordHash = enteredHash;
+				}
 
-        // Mot de passe OK → écoute temps réel
-        const dataRef = window._firebaseRef(window._firebaseDb, `sessions/${id}/data`);
-        _unsubscribe = window._firebaseOnValue(dataRef, snap2 => {
-            const remote = snap2.val();
-            if (!remote) return;
-            if (_isSyncing) return;
-            _isSyncing = true;
-			applyFormData(remote);
-			setTimeout(() => { _isSyncing = false; }, 200);
-            setSyncStatus('🟢 Synchronisé', '#00ff88');
-        });
+				// Mot de passe OK → écoute temps réel
+				const dataRef = window._firebaseRef(window._firebaseDb, `sessions/${id}/data`);
+				_unsubscribe = window._firebaseOnValue(dataRef, snap2 => {
+					const remote = snap2.val();
+					if (!remote) return;
+					if (_isSyncing) return;
+					_isSyncing = true;
+					applyFormData(remote);
+					setTimeout(() => { _isSyncing = false; }, 200);
+					setSyncStatus('🟢 Synchronisé', '#00ff88');
+				});
 
-        setSyncStatus('🟢 Connecté', '#00ff88');
+				setSyncStatus('🟢 Connecté', '#00ff88');
 
-    }, { onlyOnce: true });
-}
+			}, { onlyOnce: true });
+		}
 
-function pushToFirebase(includePitState = false) {
-    if (!_sessionId || !window._firebaseDb || _isSyncing) return;
+		function pushToFirebase(includePitState = false) {
+			if (!_sessionId || !window._firebaseDb || _isSyncing) return;
 
-    clearTimeout(_syncTimeout);
-    _syncTimeout = setTimeout(() => {
-        setSyncStatus('🔄 Envoi…', '#ffaa00');
-        const dataRef = window._firebaseRef(
-            window._firebaseDb, `sessions/${_sessionId}/data`
-        );
-        window._firebaseSet(dataRef, collectFormData(includePitState))
-            .then(() => setSyncStatus('🟢 Synchronisé', '#00ff88'))
-            .catch(() => setSyncStatus('🔴 Erreur sync', '#ff4444'));
-    }, 150);
-}
+			clearTimeout(_syncTimeout);
+			_syncTimeout = setTimeout(() => {
+				setSyncStatus('🔄 Envoi…', '#ffaa00');
+				const dataRef = window._firebaseRef(
+					window._firebaseDb, `sessions/${_sessionId}/data`
+				);
+				window._firebaseSet(dataRef, collectFormData(includePitState))
+					.then(() => setSyncStatus('🟢 Synchronisé', '#00ff88'))
+					.catch(() => setSyncStatus('🔴 Erreur sync', '#ff4444'));
+			}, 150);
+		}
 
 	/* ── Collecter toutes les valeurs du formulaire ── */
 	function collectFormData(includePitState = true) {
@@ -2713,62 +2723,97 @@ function pushToFirebase(includePitState = false) {
 		if (includePitState) {
 			form.pitState = JSON.parse(JSON.stringify(pitState));
 		}
+		
+		// ── État live à synchroniser ──
+		form._liveModeActive = window._liveModeActive || false;
+		form._liveLapsDone   = window._liveLapsDone   || 0;
+		form._liveLastEvPct  = window._liveLastEvPct  || 0;
+		form._liveLastNowSec = window._liveLastNowSec || 0;
+		form._liveEvPerSecond= window._liveEvPerSecond|| 0;
+		
+		// ── État dommage à synchroniser ──
+		form._damageMode     = window._damageMode     || false;
+		form._damageLapsDone = window._damageLapsDone || 0;
+		form._damageNowSec   = window._damageNowSec   || 0;
 
 		return form;
 	}
 
-/* ── Appliquer les données reçues au formulaire ── */
-function applyFormData(data) {
-    const ids = [
-        'realStartHours','realStartMinutes',
-        'gameStartHours','gameStartMinutes',
-        'timeMultiplier','raceHours','raceMinutes',
-        'lapMinutes','lapSeconds','lapMillis',
-        'evRemaining','evPerLap','evRefuelPerStint',
-        'refuelRate',
-        'lapsDone','evCurrent','evPerLapReal',
-        'livelapMinutes','livelapSeconds','livelapMillis'
-    ];
+		/* ── Appliquer les données reçues au formulaire ── */
+		
+		function applyFormData(data) {
+			const ids = [
+				'realStartHours','realStartMinutes',
+				'gameStartHours','gameStartMinutes',
+				'timeMultiplier','raceHours','raceMinutes',
+				'lapMinutes','lapSeconds','lapMillis',
+				'evRemaining','evPerLap','evRefuelPerStint',
+				'refuelRate',
+				'lapsDone','evCurrent','evPerLapReal',
+				'livelapMinutes','livelapSeconds','livelapMillis'
+			];
 
-    ids.forEach(id => {
-        const el = document.getElementById(id);
-        if (el && data[id] !== undefined) el.value = data[id];
-    });
-	
-	// Checkbox "hier"
-	const ydEl = document.getElementById('realStartYesterday');
-	if (ydEl && data.realStartYesterday !== undefined) {
-		ydEl.checked = data.realStartYesterday;
+		ids.forEach(id => {
+			const el = document.getElementById(id);
+			if (el && data[id] !== undefined) el.value = data[id];
+		});
+		
+		// Checkbox "hier"
+		const ydEl = document.getElementById('realStartYesterday');
+		if (ydEl && data.realStartYesterday !== undefined) {
+			ydEl.checked = data.realStartYesterday;
+		}
+
+		// Nombre de pilotes
+		if (data.driverCount) {
+			const sel = document.getElementById('driverCount');
+			if (sel) {
+				sel.value = data.driverCount;
+				renderDriverInputs();   // recrée les champs pilotes
+			}
+		}
+
+		// Noms et couleurs des pilotes
+		if (Array.isArray(data.drivers)) {
+			data.drivers.forEach((d, i) => {
+				const nameEl  = document.getElementById(`driverName_${i}`);
+				const colorEl = document.getElementById(`driverColor_${i}`);
+				if (nameEl  && d.name  !== undefined) nameEl.value  = d.name;
+				if (colorEl && d.color !== undefined) colorEl.value = d.color;
+			});
+		}
+
+		// État des pit stops
+		if (data.pitState) {
+			pitState = data.pitState;
+		}
+
+		// ── Restauration état live ──
+		if (data._liveModeActive !== undefined) {
+			window._liveModeActive  = data._liveModeActive;
+			window._liveLapsDone    = data._liveLapsDone    || 0;
+			window._liveLastEvPct   = data._liveLastEvPct   || 0;
+			window._liveLastNowSec  = data._liveLastNowSec  || 0;
+			window._liveEvPerSecond = data._liveEvPerSecond || 0;
+		}
+		
+		// ── Restauration état dommage ──
+		if (data._damageMode !== undefined) {
+			window._damageMode     = data._damageMode;
+			window._damageLapsDone = data._damageLapsDone || 0;
+			window._damageNowSec   = data._damageNowSec   || 0;
+		}
+
+
+		// Recalcul dans le bon mode
+		if (data._liveModeActive) {
+			setTimeout(() => recalculateLive(), 50);
+		} else {
+			calculate();
+		}
 	}
 
-    // Nombre de pilotes
-    if (data.driverCount) {
-        const sel = document.getElementById('driverCount');
-        if (sel) {
-            sel.value = data.driverCount;
-            renderDriverInputs();   // recrée les champs pilotes
-        }
-    }
-
-    // Noms et couleurs des pilotes
-    if (Array.isArray(data.drivers)) {
-        data.drivers.forEach((d, i) => {
-            const nameEl  = document.getElementById(`driverName_${i}`);
-            const colorEl = document.getElementById(`driverColor_${i}`);
-            if (nameEl  && d.name  !== undefined) nameEl.value  = d.name;
-            if (colorEl && d.color !== undefined) colorEl.value = d.color;
-        });
-    }
-
-    // État des pit stops
-    if (data.pitState) {
-        pitState = data.pitState;
-    }
-
-    // Recalcul
-    calculate();
-}
-
+		
 		/* ── Indicateur de statut ── */
 
 		function setSyncStatus(text, color) {
@@ -2905,6 +2950,10 @@ function resetTimelineZoom() {
 
 			// Recalculer en mode normal
 			calculate();
+			
+			// ── Synchroniser l'arrêt du mode live vers Firebase ──
+			pushToFirebase(true);
 		}
+		
 		
 	</script>
