@@ -1047,6 +1047,70 @@ const firebaseConfig = {
 </div>
 
 <script>
+
+		/* ══════════════════════════════
+   PROTECTION D'ACCÈS ÉQUIPE
+   ══════════════════════════════ */
+
+		// Hash SHA-256 du mot de passe équipe.
+		// Pour générer : ouvrir la console du navigateur et taper :
+		//   crypto.subtle.digest('SHA-256', new TextEncoder().encode('monMotDePasse'))
+		//     .then(b => console.log([...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')))
+		//
+		// Remplace cette valeur par le hash de TON mot de passe :
+		const TEAM_PASSWORD_HASH = '073e03843d353e1d0a8ac41a9bc480e8e6746d5b27ad6b891a6c2c2f4bc1c80f';
+		//                          ↑ hash de "123" — À REMPLACER AVANT DÉPLOIEMENT
+
+		const ACCESS_KEY = 'lmu_strat_access_v1';
+
+		async function hashPassword(pwd) {
+			const buf  = await crypto.subtle.digest(
+				'SHA-256', new TextEncoder().encode(pwd)
+			);
+			return [...new Uint8Array(buf)]
+				.map(x => x.toString(16).padStart(2, '0'))
+				.join('');
+		}
+
+		async function checkAccess() {
+			const pwd = document.getElementById('gatePassword').value.trim();
+			if (!pwd) return;
+
+			const hash = await hashPassword(pwd);
+
+			if (hash === TEAM_PASSWORD_HASH) {
+				sessionStorage.setItem(ACCESS_KEY, hash);
+				document.getElementById('accessGate').remove();
+				// Initialiser seulement si pas encore fait
+				if (!_firebaseInitDone) {
+					renderSessionUI();
+					hookSyncToInputs();
+				} else {
+					// Firebase déjà prêt mais avait attendu le gate
+					renderSessionUI();
+					if (!document.querySelector('[data-hooks-attached]')) {
+						hookSyncToInputs();
+						document.body.dataset.hooksAttached = 'true';
+					}
+				}
+			} else {
+				const errEl = document.getElementById('gateError');
+				errEl.textContent = '❌ Mot de passe incorrect';
+				document.getElementById('gatePassword').value = '';
+				document.getElementById('gatePassword').focus();
+				setTimeout(() => errEl.textContent = '', 3000);
+			}
+		}
+
+			// Vérifier si déjà authentifié — SYNCHRONE (pas async)
+			const _storedAccess = sessionStorage.getItem(ACCESS_KEY);
+			if (_storedAccess === TEAM_PASSWORD_HASH) {
+				const _gate = document.getElementById('accessGate');
+				if (_gate) _gate.remove();
+			// onFirebaseReady() sera appelé juste après et ne verra pas de gate
+			}
+
+
     /* ── Validation & ajustement ── */
     const MAX = {
         realStartHours:23, realStartMinutes:59,
@@ -1062,13 +1126,16 @@ const firebaseConfig = {
         input.value = v;
     }
 
-    function adjustTime(id, delta) {
-        const input = document.getElementById(id);
-        let v = (parseInt(input.value) || 0) + delta;
-        if (v < 0) v = 0;
-        if (MAX[id] !== undefined && v > MAX[id]) v = MAX[id];
-        input.value = v;
-    }
+	function adjustTime(id, delta) {
+		const input = document.getElementById(id);
+		let v = (parseInt(input.value) || 0) + delta;
+		if (v < 0) v = 0;
+		if (MAX[id] !== undefined && v > MAX[id]) v = MAX[id];
+		input.value = v;
+
+		// ← Déclencher manuellement l'événement pour la sync Firebase
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+	}
 
     /* ── Helpers temps ── */
     function getLapTimeInSeconds() {
@@ -2586,8 +2653,8 @@ function joinSession(id, knownHash) {
             if (!remote) return;
             if (_isSyncing) return;
             _isSyncing = true;
-            applyFormData(remote);
-            _isSyncing = false;
+			applyFormData(remote);
+			setTimeout(() => { _isSyncing = false; }, 500);
             setSyncStatus('🟢 Synchronisé', '#00ff88');
         });
 
@@ -2721,25 +2788,32 @@ function hookSyncToInputs() {
 let _firebaseInitDone = false;
 
 function onFirebaseReady() {
-    if (_firebaseInitDone) return;   // ← empêche le double appel
+    if (_firebaseInitDone) return;
     _firebaseInitDone = true;
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
-            renderSessionUI();
-            hookSyncToInputs();
-        }, { once: true });
-    } else {
+    const initUI = () => {
+        const gate = document.getElementById('accessGate');
+        if (gate) return;  // checkAccess() s'en chargera
         renderSessionUI();
         hookSyncToInputs();
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initUI, { once: true });
+    } else {
+        initUI();
     }
 }
 
 window.addEventListener('firebaseReady', onFirebaseReady);
 if (window._firebaseReady) onFirebaseReady();
 
-// Fallback si Firebase déjà prêt avant l'event
-if (window._firebaseReady) onFirebaseReady();
+// ── Vérification sessionStorage ──
+const _storedAccess2 = sessionStorage.getItem('lmu_strat_access_v1');
+if (_storedAccess2 === TEAM_PASSWORD_HASH) {
+    const _gate = document.getElementById('accessGate');
+    if (_gate) _gate.remove();
+}
 
 /* ── Zoom timeline ── */
 function applyTimelineZoom() {
@@ -2823,56 +2897,4 @@ function resetTimelineZoom() {
 			calculate();
 		}
 		
-		/* ══════════════════════════════
-   PROTECTION D'ACCÈS ÉQUIPE
-   ══════════════════════════════ */
-
-// Hash SHA-256 du mot de passe équipe.
-// Pour générer : ouvrir la console du navigateur et taper :
-//   crypto.subtle.digest('SHA-256', new TextEncoder().encode('monMotDePasse'))
-//     .then(b => console.log([...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')))
-//
-// Remplace cette valeur par le hash de TON mot de passe :
-const TEAM_PASSWORD_HASH = '073e03843d353e1d0a8ac41a9bc480e8e6746d5b27ad6b891a6c2c2f4bc1c80f';
-//                          ↑ hash de "123" — À REMPLACER AVANT DÉPLOIEMENT
-
-const ACCESS_KEY = 'lmu_strat_access_v1';
-
-async function hashPassword(pwd) {
-    const buf  = await crypto.subtle.digest(
-        'SHA-256', new TextEncoder().encode(pwd)
-    );
-    return [...new Uint8Array(buf)]
-        .map(x => x.toString(16).padStart(2, '0'))
-        .join('');
-}
-
-async function checkAccess() {
-    const pwd = document.getElementById('gatePassword').value.trim();
-    if (!pwd) return;
-
-    const hash = await hashPassword(pwd);
-
-    if (hash === TEAM_PASSWORD_HASH) {
-        // Mémoriser l'accès en sessionStorage (dure le temps de l'onglet)
-        sessionStorage.setItem(ACCESS_KEY, hash);
-        document.getElementById('accessGate').remove();
-    } else {
-        const errEl = document.getElementById('gateError');
-        errEl.textContent = '❌ Mot de passe incorrect';
-        document.getElementById('gatePassword').value = '';
-        document.getElementById('gatePassword').focus();
-        setTimeout(() => errEl.textContent = '', 3000);
-    }
-}
-
-// Vérifier si déjà authentifié dans cet onglet
-(async () => {
-    const stored = sessionStorage.getItem(ACCESS_KEY);
-    if (stored === TEAM_PASSWORD_HASH) {
-        document.getElementById('accessGate').remove();
-    }
-    // Sinon la gate reste affichée
-})();
-
 	</script>
