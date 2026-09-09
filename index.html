@@ -1641,7 +1641,14 @@ if (window._liveMode) {
             el.style.transform = 'scale(1.1)';
             setTimeout(() => el.style.transform = 'scale(1)', 300);
         });
+		
+		// ── Pousser l'état complet (pitState inclus) vers Firebase ──
+        // Ignoré automatiquement si aucune session active ou pendant une réception (_isSyncing)
+        if (!window._liveMode) {
+		pushToFirebase(true);
+        }
     }
+    
 
 		/* ── Timeline ── */
 	
@@ -2723,6 +2730,11 @@ function pushToFirebase(includePitState = false) {
 		form._liveLastEvPct  = window._liveLastEvPct  || 0;
 		form._liveLastNowSec = window._liveLastNowSec || 0;
 		form._liveEvPerSecond= window._liveEvPerSecond|| 0;
+		
+		// ── État dommage à synchroniser ──
+		form._damageMode     = window._damageMode     || false;
+		form._damageLapsDone = window._damageLapsDone || 0;
+		form._damageNowSec   = window._damageNowSec   || 0;
 
 		return form;
 	}
@@ -2741,57 +2753,65 @@ function pushToFirebase(includePitState = false) {
 				'livelapMinutes','livelapSeconds','livelapMillis'
 			];
 
-    ids.forEach(id => {
-        const el = document.getElementById(id);
-        if (el && data[id] !== undefined) el.value = data[id];
-    });
-	
-	// Checkbox "hier"
-	const ydEl = document.getElementById('realStartYesterday');
-	if (ydEl && data.realStartYesterday !== undefined) {
-		ydEl.checked = data.realStartYesterday;
+		ids.forEach(id => {
+			const el = document.getElementById(id);
+			if (el && data[id] !== undefined) el.value = data[id];
+		});
+		
+		// Checkbox "hier"
+		const ydEl = document.getElementById('realStartYesterday');
+		if (ydEl && data.realStartYesterday !== undefined) {
+			ydEl.checked = data.realStartYesterday;
+		}
+
+		// Nombre de pilotes
+		if (data.driverCount) {
+			const sel = document.getElementById('driverCount');
+			if (sel) {
+				sel.value = data.driverCount;
+				renderDriverInputs();   // recrée les champs pilotes
+			}
+		}
+
+		// Noms et couleurs des pilotes
+		if (Array.isArray(data.drivers)) {
+			data.drivers.forEach((d, i) => {
+				const nameEl  = document.getElementById(`driverName_${i}`);
+				const colorEl = document.getElementById(`driverColor_${i}`);
+				if (nameEl  && d.name  !== undefined) nameEl.value  = d.name;
+				if (colorEl && d.color !== undefined) colorEl.value = d.color;
+			});
+		}
+
+		// État des pit stops
+		if (data.pitState) {
+			pitState = data.pitState;
+		}
+
+		// ── Restauration état live ──
+		if (data._liveModeActive !== undefined) {
+			window._liveModeActive  = data._liveModeActive;
+			window._liveLapsDone    = data._liveLapsDone    || 0;
+			window._liveLastEvPct   = data._liveLastEvPct   || 0;
+			window._liveLastNowSec  = data._liveLastNowSec  || 0;
+			window._liveEvPerSecond = data._liveEvPerSecond || 0;
+		}
+		
+		// ── Restauration état dommage ──
+		if (data._damageMode !== undefined) {
+			window._damageMode     = data._damageMode;
+			window._damageLapsDone = data._damageLapsDone || 0;
+			window._damageNowSec   = data._damageNowSec   || 0;
+		}
+
+
+		// Recalcul dans le bon mode
+		if (data._liveModeActive) {
+			setTimeout(() => recalculateLive(), 50);
+		} else {
+			calculate();
+		}
 	}
-
-    // Nombre de pilotes
-    if (data.driverCount) {
-        const sel = document.getElementById('driverCount');
-        if (sel) {
-            sel.value = data.driverCount;
-            renderDriverInputs();   // recrée les champs pilotes
-        }
-    }
-
-    // Noms et couleurs des pilotes
-    if (Array.isArray(data.drivers)) {
-        data.drivers.forEach((d, i) => {
-            const nameEl  = document.getElementById(`driverName_${i}`);
-            const colorEl = document.getElementById(`driverColor_${i}`);
-            if (nameEl  && d.name  !== undefined) nameEl.value  = d.name;
-            if (colorEl && d.color !== undefined) colorEl.value = d.color;
-        });
-    }
-
-    // État des pit stops
-    if (data.pitState) {
-        pitState = data.pitState;
-    }
-
-	// ── Restauration état live ──
-	if (data._liveModeActive !== undefined) {
-		window._liveModeActive  = data._liveModeActive;
-		window._liveLapsDone    = data._liveLapsDone    || 0;
-		window._liveLastEvPct   = data._liveLastEvPct   || 0;
-		window._liveLastNowSec  = data._liveLastNowSec  || 0;
-		window._liveEvPerSecond = data._liveEvPerSecond || 0;
-	}
-
-	// Recalcul dans le bon mode
-	if (data._liveModeActive) {
-		setTimeout(() => recalculateLive(), 50);
-	} else {
-		calculate();
-	}
-}
 
 		
 		/* ── Indicateur de statut ── */
@@ -2930,6 +2950,10 @@ function resetTimelineZoom() {
 
 			// Recalculer en mode normal
 			calculate();
+			
+			// ── Synchroniser l'arrêt du mode live vers Firebase ──
+			pushToFirebase(true);
 		}
+		
 		
 	</script>
