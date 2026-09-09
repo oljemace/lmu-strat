@@ -2654,7 +2654,7 @@ function joinSession(id, knownHash) {
             if (_isSyncing) return;
             _isSyncing = true;
 			applyFormData(remote);
-			setTimeout(() => { _isSyncing = false; }, 500);
+			setTimeout(() => { _isSyncing = false; }, 200);
             setSyncStatus('🟢 Synchronisé', '#00ff88');
         });
 
@@ -2663,8 +2663,7 @@ function joinSession(id, knownHash) {
     }, { onlyOnce: true });
 }
 
-/* ── Pousser les données vers Firebase (avec debounce 300ms) ── */
-function pushToFirebase() {
+function pushToFirebase(includePitState = false) {
     if (!_sessionId || !window._firebaseDb || _isSyncing) return;
 
     clearTimeout(_syncTimeout);
@@ -2673,51 +2672,50 @@ function pushToFirebase() {
         const dataRef = window._firebaseRef(
             window._firebaseDb, `sessions/${_sessionId}/data`
         );
-        window._firebaseSet(dataRef, collectFormData())
+        window._firebaseSet(dataRef, collectFormData(includePitState))
             .then(() => setSyncStatus('🟢 Synchronisé', '#00ff88'))
             .catch(() => setSyncStatus('🔴 Erreur sync', '#ff4444'));
-    }, 300);
+    }, 150);
 }
 
-/* ── Collecter toutes les valeurs du formulaire ── */
-function collectFormData() {
-    
-	const ids = [
-        'realStartHours','realStartMinutes',
-        'gameStartHours','gameStartMinutes',
-        'timeMultiplier','raceHours','raceMinutes',
-        'lapMinutes','lapSeconds','lapMillis',
-        'evRemaining','evPerLap','evRefuelPerStint',
-        'refuelRate','driverCount',
-        'lapsDone','evCurrent','evPerLapReal',
-        'livelapMinutes','livelapSeconds','livelapMillis'
-    ];
+	/* ── Collecter toutes les valeurs du formulaire ── */
+	function collectFormData(includePitState = true) {
+		const ids = [
+			'realStartHours','realStartMinutes',
+			'gameStartHours','gameStartMinutes',
+			'timeMultiplier','raceHours','raceMinutes',
+			'lapMinutes','lapSeconds','lapMillis',
+			'evRemaining','evPerLap','evRefuelPerStint',
+			'refuelRate','driverCount',
+			'lapsDone','evCurrent','evPerLapReal',
+			'livelapMinutes','livelapSeconds','livelapMillis'
+		];
 
-    const form = {};
-    ids.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) form[id] = el.value;
-    });
-	
-	// Checkbox "hier"
-	const ydEl = document.getElementById('realStartYesterday');
-	if (ydEl) form.realStartYesterday = ydEl.checked;
+		const form = {};
+		ids.forEach(id => {
+			const el = document.getElementById(id);
+			if (el) form[id] = el.value;
+		});
 
-    // Noms et couleurs des pilotes
-    form.drivers = [];
-    const n = parseInt(document.getElementById('driverCount')?.value) || 2;
-    for (let i = 0; i < n; i++) {
-        form.drivers.push({
-            name:  document.getElementById(`driverName_${i}`)?.value  || '',
-            color: document.getElementById(`driverColor_${i}`)?.value || ''
-        });
-    }
+		const ydEl = document.getElementById('realStartYesterday');
+		if (ydEl) form.realStartYesterday = ydEl.checked;
 
-    // État des pit stops
-    form.pitState = JSON.parse(JSON.stringify(pitState));
+		form.drivers = [];
+		const n = parseInt(document.getElementById('driverCount')?.value) || 2;
+		for (let i = 0; i < n; i++) {
+			form.drivers.push({
+				name:  document.getElementById(`driverName_${i}`)?.value  || '',
+				color: document.getElementById(`driverColor_${i}`)?.value || ''
+			});
+		}
 
-    return form;
-}
+		// pitState seulement quand explicitement demandé (changements pit/refuel/pneus)
+		if (includePitState) {
+			form.pitState = JSON.parse(JSON.stringify(pitState));
+		}
+
+		return form;
+	}
 
 /* ── Appliquer les données reçues au formulaire ── */
 function applyFormData(data) {
@@ -2771,42 +2769,54 @@ function applyFormData(data) {
     calculate();
 }
 
-/* ── Indicateur de statut ── */
-function setSyncStatus(text, color) {
-    const el = document.getElementById('syncStatus');
-    if (el) { el.textContent = text; el.style.color = color; }
-}
+		/* ── Indicateur de statut ── */
 
-/* ── Intercepter tous les changements pour pousser vers Firebase ── */
-function hookSyncToInputs() {
-    // Observer les modifications du DOM sur les inputs/selects
-    document.addEventListener('change', () => pushToFirebase());
-    document.addEventListener('input',  () => pushToFirebase());
-}
+		function setSyncStatus(text, color) {
+			const el = document.getElementById('syncStatus');
+			if (el) { el.textContent = text; el.style.color = color; }
+			}
 
-/* ── Démarrage ── */
-let _firebaseInitDone = false;
+		/* ── Intercepter tous les changements pour pousser vers Firebase ── */
+		function hookSyncToInputs() {
+			document.addEventListener('change', e => {
+				const isPit = e.target.closest(
+					'.stop-check, .refuel-check, .tyre-check, ' +
+					'.stop-dur-input, .refuel-pct-input, .driver-select, #refuelRate'
+				);
+				pushToFirebase(!!isPit);
+			});
+			document.addEventListener('input', e => {
+				const isPit = e.target.closest(
+					'.stop-dur-input, .refuel-pct-input, #refuelRate'
+				);
+				pushToFirebase(!!isPit);
+			});
+		}
+		
+		/* ── Démarrage ── */
+		
+		let _firebaseInitDone = false;
 
-function onFirebaseReady() {
-    if (_firebaseInitDone) return;
-    _firebaseInitDone = true;
+		function onFirebaseReady() {
+			if (_firebaseInitDone) return;
+			_firebaseInitDone = true;
 
-    const initUI = () => {
-        const gate = document.getElementById('accessGate');
-        if (gate) return;  // checkAccess() s'en chargera
-        renderSessionUI();
-        hookSyncToInputs();
-    };
+			const initUI = () => {
+				const gate = document.getElementById('accessGate');
+				if (gate) return;  // checkAccess() s'en chargera
+				renderSessionUI();
+				hookSyncToInputs();
+			};
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initUI, { once: true });
-    } else {
-        initUI();
-    }
-}
+			if (document.readyState === 'loading') {
+				document.addEventListener('DOMContentLoaded', initUI, { once: true });
+			} else {
+				initUI();
+			}
+		}
 
-window.addEventListener('firebaseReady', onFirebaseReady);
-if (window._firebaseReady) onFirebaseReady();
+		window.addEventListener('firebaseReady', onFirebaseReady);
+		if (window._firebaseReady) onFirebaseReady();
 
 // ── Vérification sessionStorage ──
 const _storedAccess2 = sessionStorage.getItem('lmu_strat_access_v1');
