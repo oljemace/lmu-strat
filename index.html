@@ -2727,9 +2727,23 @@ function createSession() {
             }
 
             // pitState AVANT calculate()
-            if (data.pitState) {
-                pitState = data.pitState;
-            }
+	           if (data.pitState) {
+			    // Ne pas écraser les stints passés si on est en mode live
+			    if (window._liveModeActive) {
+			        const stintsAlreadyDone = Math.max(0,
+			            Math.floor((window._liveLapsDone || 0) / 
+			            (parseFloat(document.getElementById('evRefuelPerStint').value) /
+			             parseFloat(document.getElementById('evPerLapReal').value)))
+			        );
+			        Object.keys(data.pitState).forEach(k => {
+			            if (parseInt(k) >= stintsAlreadyDone) {
+			                pitState[k] = data.pitState[k];
+			            }
+			        });
+			    } else {
+			        pitState = data.pitState;
+			    }
+			}
 
             // Restauration état live
             if (data._liveModeActive !== undefined) {
