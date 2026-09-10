@@ -1242,9 +1242,7 @@ const firebaseConfig = {
 		window._liveLastNowSec  = 0;
 		window._liveLastEvPct   = 0;
 		window._liveEvPerSecond = 0;
-		window._damageMode      = false;   // true si dommages confirmés par l'utilisateur
-		window._damageLapsDone  = 0;       // tours faits au moment de la confirmation des dommages
-		window._damageNowSec    = 0;       // heure réelle au moment de la confirmation des dommages    
+		window._liveAutoRefresh = false; 
         window._applyingRemote  = false;  // verrou : on est en train d'appliquer des données distantes
 
 	/* pitState[idx] = {
@@ -1340,7 +1338,7 @@ const firebaseConfig = {
         if (remaining < 0) {
             bar.style.background   = '#ff2222';
             label.style.color      = '#ff4444';
-            label.textContent      = `⚠️ ${Math.abs(remaining)} pneus en trop !`;
+            label.textContent      = `⚠️ ${Math.abs(remaining)} pneus usés à réutiliser !`;
         } else if (ratio <= 0.25) {
             bar.style.background   = '#ff6600';
             label.style.color      = '#ff8800';
@@ -2213,28 +2211,26 @@ window.onload = () => {
         const nowSec       = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
         const liveRaceSec  = Math.max(0, raceEndSec - nowSec);
   
-		// ── Mode dommage : on ignore la stratégie initiale et on repart de maintenant ──
-		// Le temps restant (liveRaceSec) reste la contrainte principale — inchangé.
-		// On recalcule simplement les stints futurs sans se référer au totalRaceSec d'origine.
-		// Aucun calcul supplémentaire ici : liveRaceSec suffit car c'est déjà la durée
-		// restante depuis "maintenant", ce qui est exactement ce qu'on veut en mode dommage.
-		// La seule différence sera dans l'affichage de l'écart (cf. Partie 2).
         
         // Mise à jour du temps restant uniquement
         const el = document.getElementById('liveTempsRestant');
         if (el) el.textContent = formatDuration(liveRaceSec);
     }, 1000);
 	
-    // ── Recalcul complet toutes les minutes ──
-    setInterval(() => {
-        if (document.getElementById('timelineTrack').children.length > 0) {
-            if (window._liveModeActive) {
-                recalculateLive();
-            } else {
-                calculate();
+    
+
+    // ── Recalcul complet toutes les 30secondes ──
+        setInterval(() => {
+            if (document.getElementById('timelineTrack').children.length > 0) {
+                if (window._liveModeActive) {
+                    _liveAutoRefresh = true;
+                    recalculateLive();
+                    _liveAutoRefresh = false;
+                } else {
+                    calculate();
+                }
             }
-        }
-    }, 60000);
+        }, 30000);
 };	
 
 	/* ── Recalcul en cours de course ── */
@@ -2288,9 +2284,8 @@ function recalculateLive() {
             window._liveLastEvPct - elapsed2 * window._liveEvPerSecond
         );
 
-        // Si l'utilisateur a rentré une valeur différente de l'extrapolée (tolérance 0.2%)
-        // → il a fait une mise à jour manuelle : on rebase depuis cette nouvelle valeur
-        if (Math.abs(evCurrentSaisi - evExtrapolee) > 0.2) {
+        // Détection mise à jour manuelle uniquement (le refresh auto est géré plus bas)
+        if (!window._liveAutoRefresh && Math.abs(evCurrentSaisi - evExtrapolee) > 0.2) {
             window._liveLastEvPct  = evCurrentSaisi;
             window._liveLastNowSec = nowSec;
         }
@@ -2309,9 +2304,38 @@ function recalculateLive() {
         window._liveLastEvPct - elapsedCorrected * window._liveEvPerSecond
     );
 
+        // Rebase APRÈS avoir calculé evCurrentCalc
+    if (window._liveAutoRefresh) {
+        // Refresh auto : on rebase depuis la valeur fraîchement calculée
+        window._liveLastEvPct  = evCurrentCalc; 
+        window._liveLastNowSec = nowSec;
+    }
+
     // Mettre à jour le champ EV actuelle visuellement
     const evCurrentEl = document.getElementById('evCurrent');
     evCurrentEl.value = evCurrentCalc.toFixed(1);
+        let indicator = document.getElementById('evExtrapolLabel');
+    if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.id = 'evExtrapolLabel';
+        indicator.style.cssText =
+            'font-size:0.75em;margin-top:3px;font-style:italic;';
+        evCurrentEl.parentNode.appendChild(indicator);
+    }
+
+    const minsAgo = Math.round(elapsedCorrected / 60);
+    const evStr   = `${evCurrentCalc.toFixed(1)}%`;
+
+    if (minsAgo < 30) {
+        indicator.style.color   = '#00ff88';
+        indicator.textContent   = `📡 ${evStr} · Extrapolé (< 30 min)`;
+    } else if (minsAgo < 60) {
+        indicator.style.color   = '#ffaa00';
+        indicator.textContent   = `📡 ${evStr} · Extrapolé (${minsAgo} min)`;
+    } else {
+        indicator.style.color   = '#ff4444';
+        indicator.textContent   = `⚠️ ${evStr} · Extrapolé (${minsAgo} min) — mettre à jour !`;
+    }
 
     // ── Calcul des stints futurs basé sur EV actuelle + temps restant ──
     const rate2             = parseFloat(document.getElementById('refuelRate')?.value) || 5;
@@ -2533,10 +2557,15 @@ function renderSessionUI() {
         <input id="sessionPasswordInput" placeholder="🔒 Mot de passe" type="password"
             style="padding:4px 8px;border-radius:6px;border:1px solid #ffaa00;
                    background:#111;color:#fff;font-size:0.9em;width:140px;">
-        <span id="syncStatus"
-            style="margin-left:auto;font-size:0.8em;color:#888;">
-            ⬤ Non connecté
-        </span>`;
+        <div style="margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:1px;">
+            <span id="syncStatus"
+                style="font-size:0.8em;color:#888;">
+                ⬤ Non connecté
+            </span>
+            <span id="syncTime"
+                style="font-size:0.9em;color:#555;font-style:italic;white-space:nowrap;">
+            </span>
+        </div>`;
 
     document.body.prepend(bar);
 
@@ -2887,10 +2916,21 @@ function _doFirebasePush() {
         }		
 		/* ── Indicateur de statut ── */
 
-		function setSyncStatus(text, color) {
-			const el = document.getElementById('syncStatus');
-			if (el) { el.textContent = text; el.style.color = color; }
-			}
+        function setSyncStatus(text, color) {
+            const el = document.getElementById('syncStatus');
+            if (el) { el.textContent = text; el.style.color = color; }
+
+            // Mettre à jour l'heure uniquement sur les états positifs
+            const timeEl = document.getElementById('syncTime');
+            if (timeEl && (text.includes('Synchronisé') || text.includes('Connecté') || text.includes('créée'))) {
+                const now  = new Date();
+                const hh   = String(now.getHours()).padStart(2, '0');
+                const mm   = String(now.getMinutes()).padStart(2, '0');
+                const ss   = String(now.getSeconds()).padStart(2, '0');
+                timeEl.textContent = `dernière sync : ${hh}:${mm}:${ss}`;
+                timeEl.style.color = '#557755';
+            }
+        }
 
 		/* ── Intercepter tous les changements pour pousser vers Firebase ── */
         function hookSyncToInputs() {
@@ -3026,8 +3066,6 @@ function resetTimelineZoom() {
 				window._liveLastEvPct   = 0;
 				window._liveEvPerSecond = 0;
 
-				const banner = document.getElementById('damageBanner');
-				if (banner) banner.remove();
 				
 			// Remettre les champs live à zéro
 			
