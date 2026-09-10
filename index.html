@@ -2605,19 +2605,29 @@ function createSession() {
             function pushToFirebase(includePitState = false) {
                 if (!_sessionId || !window._firebaseDb || _isSyncing || window._applyingRemote) return;
 
-                clearTimeout(_syncTimeout);
-                _syncTimeout = setTimeout(() => {
-                    setSyncStatus('🔄 Envoi…', '#ffaa00');
-                    const dataRef = window._firebaseRef(
-                        window._firebaseDb, `sessions/${_sessionId}/data`
-                    );
-                    // ← TOUJOURS inclure pitState pour ne jamais l'écraser sur Firebase
-                    window._firebaseSet(dataRef, collectFormData(true))
-                        .then(() => setSyncStatus('🟢 Synchronisé', '#00ff88'))
-                        .catch(() => setSyncStatus('🔴 Erreur sync', '#ff4444'));
-                }, 150);
+                // Pour les changements pit (checkboxes, refuel, pneus) :
+                // on flush immédiatement sans debounce pour ne pas perdre les clics rapides.
+                // Pour les autres champs (temps au tour, etc.) : debounce 300ms.
+                if (includePitState) {
+                    // Annuler tout debounce en cours et envoyer immédiatement
+                    clearTimeout(_syncTimeout);
+                    _doFirebasePush();
+                } else {
+                    clearTimeout(_syncTimeout);
+                    _syncTimeout = setTimeout(_doFirebasePush, 300);
+                }
             }
-            
+
+function _doFirebasePush() {
+    if (!_sessionId || !window._firebaseDb || _isSyncing || window._applyingRemote) return;
+    setSyncStatus('🔄 Envoi…', '#ffaa00');
+    const dataRef = window._firebaseRef(
+        window._firebaseDb, `sessions/${_sessionId}/data`
+    );
+    window._firebaseSet(dataRef, collectFormData(true))
+        .then(() => setSyncStatus('🟢 Synchronisé', '#00ff88'))
+        .catch(() => setSyncStatus('🔴 Erreur sync', '#ff4444'));
+}            
 	/* ── Collecter toutes les valeurs du formulaire ── */
 	function collectFormData(includePitState = true) {
 		const ids = [
@@ -2771,14 +2781,16 @@ function createSession() {
             // puis on libère le verrou dans le tick suivant.
             
             if (data._liveModeActive) {
-                setTimeout(() => {
+                setTimeout(() => 
+                {
                     recalculateLive();
-                    setTimeout(() => { window._applyingRemote = false; }, 50);
+                    window._applyingRemote = false;   // ← libération immédiate après recalcul
                 }, 50);
-            } else {
+            } else 
+                {
                 calculate();
-                setTimeout(() => { window._applyingRemote = false; }, 50);
-            }
+                window._applyingRemote = false;       // ← libération synchrone, pas de délai
+                }        
         }		
 		/* ── Indicateur de statut ── */
 
@@ -2787,31 +2799,67 @@ function createSession() {
 			if (el) { el.textContent = text; el.style.color = color; }
 			}
 
-		    /* ── Intercepter tous les changements pour pousser vers Firebase ── */
-            function hookSyncToInputs() {
-                document.addEventListener('change', e => {
-                    // Bloquer si sync entrante en cours OU si application de données distantes
-                    if (_isSyncing || window._applyingRemote) return;
-                    const t = e.target;
-                    const isPit = t.matches(
-                        '.stop-check, .refuel-check, .tyre-check, ' +
-                        '.stop-dur-input, .refuel-pct-input, .driver-select, #refuelRate'
-                    ) || !!t.closest(
-                        '.stop-check, .refuel-check, .tyre-check, ' +
-                        '.stop-dur-input, .refuel-pct-input, .driver-select'
-                    );
-                    pushToFirebase(!!isPit);
-                });
+		/* ── Intercepter tous les changements pour pousser vers Firebase ── */
+        function hookSyncToInputs() {
+            document.addEventListener('change', e => {
+                if (_isSyncing || window._applyingRemote) return;
+                const t = e.target;
 
-                document.addEventListener('input', e => {
-                    // Bloquer si sync entrante en cours OU si application de données distantes
-                    if (_isSyncing || window._applyingRemote) return;
-                    const t = e.target;
-                    const isPit = t.matches('.stop-dur-input, .refuel-pct-input, #refuelRate')
-                        || !!t.closest('.stop-dur-input, .refuel-pct-input');
-                    pushToFirebase(!!isPit);
-                });
-            }		/* ── Démarrage ── */
+                const isPit = t.matches(
+                    '.stop-check, .refuel-check, .tyre-check, ' +
+                    '.stop-dur-input, .refuel-pct-input, .driver-select, #refuelRate'
+                ) || !!t.closest(
+                    '.stop-check, .refuel-check, .tyre-check, ' +
+                    '.stop-dur-input, .refuel-pct-input, .driver-select'
+                );
+
+                // Pour les éléments pit : commit immédiat dans pitState
+                // avant que calculate() ne reconstruise le DOM
+                if (isPit) {
+                    const tr = t.closest('tr[data-stint-idx]');
+                    if (tr && tr.dataset.past !== 'true') {
+                        const idx = parseInt(tr.dataset.stintIdx);
+                        if (!pitState[idx]) pitState[idx] = defaultState();
+
+                        if (t.classList.contains('stop-check'))   pitState[idx].stop      = t.checked;
+                        if (t.classList.contains('refuel-check'))  pitState[idx].refuel    = t.checked;
+                        if (t.classList.contains('tyre-check')) {
+                            if (t.dataset.side === 'left')         pitState[idx].left      = t.checked;
+                            else                                   pitState[idx].right     = t.checked;
+                        }
+                        if (t.classList.contains('stop-dur-input'))  pitState[idx].stopDur   = parseFloat(t.value) || 0;
+                        if (t.classList.contains('refuel-pct-input')) pitState[idx].refuelPct = parseFloat(t.value) || 0;
+                        if (t.classList.contains('driver-select'))   pitState[idx].driver    = parseInt(t.value);
+
+                        pitState[idx]._userSet = true;
+                    }
+                }
+
+                pushToFirebase(!!isPit);
+            });
+
+            document.addEventListener('input', e => {
+                if (_isSyncing || window._applyingRemote) return;
+                const t = e.target;
+                const isPit = t.matches('.stop-dur-input, .refuel-pct-input, #refuelRate')
+                    || !!t.closest('.stop-dur-input, .refuel-pct-input');
+
+                // Commit immédiat pour les inputs numériques pit
+                if (isPit && t.closest) {
+                    const tr = t.closest('tr[data-stint-idx]');
+                    if (tr && tr.dataset.past !== 'true') {
+                        const idx = parseInt(tr.dataset.stintIdx);
+                        if (!pitState[idx]) pitState[idx] = defaultState();
+                        if (t.classList.contains('stop-dur-input'))   pitState[idx].stopDur   = parseFloat(t.value) || 0;
+                        if (t.classList.contains('refuel-pct-input')) pitState[idx].refuelPct = parseFloat(t.value) || 0;
+                        pitState[idx]._userSet = true;
+                    }
+                }
+
+                pushToFirebase(!!isPit);
+            });
+        }            
+        /* ── Démarrage ── */
 		
 		let _firebaseInitDone = false;
 
