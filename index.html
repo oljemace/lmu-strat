@@ -9,7 +9,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            background: linear-gradient(135deg, #1e2646 0%, #16213e 100%);
             color: #fff;
             margin: 0;
             padding: 20px;
@@ -19,7 +19,7 @@
         .container {
             max-width: 1400px;
             margin: 0 auto;
-            background: rgba(0,0,0,0.3);
+            background: rgba(0, 0, 0, 0.244);
             border-radius: 15px;
             padding: 30px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.3);
@@ -2271,7 +2271,8 @@ function recalculateLive() {
     document.getElementById('liveDureeStint').textContent     = formatDuration(dureeStintLive);
 
 	// Écart vs théorique
-		const lapTimeTheo      = getLapTimeInSeconds();
+		const noteEl = document.getElementById('liveRecalcNote');
+        const lapTimeTheo      = getLapTimeInSeconds();
 		const toursTheo        = lapTimeTheo > 0 ? totalRaceSec / lapTimeTheo : 0;
 		const toursTheoRestants = Math.max(0, toursTheo - lapsDone);
 		const toursDiff        = toursRestantsLive - toursTheoRestants;
@@ -2295,97 +2296,10 @@ function recalculateLive() {
 			}
 		}
 
-		// ── Détection d'un écart > 3% → suspicion de dommages ──
-		const ecartRatio = toursTheoRestants > 0
-			? Math.abs(toursDiff) / toursTheoRestants
-			: 0;
-
-		const noteEl = document.getElementById('liveRecalcNote');
-
-		// Supprimer toute bannière dommages existante pour la recréer proprement
-		const oldBanner = document.getElementById('damageBanner');
-		if (oldBanner) oldBanner.remove();
-
-		if (!window._damageMode && ecartRatio > 0.03 && toursDiff < 0) {
-			// L'écart est négatif (on fait moins de tours que prévu) et > 3% → afficher la question
-
-			noteEl.innerHTML =
-				`⚠️ Écart vs théorique : ${sign}${toursDiff.toFixed(1)} tours`
-			  + ` | Tours totaux attendus : ${(lapsDone + toursRestantsLive).toFixed(1)}`
-			  + avgLapStr;
-
-			// Bannière de confirmation dommages
-			const banner = document.createElement('div');
-			banner.id = 'damageBanner';
-			banner.style.cssText = `
-				margin-top: 10px;
-				padding: 12px 16px;
-				background: rgba(255, 80, 80, 0.15);
-				border: 1.5px solid rgba(255, 80, 80, 0.6);
-				border-radius: 8px;
-				color: #ffaaaa;
-				font-size: 0.88em;
-				display: flex;
-				flex-wrap: wrap;
-				align-items: center;
-				gap: 10px;`;
-
-			banner.innerHTML = `
-				<span>🔧 <strong>Écart de ${(ecartRatio * 100).toFixed(1)}% détecté.</strong>
-				Y a-t-il eu des arrêts imprévus (dommages / Safety Car / VSC) ?</span>
-				<div style="display:flex;gap:8px;flex-shrink:0;">
-					<button id="btnDamageOui"
-						style="padding:5px 14px;background:#ff4444;border:none;border-radius:6px;
-							   color:#fff;font-weight:bold;cursor:pointer;font-size:0.95em;">
-						✅ Oui, recalculer
-					</button>
-					<button id="btnDamageNon"
-						style="padding:5px 14px;background:rgba(255,255,255,0.1);border:1px solid #555;
-							   border-radius:6px;color:#ccc;font-weight:bold;cursor:pointer;font-size:0.95em;">
-						❌ Non, ignorer
-					</button>
-				</div>`;
-
-			noteEl.after(banner);
-
-			// ── Bouton OUI : activer le mode dommage et recalculer ──
-			document.getElementById('btnDamageOui').onclick = () => {
-				window._damageMode     = true;
-				window._damageLapsDone = lapsDone;
-				window._damageNowSec   = nowSec;
-				banner.remove();
-				recalculateLive();
-			};
-
-			// ── Bouton NON : supprimer la bannière et ne rien changer ──
-			document.getElementById('btnDamageNon').onclick = () => {
-				banner.remove();
-				// On marque temporairement pour ne pas re-poser la question à chaque recalcul
-				// L'utilisateur a refusé : on ignore jusqu'au prochain changement de lapsDone
-				noteEl.dataset.damageIgnored = lapsDone.toString();
-			};
-
-		} else if (window._damageMode) {
-			// Mode dommage actif : affichage adapté
-			noteEl.innerHTML =
-				`🔧 <strong style="color:#ff8888;">Mode dommage actif</strong>`
-			  + ` — Stratégie recalculée depuis le tour ${window._damageLapsDone.toFixed(0)}`
-			  + ` | Tours totaux attendus : ${(lapsDone + toursRestantsLive).toFixed(1)}`
-			  + avgLapStr
-			  + ` <button onclick="resetDamageMode()"
-					style="margin-left:8px;padding:2px 10px;background:rgba(255,255,255,0.12);
-						   border:1px solid #888;border-radius:5px;color:#ccc;cursor:pointer;
-						   font-size:0.85em;">
-					↩ Annuler dommage
-				</button>`;
-		} else {
-			// Mode normal
-			noteEl.textContent =
-				`Écart vs théorique : ${sign}${toursDiff.toFixed(1)} tours`
-			  + ` | Tours totaux attendus : ${(lapsDone + toursRestantsLive).toFixed(1)}`
-			  + avgLapStr;
-			noteEl.dataset.damageIgnored = '';
-		}
+    noteEl.textContent =
+        `Écart vs théorique : ${sign}${toursDiff.toFixed(1)} tours`
+    + ` | Tours totaux attendus : ${(lapsDone + toursRestantsLive).toFixed(1)}`
+    + avgLapStr;
 		
     // ── Régénération table et timeline via calculate() avec overrides ──
     // On ne touche JAMAIS aux champs HTML théoriques.
@@ -2731,10 +2645,6 @@ function createSession() {
 		form._liveLastNowSec = window._liveLastNowSec || 0;
 		form._liveEvPerSecond= window._liveEvPerSecond|| 0;
 		
-		// ── État dommage à synchroniser ──
-		form._damageMode     = window._damageMode     || false;
-		form._damageLapsDone = window._damageLapsDone || 0;
-		form._damageNowSec   = window._damageNowSec   || 0;
 
 		return form;
 	}
@@ -2764,55 +2674,65 @@ function createSession() {
 			ydEl.checked = data.realStartYesterday;
 		}
 
-		// Nombre de pilotes
-		if (data.driverCount) {
-			const sel = document.getElementById('driverCount');
-			if (sel) {
-				sel.value = data.driverCount;
-				renderDriverInputs();   // recrée les champs pilotes
-			}
-		}
+        // Nombre de pilotes — NE PAS appeler calculate() via renderDriverInputs ici
+        if (data.driverCount) {
+            const sel = document.getElementById('driverCount');
+            if (sel) {
+                sel.value = data.driverCount;
+                // Recréer les champs sans déclencher calculate()
+                const n = parseInt(data.driverCount) || 1;
+                const container = document.getElementById('driverInputsContainer');
+                container.innerHTML = '';
+                for (let i = 0; i < n; i++) {
+                    const row = document.createElement('div');
+                    row.className = 'driver-input-row';
+                    row.innerHTML = `
+                        <input type="color" id="driverColor_${i}"
+                            class="driver-color-swatch"
+                            value="${DRIVER_COLORS[i % DRIVER_COLORS.length]}"
+                            onchange="window._liveModeActive ? recalculateLive() : calculate()"
+                            title="Couleur du pilote ${i+1}">
+                        <input type="text" id="driverName_${i}"
+                            class="driver-name-input"
+                            placeholder="${DEFAULT_DRIVER_NAMES[i]}"
+                            value="${DEFAULT_DRIVER_NAMES[i]}"
+                            oninput="calculate()">
+                    `;
+                    container.appendChild(row);
+                }
+            }
+        }
 
-		// Noms et couleurs des pilotes
-		if (Array.isArray(data.drivers)) {
-			data.drivers.forEach((d, i) => {
-				const nameEl  = document.getElementById(`driverName_${i}`);
-				const colorEl = document.getElementById(`driverColor_${i}`);
-				if (nameEl  && d.name  !== undefined) nameEl.value  = d.name;
-				if (colorEl && d.color !== undefined) colorEl.value = d.color;
-			});
-		}
+            // Noms et couleurs des pilotes
+            if (Array.isArray(data.drivers)) {
+                data.drivers.forEach((d, i) => {
+                    const nameEl  = document.getElementById(`driverName_${i}`);
+                    const colorEl = document.getElementById(`driverColor_${i}`);
+                    if (nameEl  && d.name  !== undefined) nameEl.value  = d.name;
+                    if (colorEl && d.color !== undefined) colorEl.value = d.color;
+                });
+            }
 
-		// État des pit stops
-		if (data.pitState) {
-			pitState = data.pitState;
-		}
+            // pitState AVANT calculate()
+            if (data.pitState) {
+                pitState = data.pitState;
+            }
 
-		// ── Restauration état live ──
-		if (data._liveModeActive !== undefined) {
-			window._liveModeActive  = data._liveModeActive;
-			window._liveLapsDone    = data._liveLapsDone    || 0;
-			window._liveLastEvPct   = data._liveLastEvPct   || 0;
-			window._liveLastNowSec  = data._liveLastNowSec  || 0;
-			window._liveEvPerSecond = data._liveEvPerSecond || 0;
-		}
-		
-		// ── Restauration état dommage ──
-		if (data._damageMode !== undefined) {
-			window._damageMode     = data._damageMode;
-			window._damageLapsDone = data._damageLapsDone || 0;
-			window._damageNowSec   = data._damageNowSec   || 0;
-		}
+            // Restauration état live
+            if (data._liveModeActive !== undefined) {
+                window._liveModeActive  = data._liveModeActive;
+                window._liveLapsDone    = data._liveLapsDone    || 0;
+                window._liveLastEvPct   = data._liveLastEvPct   || 0;
+                window._liveLastNowSec  = data._liveLastNowSec  || 0;
+                window._liveEvPerSecond = data._liveEvPerSecond || 0;
+            }
 
-
-		// Recalcul dans le bon mode
-		if (data._liveModeActive) {
-			setTimeout(() => recalculateLive(), 50);
-		} else {
-			calculate();
-		}
-	}
-
+            // Recalcul une seule fois, après tout
+            if (data._liveModeActive) {
+                setTimeout(() => recalculateLive(), 50);
+            } else {
+                calculate();
+            }
 		
 		/* ── Indicateur de statut ── */
 
@@ -2822,22 +2742,25 @@ function createSession() {
 			}
 
 		/* ── Intercepter tous les changements pour pousser vers Firebase ── */
-		function hookSyncToInputs() {
-			document.addEventListener('change', e => {
-				const isPit = e.target.closest(
-					'.stop-check, .refuel-check, .tyre-check, ' +
-					'.stop-dur-input, .refuel-pct-input, .driver-select, #refuelRate'
-				);
-				pushToFirebase(!!isPit);
-			});
-			document.addEventListener('input', e => {
-				const isPit = e.target.closest(
-					'.stop-dur-input, .refuel-pct-input, #refuelRate'
-				);
-				pushToFirebase(!!isPit);
-			});
-		}
-		
+        function hookSyncToInputs() {
+            document.addEventListener('change', e => {
+                const t = e.target;
+                const isPit = t.matches(
+                    '.stop-check, .refuel-check, .tyre-check, ' +
+                    '.stop-dur-input, .refuel-pct-input, .driver-select, #refuelRate'
+                ) || !!t.closest(
+                    '.stop-check, .refuel-check, .tyre-check, ' +
+                    '.stop-dur-input, .refuel-pct-input, .driver-select'
+                );
+                pushToFirebase(!!isPit);
+            });
+            document.addEventListener('input', e => {
+                const t = e.target;
+                const isPit = t.matches('.stop-dur-input, .refuel-pct-input, #refuelRate')
+                    || !!t.closest('.stop-dur-input, .refuel-pct-input');
+                pushToFirebase(!!isPit);
+            });
+        }		
 		/* ── Démarrage ── */
 		
 		let _firebaseInitDone = false;
@@ -2900,23 +2823,6 @@ function resetTimelineZoom() {
     if (slider) { slider.value = 1; applyTimelineZoom(); }
 }
 
-		/* ── Réinitialisation du mode dommage ── */
-		
-		function resetDamageMode() {
-			window._damageMode     = false;
-			window._damageLapsDone = 0;
-			window._damageNowSec   = 0;
-
-			const banner = document.getElementById('damageBanner');
-			if (banner) banner.remove();
-
-			// Nettoyer le flag "ignoré"
-			const noteEl = document.getElementById('liveRecalcNote');
-			if (noteEl) noteEl.dataset.damageIgnored = '';
-
-			recalculateLive();
-		}
-
 		/* ── Réinitialisation du mode live ── */
 
 		function resetLiveMode() {
@@ -2928,9 +2834,6 @@ function resetTimelineZoom() {
 				window._liveLastNowSec  = 0;
 				window._liveLastEvPct   = 0;
 				window._liveEvPerSecond = 0;
-				window._damageMode      = false;
-				window._damageLapsDone  = 0;
-				window._damageNowSec    = 0;
 
 				const banner = document.getElementById('damageBanner');
 				if (banner) banner.remove();
