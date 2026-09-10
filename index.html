@@ -794,10 +794,10 @@ const firebaseConfig = {
                 <div class="note"><strong>Aide :</strong> Faites une moyenne sur vos tours précédents.</div>
             </div>
                 <div class="input-group">
-                    <label for="tyreBudget">🏎️ Stock de pneus neufs (sets)</label>
+                    <label for="tyreBudget">🏎️ Stock de pneus neufs</label>
                     <input type="number" id="tyreBudget" value="10" min="0" max="100" step="1"
                         onchange="window._liveModeActive ? recalculateLive() : calculate()">
-                    <div class="note"><strong>Note :</strong> Chaque case pneu cochée consomme 2 pneus neufs (1 essieu).</div>
+                    <div class="note"><strong>Note :</strong> Chaque case pneu cochée consomme 2 pneus neufs.</div>
                 </div>
             <div class="input-group">
                 <label for="evRefuelPerStint">💧 EV Recharge par stint (%)</label>
@@ -1032,22 +1032,38 @@ const firebaseConfig = {
                             <th>🏁 Arrêt Stand</th>
                             <th id="refuelRateHeader">⛽ Refuel %<br><small style="color:#aaa;font-weight:normal;">Débit : <input type="number" id="refuelRate" value="0.4" min="0.1" max="6" step="0.1" onchange="window._liveModeActive ? recalculateLive() : calculate()" style="width:45px;padding:2px 4px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.3);border-radius:4px;color:#fff;font-size:0.9em;text-align:center;"> s/%</small></th>
                             
-                            <th title="Changement pneus côté gauche">
-                                🔧 Pneus G
-                                <div id="tyreGaugeContainer" style="display:none;margin-top:4px;">
-                                    <div id="tyreGaugeBar" style="
-                                        height:4px;border-radius:2px;
-                                        background:#ff6600;
+                            <th colspan="2" style="text-align:center;padding-bottom:2px;">
+                                <!-- Jauge pneus sur toute la largeur des 2 colonnes -->
+                                <div id="tyreGaugeContainer" style="display:none;margin-bottom:4px;">
+                                    <div style="
+                                        background:rgba(255,255,255,0.08);
+                                        border-radius:4px;
+                                        height:6px;
                                         width:100%;
-                                        transition:width 0.3s,background 0.3s;">
+                                        overflow:hidden;">
+                                        <div id="tyreGaugeBar" style="
+                                            height:6px;
+                                            border-radius:4px;
+                                            background:#ff6600;
+                                            width:100%;
+                                            transition:width 0.3s,background 0.3s;">
+                                        </div>
                                     </div>
                                     <div id="tyreGaugeLabel" style="
-                                        color:#ffaa00;font-size:0.80em;font-weight:bold;
-                                        margin-top:2px;white-space:nowrap;text-align:center;">
+                                        color:#ffaa00;
+                                        font-size:0.78em;
+                                        font-weight:bold;
+                                        margin-top:3px;
+                                        white-space:nowrap;
+                                        text-align:center;">
                                     </div>
                                 </div>
-                            </th>
-                            <th title="Changement pneus côté droit">🔧 Pneus D</th>                            
+                                <!-- Sous-en-têtes côte à côte -->
+                                <div style="display:flex;justify-content:space-around;gap:4px;">
+                                    <span title="Changement pneus côté gauche">🔧 Pneus G</span>
+                                    <span title="Changement pneus côté droit">🔧 Pneus D</span>
+                                </div>
+                            </th>                                                        
                             <th>⏱️ Pit +</th>
                         </tr>
                     </thead>
