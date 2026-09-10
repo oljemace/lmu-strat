@@ -2578,7 +2578,7 @@ function createSession() {
 					if (_isSyncing) return;
 					_isSyncing = true;
 					applyFormData(remote);
-					setTimeout(() => { _isSyncing = false; }, 200);
+					setTimeout(() => { _isSyncing = false; }, 800);
 					setSyncStatus('🟢 Synchronisé', '#00ff88');
 				});
 
@@ -2852,11 +2852,12 @@ function resetTimelineZoom() {
 			const result = document.getElementById('liveRecalcResult');
 			if (result) result.style.display = 'none';
 
-			// Recalculer en mode normal
-			calculate();
-			
-			// ── Synchroniser l'arrêt du mode live vers Firebase ──
-			pushToFirebase(true);
+	        // Recalculer en mode normal
+	        calculate();
+	        
+	        // ── Synchroniser l'arrêt du mode live vers Firebase ──
+	        // On attend que calculate() ait fini avant de pousser
+	        setTimeout(() => pushToFirebase(true), 300);
 		}
 		
 		
