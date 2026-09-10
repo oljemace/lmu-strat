@@ -1132,9 +1132,13 @@ const firebaseConfig = {
 		if (v < 0) v = 0;
 		if (MAX[id] !== undefined && v > MAX[id]) v = MAX[id];
 		input.value = v;
+        const isPitField = ['stopDur', 'refuelPct'].some(k => id.includes(k));
+        pushToFirebase(isPitField);
 
 		// ← Déclencher manuellement l'événement pour la sync Firebase
 		input.dispatchEvent(new Event('input', { bubbles: true }));
+
+
 	}
 
     /* ── Helpers temps ── */
@@ -2754,6 +2758,7 @@ function createSession() {
 		/* ── Intercepter tous les changements pour pousser vers Firebase ── */
         function hookSyncToInputs() {
             document.addEventListener('change', e => {
+                if (_isSyncing) return;
                 const t = e.target;
                 const isPit = t.matches(
                     '.stop-check, .refuel-check, .tyre-check, ' +
@@ -2765,11 +2770,13 @@ function createSession() {
                 pushToFirebase(!!isPit);
             });
             document.addEventListener('input', e => {
+                if (_isSyncing) return;
                 const t = e.target;
                 const isPit = t.matches('.stop-dur-input, .refuel-pct-input, #refuelRate')
                     || !!t.closest('.stop-dur-input, .refuel-pct-input');
                 pushToFirebase(!!isPit);
             });
+
         }		
 		/* ── Démarrage ── */
 		
