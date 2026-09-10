@@ -1830,8 +1830,10 @@ if (window._liveMode) {
             let currentDriverIdx = -1;
             let elapsedCur = 0;
             for (let i = 0; i < stints.length; i++) {
-                const pp  = i === 0 ? 0 : getPitDuration(i - 1);
-                const dur = stints[i].tours * lapTime + pp;
+                const pp  = (i === 0 || (window._liveMode && stints[i]._past)) ? 0 : getPitDuration(i - 1);
+                const dur = (window._liveMode && stints[i]._past && stints[i]._durReelle !== undefined)
+                    ? stints[i]._durReelle
+                    : stints[i].tours * lapTime + pp;
                 const s   = realStart + elapsedCur;
                 const e   = s + dur;
                 if (nowSec2 >= s && nowSec2 < e) {
@@ -1844,18 +1846,22 @@ if (window._liveMode) {
             // 2. Chercher le prochain stint avec un pilote DIFFÉRENT du pilote actuel
             let elapsedNext = 0;
             for (let i = 0; i < stints.length; i++) {
-                const pp        = i === 0 ? 0 : getPitDuration(i - 1);
-                const dur       = stints[i].tours * lapTime + pp;
+                const pp        = (i === 0 || (window._liveMode && stints[i]._past)) ? 0 : getPitDuration(i - 1);
+                const dur       = (window._liveMode && stints[i]._past && stints[i]._durReelle !== undefined)
+                    ? stints[i]._durReelle
+                    : stints[i].tours * lapTime + pp;
                 const stintStart = realStart + elapsedNext;
 
                 if (stintStart > nowSec2) {
                     const ps         = pitState[i] || defaultState();
                     const thisDriver = ps.driver;
 
-                    // N'afficher que si le pilote est désigné ET différent du pilote actuel
                     if (thisDriver >= 0 && thisDriver !== currentDriverIdx) {
-                        const minUntil  = Math.round((stintStart - nowSec2) / 60);
-                        const posRatioN = (stintStart - realStart) / totalRealSec;
+                        // En mode live : calculer le temps RESTANT depuis maintenant
+                        // jusqu'au début de ce stint (et non depuis le début de course)
+                        const secsUntil  = stintStart - nowSec2;
+                        const minUntil   = Math.round(secsUntil / 60);
+                        const posRatioN  = (stintStart - realStart) / totalRealSec;
                         const driverName = getDriverName(thisDriver);
 
                         const badge = document.createElement('div');
@@ -1874,14 +1880,15 @@ if (window._liveMode) {
                             z-index:5;
                             pointer-events:none;
                             box-shadow:0 2px 6px rgba(0,0,0,0.4);`;
-                        badge.textContent = `👤 ${driverName} dans ${minUntil} min`;
+                        badge.textContent = secsUntil > 0
+                            ? `👤 ${driverName} dans ${minUntil} min`
+                            : `👤 ${driverName} maintenant`;
                         nextDriverLabel.appendChild(badge);
                         break;
                     }
                 }
                 elapsedNext += dur;
-            }
-        
+            }        
 		 
 		
 		}
@@ -1917,8 +1924,10 @@ if (window._liveMode) {
             let currentDriver = '';
             let elapsed = 0;
             for (let i = 0; i < stints.length; i++) {
-                const pitPrev = i === 0 ? 0 : getPitDuration(i - 1);
-                const stintDur = stints[i].tours * lapTime + pitPrev;
+                const pitPrev  = (i === 0 || (window._liveMode && stints[i]._past)) ? 0 : getPitDuration(i - 1);
+                const stintDur = (window._liveMode && stints[i]._past && stints[i]._durReelle !== undefined)
+                    ? stints[i]._durReelle
+                    : stints[i].tours * lapTime + pitPrev;
                 const stintStart = realStart + elapsed;
                 const stintEnd   = stintStart + stintDur;
                 if (nowSec >= stintStart && nowSec < stintEnd) {
