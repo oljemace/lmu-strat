@@ -793,7 +793,12 @@ const firebaseConfig = {
                 <input type="number" id="evPerLap" value="8.0" step="0.1">
                 <div class="note"><strong>Aide :</strong> Faites une moyenne sur vos tours précédents.</div>
             </div>
-
+                <div class="input-group">
+                    <label for="tyreBudget">🏎️ Stock de pneus neufs (sets)</label>
+                    <input type="number" id="tyreBudget" value="10" min="0" max="100" step="1"
+                        onchange="window._liveModeActive ? recalculateLive() : calculate()">
+                    <div class="note"><strong>Note :</strong> Chaque case pneu cochée consomme 2 pneus neufs (1 essieu).</div>
+                </div>
             <div class="input-group">
                 <label for="evRefuelPerStint">💧 EV Recharge par stint (%)</label>
                 <input type="number" id="evRefuelPerStint" value="100" min="0" max="100" step="1">
@@ -1026,8 +1031,23 @@ const firebaseConfig = {
                             <th>EV Conso</th>
                             <th>🏁 Arrêt Stand</th>
                             <th id="refuelRateHeader">⛽ Refuel %<br><small style="color:#aaa;font-weight:normal;">Débit : <input type="number" id="refuelRate" value="0.4" min="0.1" max="6" step="0.1" onchange="window._liveModeActive ? recalculateLive() : calculate()" style="width:45px;padding:2px 4px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.3);border-radius:4px;color:#fff;font-size:0.9em;text-align:center;"> s/%</small></th>
-                            <th title="Changement pneus côté gauche">🔧 Pneus G</th>
-                            <th title="Changement pneus côté droit">🔧 Pneus D</th>
+                            
+                            <th title="Changement pneus côté gauche">
+                                🔧 Pneus G
+                                <div id="tyreGaugeContainer" style="display:none;margin-top:4px;">
+                                    <div id="tyreGaugeBar" style="
+                                        height:4px;border-radius:2px;
+                                        background:#ff6600;
+                                        width:100%;
+                                        transition:width 0.3s,background 0.3s;">
+                                    </div>
+                                    <div id="tyreGaugeLabel" style="
+                                        color:#ffaa00;font-size:0.80em;font-weight:bold;
+                                        margin-top:2px;white-space:nowrap;text-align:center;">
+                                    </div>
+                                </div>
+                            </th>
+                            <th title="Changement pneus côté droit">🔧 Pneus D</th>                            
                             <th>⏱️ Pit +</th>
                         </tr>
                     </thead>
@@ -1265,6 +1285,59 @@ const firebaseConfig = {
         const refuelSec = s.refuel ? (s.refuelPct || 0) * rate : 0;
         const tyreSec   = (s.left ? TYRE_PENALTY : 0) + (s.right ? TYRE_PENALTY : 0);
         return stopSec + refuelSec + tyreSec;
+    }
+
+        /* ── Compteur de pneus neufs ── */
+    function updateTyreGauge() {
+        const budget = parseInt(document.getElementById('tyreBudget')?.value) || 0;
+
+        // Compter les pneus utilisés : chaque côté coché = 2 pneus (1 essieu)
+        let used = 0;
+        document.querySelectorAll('tr[data-stint-idx]').forEach(tr => {
+            // Ne compter que les stints non-passés (les passés sont déjà consommés,
+            // mais on compte TOUT pour afficher le budget total engagé)
+            const leftCb  = tr.querySelector('.tyre-check[data-side="left"]');
+            const rightCb = tr.querySelector('.tyre-check[data-side="right"]');
+            if (leftCb  && leftCb.checked)  used += 2;
+            if (rightCb && rightCb.checked) used += 2;
+        });
+
+        const remaining = budget - used;
+        const container = document.getElementById('tyreGaugeContainer');
+        const bar       = document.getElementById('tyreGaugeBar');
+        const label     = document.getElementById('tyreGaugeLabel');
+
+        if (!container || !bar || !label) return;
+
+        if (budget <= 0) {
+            container.style.display = 'none';
+            return;
+        }
+
+        container.style.display = 'block';
+
+        // Largeur de la barre = ratio restant
+        const ratio = Math.max(0, Math.min(1, remaining / budget));
+        bar.style.width = `${ratio * 100}%`;
+
+        // Couleur selon niveau
+        if (remaining < 0) {
+            bar.style.background   = '#ff2222';
+            label.style.color      = '#ff4444';
+            label.textContent      = `⚠️ ${Math.abs(remaining)} pneus en trop !`;
+        } else if (ratio <= 0.25) {
+            bar.style.background   = '#ff6600';
+            label.style.color      = '#ff8800';
+            label.textContent      = `🔴 ${remaining} pneus restants (${used} utilisés)`;
+        } else if (ratio <= 0.5) {
+            bar.style.background   = '#ffaa00';
+            label.style.color      = '#ffcc00';
+            label.textContent      = `🟡 ${remaining} pneus restants (${used} utilisés)`;
+        } else {
+            bar.style.background   = '#00ff88';
+            label.style.color      = '#00ff88';
+            label.textContent      = `🟢 ${remaining} pneus restants (${used} utilisés)`;
+        }
     }
 
     /* ── Calcul principal ── */
@@ -1640,7 +1713,7 @@ if (window._liveMode) {
             cR += dR;
             cG += dG;
         });
-		
+		updateTyreGauge();
         buildTimeline(stints, lapTime, multiplier, realStart, gameStart, totalRaceSec);
 
         document.querySelectorAll('.result-value').forEach(el => {
@@ -2050,6 +2123,8 @@ if (window._liveMode) {
         document.getElementById('strategyTableBody').innerHTML       = '';
         document.getElementById('timelineTrack').innerHTML           = '';
         document.getElementById('timelineLabels').innerHTML          = '';
+        if (document.getElementById('tyreBudget'))
+        document.getElementById('tyreBudget').value = '6';
     }
 
 /* ── Driver defaults ── */
@@ -2639,6 +2714,7 @@ function _doFirebasePush() {
 			'refuelRate','driverCount',
 			'lapsDone','evCurrent','evPerLapReal',
 			'livelapMinutes','livelapSeconds','livelapMillis'
+            'tyreBudget'
 		];
 
 		const form = {};
