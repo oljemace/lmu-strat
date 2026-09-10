@@ -2600,23 +2600,24 @@ function createSession() {
 				setSyncStatus('🟢 Connecté', '#00ff88');
 
 			}, { onlyOnce: true });
-		}
+		    }
 
-		function pushToFirebase(includePitState = false) {
-			if (!_sessionId || !window._firebaseDb || _isSyncing) return;
+            function pushToFirebase(includePitState = false) {
+                if (!_sessionId || !window._firebaseDb || _isSyncing || window._applyingRemote) return;
 
-			clearTimeout(_syncTimeout);
-			_syncTimeout = setTimeout(() => {
-				setSyncStatus('🔄 Envoi…', '#ffaa00');
-				const dataRef = window._firebaseRef(
-					window._firebaseDb, `sessions/${_sessionId}/data`
-				);
-				window._firebaseSet(dataRef, collectFormData(includePitState))
-					.then(() => setSyncStatus('🟢 Synchronisé', '#00ff88'))
-					.catch(() => setSyncStatus('🔴 Erreur sync', '#ff4444'));
-			}, 150);
-		}
-
+                clearTimeout(_syncTimeout);
+                _syncTimeout = setTimeout(() => {
+                    setSyncStatus('🔄 Envoi…', '#ffaa00');
+                    const dataRef = window._firebaseRef(
+                        window._firebaseDb, `sessions/${_sessionId}/data`
+                    );
+                    // ← TOUJOURS inclure pitState pour ne jamais l'écraser sur Firebase
+                    window._firebaseSet(dataRef, collectFormData(true))
+                        .then(() => setSyncStatus('🟢 Synchronisé', '#00ff88'))
+                        .catch(() => setSyncStatus('🔴 Erreur sync', '#ff4444'));
+                }, 150);
+            }
+            
 	/* ── Collecter toutes les valeurs du formulaire ── */
 	function collectFormData(includePitState = true) {
 		const ids = [
