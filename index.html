@@ -1209,7 +1209,8 @@ const firebaseConfig = {
 		window._damageMode      = false;   // true si dommages confirmés par l'utilisateur
 		window._damageLapsDone  = 0;       // tours faits au moment de la confirmation des dommages
 		window._damageNowSec    = 0;       // heure réelle au moment de la confirmation des dommages    
-	
+        window._applyingRemote  = false;  // verrou : on est en train d'appliquer des données distantes
+
 	/* pitState[idx] = {
          stop: bool,       // arrêt au stand activé
          stopDur: number,  // durée passage au stand (s)
@@ -1225,34 +1226,35 @@ const firebaseConfig = {
 }
 
     /* Sauvegarde l'état des contrôles avant de vider le tbody */
-    function savePitState() {
-        document.querySelectorAll('tr[data-stint-idx]').forEach(tr => {
-            const idx = parseInt(tr.dataset.stintIdx);
-            if (!pitState[idx]) pitState[idx] = defaultState();
+        function savePitState() {
+            // ← AJOUTER : si on applique des données distantes, ne pas écraser pitState
+            if (window._applyingRemote) return;
 
-            // Ne pas écraser l'état des lignes passées (désactivées en mode live)
-            if (tr.dataset.past === 'true') return;
-			
-            const stopCb   = tr.querySelector('.stop-check');
-            const stopDurI = tr.querySelector('.stop-dur-input');
-            const refuelCb = tr.querySelector('.refuel-check');
-            const refuelI  = tr.querySelector('.refuel-pct-input');
-            const leftCb   = tr.querySelector('.tyre-check[data-side="left"]');
-            const rightCb  = tr.querySelector('.tyre-check[data-side="right"]');
-			const driverSel = tr.querySelector('.driver-select');
-if (driverSel) pitState[idx].driver = parseInt(driverSel.value);
+            document.querySelectorAll('tr[data-stint-idx]').forEach(tr => {
+                const idx = parseInt(tr.dataset.stintIdx);
+                if (!pitState[idx]) pitState[idx] = defaultState();
 
-            if (stopCb)   pitState[idx].stop     = stopCb.checked;
-            if (stopDurI) pitState[idx].stopDur  = parseFloat(stopDurI.value) || 30;
-            if (refuelCb) pitState[idx].refuel   = refuelCb.checked;
-            if (refuelI)  pitState[idx].refuelPct= parseFloat(refuelI.value)  || 25;
-            if (leftCb)   pitState[idx].left     = leftCb.checked;
-            if (rightCb)  pitState[idx].right    = rightCb.checked;
-			
-			// Marquer ce stint comme explicitement modifié par l'utilisateur
-			pitState[idx]._userSet = true;
-        });
-    }
+                if (tr.dataset.past === 'true') return;
+
+                const stopCb    = tr.querySelector('.stop-check');
+                const stopDurI  = tr.querySelector('.stop-dur-input');
+                const refuelCb  = tr.querySelector('.refuel-check');
+                const refuelI   = tr.querySelector('.refuel-pct-input');
+                const leftCb    = tr.querySelector('.tyre-check[data-side="left"]');
+                const rightCb   = tr.querySelector('.tyre-check[data-side="right"]');
+                const driverSel = tr.querySelector('.driver-select');
+
+                if (driverSel) pitState[idx].driver    = parseInt(driverSel.value);
+                if (stopCb)    pitState[idx].stop       = stopCb.checked;
+                if (stopDurI)  pitState[idx].stopDur    = parseFloat(stopDurI.value) || 30;
+                if (refuelCb)  pitState[idx].refuel     = refuelCb.checked;
+                if (refuelI)   pitState[idx].refuelPct  = parseFloat(refuelI.value)  || 25;
+                if (leftCb)    pitState[idx].left       = leftCb.checked;
+                if (rightCb)   pitState[idx].right      = rightCb.checked;
+
+                pitState[idx]._userSet = true;
+            });
+        }
 
     /* Calcule la durée totale du pit stop pour un stint donné (secondes) */
     function getPitDuration(idx) {
@@ -2660,61 +2662,64 @@ function createSession() {
 		
 
 		return form;
-	}
+	    }
 
 		/* ── Appliquer les données reçues au formulaire ── */
 		
-		function applyFormData(data) {
-			const ids = [
-				'realStartHours','realStartMinutes',
-				'gameStartHours','gameStartMinutes',
-				'timeMultiplier','raceHours','raceMinutes',
-				'lapMinutes','lapSeconds','lapMillis',
-				'evRemaining','evPerLap','evRefuelPerStint',
-				'refuelRate',
-				'lapsDone','evCurrent','evPerLapReal',
-				'livelapMinutes','livelapSeconds','livelapMillis'
-			];
+        function applyFormData(data) {
+            // ← Activer le verrou : empêche savePitState() et hookSyncToInputs
+            //   d'écraser pitState ou de renvoyer vers Firebase pendant l'application
+            window._applyingRemote = true;
 
-		ids.forEach(id => {
-			const el = document.getElementById(id);
-			if (el && data[id] !== undefined) el.value = data[id];
-		});
-		
-		// Checkbox "hier"
-		const ydEl = document.getElementById('realStartYesterday');
-		if (ydEl && data.realStartYesterday !== undefined) {
-			ydEl.checked = data.realStartYesterday;
-		}
+            const ids = [
+                'realStartHours','realStartMinutes',
+                'gameStartHours','gameStartMinutes',
+                'timeMultiplier','raceHours','raceMinutes',
+                'lapMinutes','lapSeconds','lapMillis',
+                'evRemaining','evPerLap','evRefuelPerStint',
+                'refuelRate',
+                'lapsDone','evCurrent','evPerLapReal',
+                'livelapMinutes','livelapSeconds','livelapMillis'
+            ];
 
-        // Nombre de pilotes — NE PAS appeler calculate() via renderDriverInputs ici
-        if (data.driverCount) {
-            const sel = document.getElementById('driverCount');
-            if (sel) {
-                sel.value = data.driverCount;
-                // Recréer les champs sans déclencher calculate()
-                const n = parseInt(data.driverCount) || 1;
-                const container = document.getElementById('driverInputsContainer');
-                container.innerHTML = '';
-                for (let i = 0; i < n; i++) {
-                    const row = document.createElement('div');
-                    row.className = 'driver-input-row';
-                    row.innerHTML = `
-                        <input type="color" id="driverColor_${i}"
-                            class="driver-color-swatch"
-                            value="${DRIVER_COLORS[i % DRIVER_COLORS.length]}"
-                            onchange="window._liveModeActive ? recalculateLive() : calculate()"
-                            title="Couleur du pilote ${i+1}">
-                        <input type="text" id="driverName_${i}"
-                            class="driver-name-input"
-                            placeholder="${DEFAULT_DRIVER_NAMES[i]}"
-                            value="${DEFAULT_DRIVER_NAMES[i]}"
-                            oninput="calculate()">
-                    `;
-                    container.appendChild(row);
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (el && data[id] !== undefined) el.value = data[id];
+            });
+
+            // Checkbox "hier"
+            const ydEl = document.getElementById('realStartYesterday');
+            if (ydEl && data.realStartYesterday !== undefined) {
+                ydEl.checked = data.realStartYesterday;
+            }
+
+            // Nombre de pilotes
+            if (data.driverCount) {
+                const sel = document.getElementById('driverCount');
+                if (sel) {
+                    sel.value = data.driverCount;
+                    const n = parseInt(data.driverCount) || 1;
+                    const container = document.getElementById('driverInputsContainer');
+                    container.innerHTML = '';
+                    for (let i = 0; i < n; i++) {
+                        const row = document.createElement('div');
+                        row.className = 'driver-input-row';
+                        row.innerHTML = `
+                            <input type="color" id="driverColor_${i}"
+                                class="driver-color-swatch"
+                                value="${DRIVER_COLORS[i % DRIVER_COLORS.length]}"
+                                onchange="window._liveModeActive ? recalculateLive() : calculate()"
+                                title="Couleur du pilote ${i+1}">
+                            <input type="text" id="driverName_${i}"
+                                class="driver-name-input"
+                                placeholder="${DEFAULT_DRIVER_NAMES[i]}"
+                                value="${DEFAULT_DRIVER_NAMES[i]}"
+                                oninput="calculate()">
+                        `;
+                        container.appendChild(row);
+                    }
                 }
             }
-        }
 
             // Noms et couleurs des pilotes
             if (Array.isArray(data.drivers)) {
@@ -2726,24 +2731,27 @@ function createSession() {
                 });
             }
 
-            // pitState AVANT calculate()
-	           if (data.pitState) {
-			    // Ne pas écraser les stints passés si on est en mode live
-			    if (window._liveModeActive) {
-			        const stintsAlreadyDone = Math.max(0,
-			            Math.floor((window._liveLapsDone || 0) / 
-			            (parseFloat(document.getElementById('evRefuelPerStint').value) /
-			             parseFloat(document.getElementById('evPerLapReal').value)))
-			        );
-			        Object.keys(data.pitState).forEach(k => {
-			            if (parseInt(k) >= stintsAlreadyDone) {
-			                pitState[k] = data.pitState[k];
-			            }
-			        });
-			    } else {
-			        pitState = data.pitState;
-			    }
-			}
+            // ← pitState appliqué ICI, AVANT calculate(), et protégé par _applyingRemote
+            if (data.pitState) {
+                if (window._liveModeActive) {
+                    const stintsAlreadyDone = Math.max(0,
+                        Math.floor((window._liveLapsDone || 0) /
+                        (parseFloat(document.getElementById('evRefuelPerStint').value) /
+                        parseFloat(document.getElementById('evPerLapReal').value)))
+                    );
+                    Object.keys(data.pitState).forEach(k => {
+                        if (parseInt(k) >= stintsAlreadyDone) {
+                            pitState[k] = data.pitState[k];
+                        }
+                    });
+                } else {
+                    // Remplacement complet + timestamps pour résolution de conflits
+                    pitState = {};
+                    Object.keys(data.pitState).forEach(k => {
+                        pitState[k] = data.pitState[k];
+                    });
+                }
+            }
 
             // Restauration état live
             if (data._liveModeActive !== undefined) {
@@ -2754,14 +2762,23 @@ function createSession() {
                 window._liveEvPerSecond = data._liveEvPerSecond || 0;
             }
 
-            // Recalcul une seule fois, après tout
+            // ← Désactiver le verrou AVANT le recalcul
+            //   (calculate() doit pouvoir lire pitState normalement,
+            //    mais savePitState() ne doit toujours pas écraser — on le laisse actif
+            //    juste le temps du calculate(), puis on le coupe après)
+            // On utilise setTimeout 0 pour laisser le recalcul se faire dans ce tick,
+            // puis on libère le verrou dans le tick suivant.
+            
             if (data._liveModeActive) {
-                setTimeout(() => recalculateLive(), 50);
+                setTimeout(() => {
+                    recalculateLive();
+                    setTimeout(() => { window._applyingRemote = false; }, 50);
+                }, 50);
             } else {
                 calculate();
+                setTimeout(() => { window._applyingRemote = false; }, 50);
             }
-		}
-		
+        }		
 		/* ── Indicateur de statut ── */
 
 		function setSyncStatus(text, color) {
@@ -2769,30 +2786,31 @@ function createSession() {
 			if (el) { el.textContent = text; el.style.color = color; }
 			}
 
-		/* ── Intercepter tous les changements pour pousser vers Firebase ── */
-        function hookSyncToInputs() {
-            document.addEventListener('change', e => {
-                if (_isSyncing) return;
-                const t = e.target;
-                const isPit = t.matches(
-                    '.stop-check, .refuel-check, .tyre-check, ' +
-                    '.stop-dur-input, .refuel-pct-input, .driver-select, #refuelRate'
-                ) || !!t.closest(
-                    '.stop-check, .refuel-check, .tyre-check, ' +
-                    '.stop-dur-input, .refuel-pct-input, .driver-select'
-                );
-                pushToFirebase(!!isPit);
-            });
-            document.addEventListener('input', e => {
-                if (_isSyncing) return;
-                const t = e.target;
-                const isPit = t.matches('.stop-dur-input, .refuel-pct-input, #refuelRate')
-                    || !!t.closest('.stop-dur-input, .refuel-pct-input');
-                pushToFirebase(!!isPit);
-            });
+		    /* ── Intercepter tous les changements pour pousser vers Firebase ── */
+            function hookSyncToInputs() {
+                document.addEventListener('change', e => {
+                    // Bloquer si sync entrante en cours OU si application de données distantes
+                    if (_isSyncing || window._applyingRemote) return;
+                    const t = e.target;
+                    const isPit = t.matches(
+                        '.stop-check, .refuel-check, .tyre-check, ' +
+                        '.stop-dur-input, .refuel-pct-input, .driver-select, #refuelRate'
+                    ) || !!t.closest(
+                        '.stop-check, .refuel-check, .tyre-check, ' +
+                        '.stop-dur-input, .refuel-pct-input, .driver-select'
+                    );
+                    pushToFirebase(!!isPit);
+                });
 
-        }		
-		/* ── Démarrage ── */
+                document.addEventListener('input', e => {
+                    // Bloquer si sync entrante en cours OU si application de données distantes
+                    if (_isSyncing || window._applyingRemote) return;
+                    const t = e.target;
+                    const isPit = t.matches('.stop-dur-input, .refuel-pct-input, #refuelRate')
+                        || !!t.closest('.stop-dur-input, .refuel-pct-input');
+                    pushToFirebase(!!isPit);
+                });
+            }		/* ── Démarrage ── */
 		
 		let _firebaseInitDone = false;
 
