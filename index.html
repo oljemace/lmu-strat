@@ -363,14 +363,15 @@
 }
 
 .strategy-table {
-    width: 100%;
-    min-width: 900px;
+    width: max-content;
+    min-width: 1100px;
     border-collapse: collapse;
     margin-top: 0;
     background: rgba(0,0,0,0.2);
     border-radius: 8px;
     overflow: hidden;
     font-size: 1.0em;
+    table-layout: auto;
 }
 
 .strategy-table th,
@@ -2546,6 +2547,7 @@ function initColumnResizers() {
 
     // Fixer table-layout pour que les largeurs soient respectées
     table.style.tableLayout = 'fixed';
+    table.style.width = 'max-content';
 }
 
 /* ── Timeline ── */
@@ -3797,11 +3799,24 @@ function applyTimelineZoom() {
     // Le wrapper intérieur est le premier enfant de timelineTrack
     const track   = document.getElementById('timelineTrack');
     const wrapper = track?.firstElementChild;
-    if (!wrapper) return;
+    if (wrapper) {
+        wrapper.style.width    = `${zoom * 100}%`;
+        wrapper.style.minWidth = `${zoom * 600}px`;
+    }
 
-    // On étire le wrapper, le container scrolle automatiquement
-    wrapper.style.width    = `${zoom * 100}%`;
-    wrapper.style.minWidth = `${zoom * 600}px`;
+    // Zoom sur le tableau des stints
+    const tableWrapper = document.querySelector('.strategy-table-wrapper');
+    const table        = document.querySelector('.strategy-table');
+    if (table && tableWrapper) {
+        if (zoom <= 1) {
+            table.style.width    = 'max-content';
+            table.style.minWidth = '1100px';
+        } else {
+            const baseWidth = Math.max(1100, tableWrapper.offsetWidth);
+            table.style.width    = `${zoom * baseWidth}px`;
+            table.style.minWidth = `${zoom * baseWidth}px`;
+        }
+    }
 }
 
 function adjustTimelineZoom(delta) {
