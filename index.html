@@ -333,20 +333,49 @@
             position: relative;
         }
 
+
 /* ── Table stratégie ── */
+.strategy-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    border-radius: 8px;
+    /* Scrollbar stylée */
+    scrollbar-width: thin;
+    scrollbar-color: #00ff88 rgba(255,255,255,0.05);
+}
+
+.strategy-table-wrapper::-webkit-scrollbar {
+    height: 8px;
+}
+
+.strategy-table-wrapper::-webkit-scrollbar-track {
+    background: rgba(255,255,255,0.05);
+    border-radius: 4px;
+}
+
+.strategy-table-wrapper::-webkit-scrollbar-thumb {
+    background: #00ff88;
+    border-radius: 4px;
+}
+
+.strategy-table-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #00cc6a;
+}
+
 .strategy-table {
     width: 100%;
+    min-width: 900px;
     border-collapse: collapse;
-    margin-top: 20px;
+    margin-top: 0;
     background: rgba(0,0,0,0.2);
     border-radius: 8px;
     overflow: hidden;
-    font-size: 0.85em;
+    font-size: 1.0em;
 }
 
 .strategy-table th,
 .strategy-table td {
-    padding: 7px 5px;
+    padding: 9px 6px;
     text-align: left;
     border-bottom: 1px solid rgba(255,255,255,0.1);
 }
@@ -355,35 +384,36 @@
     background: rgba(0,255,136,0.1);
     color: #00ff88;
     font-weight: 600;
-    font-size: 0.78em;
-    padding: 6px 4px;
+    font-size: 0.88em;
+    padding: 8px 6px;
+    white-space: nowrap;
 }
 
 .strategy-table tr:hover {
     background: rgba(255,255,255,0.05);
 }
 
-/* Colonnes spécifiques pour optimiser l'espace */
-.strategy-table td:nth-child(1) { width: 65px; font-size: 0.80em; }  /* Stint */
-.strategy-table td:nth-child(2) { width: 65px; font-size: 0.78em; }  /* Pilote */
-.strategy-table td:nth-child(3) { width: 40px; font-size: 0.85em; }  /* Tours */
-.strategy-table td:nth-child(4),
-.strategy-table td:nth-child(5) { width: 35px; font-size: 0.85em; }  /* Durées */
-.strategy-table td:nth-child(6),
+/* Colonnes spécifiques */
+.strategy-table td:nth-child(1)  { width: 80px;  font-size: 0.92em; }  /* Stint */
+.strategy-table td:nth-child(2)  { width: 80px;  font-size: 1.05em; }  /* Pilote */
+.strategy-table td:nth-child(3)  { width: 52px;  font-size: 1.00em; }  /* Tours */
+.strategy-table td:nth-child(4)  { width: 44px;  font-size: 0.92em; }  /* T.Pit */
+.strategy-table td:nth-child(5),
+.strategy-table td:nth-child(6)  { width: 80px;  font-size: 0.92em; }  /* Durées */
 .strategy-table td:nth-child(7),
-.strategy-table td:nth-child(8),
-.strategy-table td:nth-child(9) { width: 40px; font-size: 1.00em; white-space: nowrap; }  /* Heures */
-.strategy-table td:nth-child(10) { width: 50px; font-size: 0.60em; }  /* EV Conso */
-.strategy-table td:nth-child(11) { width: 75px; font-size: 0.80em; text-align: center; }  /* Arrêt Stand */
-.strategy-table td:nth-child(12) { width: 95px; font-size: 0.82em; text-align: center; }  /* Refuel % */
-.strategy-table td:nth-child(13),
-.strategy-table td:nth-child(14) { width: 50px; font-size: 0.78em; text-align: center; }  /* Pneus */
-.strategy-table td:nth-child(15) { width: 55px; font-size: 0.78em; text-align: center; }  /* Pit + */
+.strategy-table td:nth-child(8)  { width: 48px;  font-size: 0.95em; white-space: nowrap; }  /* Heures */
+.strategy-table td:nth-child(9)  { width: 60px;  font-size: 0.88em; }  /* EV Conso */
+.strategy-table td:nth-child(10) { width: 80px;  font-size: 0.92em; text-align: center; }  /* Arrêt Stand */
+.strategy-table td:nth-child(11) { width: 120px; font-size: 1.00em; text-align: center; }  /* Refuel % */
+.strategy-table td:nth-child(12),
+.strategy-table td:nth-child(13) { width: 38px;  font-size: 0.88em; text-align: center; }  /* Pneus G/D réduits */
+.strategy-table td:nth-child(14) { width: 60px;  font-size: 1.00em; text-align: center; }  /* Pit + */
 
+        
 /* ── Pit cells ── */
 .pit-cell {
     vertical-align: middle;
-    padding: 5px 4px !important;
+    padding: 4px 4px !important;
 }
 
 .pit-cell-inner {
@@ -391,6 +421,8 @@
     flex-direction: column;
     align-items: center;
     gap: 2px;
+    overflow: visible;
+    min-width: 0;
 }
 
 .pit-row {
@@ -399,7 +431,8 @@
     align-items: center;
     justify-content: center;
     gap: 2px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow: visible;
 }
 
 .pit-input {
@@ -414,6 +447,8 @@
     transition: border-color 0.2s;
 }
 
+
+
 .pit-input:focus {
     outline: none;
     border-color: #00ff88;
@@ -427,21 +462,35 @@
     border-color: #ffaa00;
 }
 
-/* ── REFUEL INPUT : TRÈS LISIBLE ── */
+/* ── REFUEL INPUT ── */
 .refuel-pct-input {
-    width: 50px;
+    width: 62px;
     padding: 4px 3px;
-    font-size: 0.92em;
+    font-size: 0.78em;
     font-weight: bold;
-    color: #ffff00;
-    border: 1.5px solid rgba(255,170,0,0.8) !important;
-    background: rgba(255,170,0,0.08) !important;
+    color: #ffdd00;
+    border: 2px solid rgba(255,170,0,0.9) !important;
+    background: rgba(255,140,0,0.15) !important;
+    border-radius: 6px;
+    text-align: center;
+    letter-spacing: 0.03em;
 }
 
 .refuel-pct-input:focus {
     border-color: #ffff00 !important;
-    background: rgba(255,255,0,0.1) !important;
-    box-shadow: 0 0 8px rgba(255,170,0,0.5);
+    background: rgba(255,255,0,0.12) !important;
+    box-shadow: 0 0 10px rgba(255,200,0,0.6);
+}
+
+/* Masquer les spinners sur le champ refuel */
+.refuel-pct-input::-webkit-outer-spin-button,
+.refuel-pct-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.refuel-pct-input[type="number"] {
+    appearance: textfield;
+    -moz-appearance: textfield;
 }
 
 .pit-unit {
@@ -452,7 +501,7 @@
 
 .pit-duration {
     color: #ffaa00;
-    font-size: 0.70em;
+    font-size: 1.20em;
     font-style: italic;
     display: block;
     margin-top: 1px;
@@ -464,9 +513,9 @@
     font-weight: bold;
     text-align: center;
     white-space: nowrap;
-    font-size: 0.78em;
+    font-size: 1.05em;
+    letter-spacing: 0.02em;
 }
-
 .pit-extra.none {
     color: #444;
 }
@@ -531,46 +580,172 @@
 }
 
 /* ── Responsive pour petits écrans ── */
-@media (max-width: 1400px) {
-    .strategy-table {
-        font-size: 0.80em;
-    }
-    
-    .strategy-table th {
-        font-size: 0.75em;
-        padding: 5px 3px;
-    }
-    
-    .strategy-table td {
-        padding: 6px 4px;
-    }
-    
-    .pit-input {
-        width: 38px;
-        font-size: 0.80em;
-    }
-    
-    .refuel-pct-input {
-        width: 45px;
-        font-size: 0.88em;
-    }
+/* ══════════════════════════════════════════════
+   TABLE STRATÉGIE — taille fluide via clamp/vw
+   Progression : ~900px → 0.78rem  /  1920px → 1.05rem
+   Aucun font-size sur les td:nth-child ne doit
+   surcharger ces valeurs.
+══════════════════════════════════════════════ */
+
+.strategy-table {
+    font-size: clamp(0.78rem, 0.55vw + 0.45rem, 1.08rem);
 }
 
-@media (max-width: 1200px) {
+.strategy-table th {
+    /* légèrement plus petit que le corps, mais suit le même vw */
+    font-size: clamp(0.70rem, 0.48vw + 0.42rem, 0.96rem);
+    padding: clamp(5px, 0.5vw, 10px) clamp(3px, 0.4vw, 8px);
+    white-space: nowrap;
+}
+
+.strategy-table td {
+    padding: clamp(6px, 0.55vw, 11px) clamp(3px, 0.4vw, 8px);
+}
+
+/* Inputs dans la table : progressifs aussi */
+.pit-input {
+    width: clamp(34px, 2.5vw, 52px);
+    font-size: clamp(0.72rem, 0.5vw + 0.4rem, 1.0rem);
+    padding: clamp(2px, 0.25vw, 5px) clamp(1px, 0.2vw, 4px);
+}
+
+.refuel-pct-input {
+    width:     clamp(52px, 3.5vw, 68px) !important;
+    min-width: clamp(52px, 3.5vw, 68px) !important;
+    font-size: clamp(0.72rem, 0.5vw + 0.40rem, 0.88rem) !important;
+}
+
+.driver-select {
+    width:     clamp(80px, 6vw, 120px);
+    font-size: clamp(0.85rem, 0.6vw + 0.55rem, 1.10rem);
+}
+
+/* ── Largeurs de colonnes : on supprime les px fixes,
+   on laisse le navigateur distribuer l'espace ── */
+.strategy-table td:nth-child(1)  { white-space: nowrap; }  /* Stint */
+.strategy-table td:nth-child(2)  { white-space: nowrap; }  /* Pilote */
+.strategy-table td:nth-child(3)  { white-space: nowrap; }  /* Tours */
+.strategy-table td:nth-child(4)  { white-space: nowrap; color: #aaffcc; font-weight: bold; }  /* T.Pit */
+.strategy-table td:nth-child(5),
+.strategy-table td:nth-child(6)  { white-space: nowrap; }  /* Durées */
+.strategy-table td:nth-child(7),
+.strategy-table td:nth-child(8)  { white-space: nowrap; }  /* Heures */
+.strategy-table td:nth-child(9)  { white-space: nowrap; }  /* EV Conso */
+.strategy-table td:nth-child(10) { text-align: center; }   /* Arrêt Stand */
+.strategy-table td:nth-child(11) { text-align: center; }   /* Refuel % */
+.strategy-table td:nth-child(12),
+.strategy-table td:nth-child(13) { text-align: center; width: clamp(28px, 2vw, 42px); }  /* Pneus G/D */
+.strategy-table td:nth-child(14) { text-align: center; white-space: nowrap; }  /* Pit + */
+
+/* ── Plus de media queries qui cassent la progression ──
+   Le clamp() gère seul la plage 900px → 1920px+           */
+
+@media (max-width: 800px) {
     .strategy-table {
-        font-size: 0.75em;
+        font-size: 0.82em;
     }
-    
     .pit-input {
-        width: 35px;
+        width: 34px;
         padding: 2px 2px;
-        font-size: 0.75em;
+        font-size: 0.80em;
     }
-    
-    .refuel-pct-input {
-        width: 42px;
-        font-size: 0.85em;
+.refuel-pct-input {
+    width:      62px !important;
+    min-width:  62px !important;
+    max-width:  62px !important;
+    font-size:  0.75em !important;
+    font-weight: bold;
+    color:       #ffdd00;
+    text-align:  center;
+    padding:     3px 4px !important;
+    box-sizing:  border-box !important;
+}
+
+}
+    /* ── Tours override input dans la table ── */
+    .tours-override-input {
+        width: 46px;
+        padding: 3px 2px;
+        background: rgba(255,255,255,0.08);
+        border: 1.5px solid rgba(255,255,255,0.15);
+        border-radius: 5px;
+        color: #fff;
+        font-size: 0.88em;
+        text-align: center;
+        transition: border-color 0.2s, background 0.2s;
     }
+    .tours-override-input:focus {
+        outline: none;
+        border-color: #00ff88;
+        background: rgba(0,255,136,0.08);
+    }
+    .tours-override-input.is-overridden {
+        border-color: #ffaa00 !important;
+        color: #ffdd88;
+        background: rgba(255,170,0,0.10) !important;
+    }
+
+    /* ── Colonne Tour Pit ── */
+    .strategy-table td:nth-child(1)  { width: 65px; font-size: 0.80em; }  /* Stint */
+    .strategy-table td:nth-child(2)  { width: 65px; font-size: 0.78em; }  /* Pilote */
+    .strategy-table td:nth-child(3)  { width: 52px; font-size: 0.85em; }  /* Tours input */
+    .strategy-table td:nth-child(4)  { width: 36px; font-size: 0.80em; text-align: center; color: #aaffcc; } /* Tour Pit */
+    .strategy-table td:nth-child(5),
+    .strategy-table td:nth-child(6)  { width: 35px; font-size: 0.85em; }  /* Durées */
+    .strategy-table td:nth-child(7),
+    .strategy-table td:nth-child(8),
+    .strategy-table td:nth-child(9),
+    .strategy-table td:nth-child(10) { width: 40px; font-size: 1.00em; white-space: nowrap; } /* Heures */
+    .strategy-table td:nth-child(11) { width: 50px; font-size: 0.60em; }  /* EV Conso */
+    .strategy-table td:nth-child(12) { width: 75px; font-size: 0.80em; text-align: center; } /* Arrêt Stand */
+    .strategy-table td:nth-child(13) { 
+    width: 120px; 
+    min-width: 120px;
+    text-align: center; 
+    overflow: visible;
+    } /* Refuel % */
+    .strategy-table td:nth-child(14),
+    .strategy-table td:nth-child(15) { width: 50px; font-size: 0.78em; text-align: center; } /* Pneus */
+    .strategy-table td:nth-child(16) { width: 55px; font-size: 0.78em; text-align: center; } /* Pit + */
+
+/* ── Colonnes redimensionnables ── */
+.strategy-table th {
+    position: relative;
+    overflow: hidden;
+}
+
+.col-resizer {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 6px;
+    height: 100%;
+    cursor: col-resize;
+    user-select: none;
+    z-index: 10;
+    background: transparent;
+    transition: background 0.15s;
+}
+
+.col-resizer:hover,
+.col-resizer.resizing {
+    background: rgba(0, 255, 136, 0.5);
+}
+
+    /* ── Stint manuel : highlight ── */
+tr[data-manual="true"] td:first-child::after {
+    content: ' ✏️';
+    font-size: 0.75em;
+    opacity: 0.7;
+}
+
+tr[data-manual="true"] {
+    outline: 1px solid rgba(0,170,255,0.25);
+}
+
+#btnRemoveStint:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(255,107,107,0.4);
 }
 
     </style>
@@ -784,7 +959,7 @@ const firebaseConfig = {
 
             <!-- EV -->
             <div class="input-group">
-                <label for="evRemaining">⚡ EV théorique (%)</label>
+                <label for="evRemaining">⚡ EV de départ (%)</label>
                 <input type="number" id="evRemaining" value="100" min="0" max="100" step="1">
             </div>
 
@@ -799,12 +974,10 @@ const firebaseConfig = {
                         onchange="window._liveModeActive ? recalculateLive() : calculate()">
                     <div class="note"><strong>Note :</strong> Chaque case pneu cochée consomme 2 pneus neufs.</div>
                 </div>
-            <div class="input-group">
-                <label for="evRefuelPerStint">💧 EV Recharge par stint (%)</label>
-                <input type="number" id="evRefuelPerStint" value="100" min="0" max="100" step="1">
-                <div class="note"><strong>Note :</strong> Capacité de recharge EV à chaque arrêt (selon les règles).</div>
-            </div>
-<hr class="section-divider">
+            <!-- Valeur fixe 100% — gérée par le tableau des stints -->
+            <input type="hidden" id="evRefuelPerStint" value="100">
+
+                <hr class="section-divider">
 <h2 style="color:#00ff88;margin-bottom:20px;">👤 Pilotes</h2>
 
 <div class="input-group">
@@ -822,7 +995,7 @@ const firebaseConfig = {
 </div>
 
 <div id="driverInputsContainer"></div>
-            <button class="btn-calculate" onclick="calculate()">🚀 Calculer & Mettre à jour</button>
+            <button class="btn-calculate" onclick="calculateFromButton()">🚀 Calculer & Mettre à jour</button>
             <button class="btn-reset"     onclick="reset()">🔄 Réinitialiser</button>
         </div>
 
@@ -874,14 +1047,6 @@ const firebaseConfig = {
         <h3 style="color:#00ff88;margin-top:0;margin-bottom:15px;">🔄 Recalcul en Cours de Course</h3>
         <div style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-end;">
 
-            <!-- Tours réalisés -->
-            <div class="input-group" style="margin-bottom:0;min-width:160px;">
-                <label for="lapsDone">🔢 Tours réalisés</label>
-				<input type="number" id="lapsDone" value="0" min="0" step="0.2"
-					onchange="if(window._liveModeActive) { setTimeout(recalculateLive, 50); }"
-					style="width:100%;padding:10px 12px;border:2px solid rgba(255,255,255,0.2);
-							border-radius:8px;background:rgba(255,255,255,0.1);color:#fff;font-size:1em;">               
-			   </div>
 			
             <!-- EV actuelle -->
             <div class="input-group" style="margin-bottom:0;min-width:160px;">
@@ -946,7 +1111,7 @@ const firebaseConfig = {
 			</div>
         <!-- Résultats du recalcul -->
         <div id="liveRecalcResult" style="display:none;margin-top:15px;padding:15px;
-             background:rgba(0,0,0,0.25);border-radius:8px;border-left:4px solid #ffaa00;">
+            background:rgba(0,0,0,0.25);border-radius:8px;border-left:4px solid #ffaa00;">
             <div style="display:flex;flex-wrap:wrap;gap:20px;">
                 <div>
                     <div style="color:#999;font-size:0.85em;text-transform:uppercase;letter-spacing:1px;">
@@ -956,7 +1121,7 @@ const firebaseConfig = {
                 </div>
                 <div>
                     <div style="color:#999;font-size:0.85em;text-transform:uppercase;letter-spacing:1px;">
-                        Tours restants (réel)
+                        Tours restants
                     </div>
                     <div id="liveToursRestants" style="color:#fff;font-size:1.6em;font-weight:bold;"></div>
                 </div>
@@ -966,10 +1131,9 @@ const firebaseConfig = {
                     </div>
                     <div id="liveToursParStint" style="color:#fff;font-size:1.6em;font-weight:bold;"></div>
                 </div>
-                </div>
                 <div>
                     <div style="color:#999;font-size:0.85em;text-transform:uppercase;letter-spacing:1px;">
-                        Stints restants (réel)
+                        Stints restants
                     </div>
                     <div id="liveStintsRestants" style="color:#fff;font-size:1.6em;font-weight:bold;"></div>
                 </div>
@@ -979,13 +1143,13 @@ const firebaseConfig = {
                     </div>
                     <div id="liveDureeStint" style="color:#fff;font-size:1.6em;font-weight:bold;"></div>
                 </div>
-							<div>
-				<div style="color:#999;font-size:0.85em;text-transform:uppercase;letter-spacing:1px;">
-					🎯 Conso cible (-1 pit)
-				</div>
-				<div id="liveConsoTarget" style="color:#ffff00;font-size:1.4em;font-weight:bold;"></div>
-				<div id="liveConsoTargetDetail" style="color:#aaa;font-size:0.75em;margin-top:2px;"></div>
-			</div>
+                <div>
+                    <div style="color:#999;font-size:0.85em;text-transform:uppercase;letter-spacing:1px;">
+                        🎯 Conso cible (-1 pit)
+                    </div>
+                    <div id="liveConsoTarget" style="color:#ffff00;font-size:1.4em;font-weight:bold;"></div>
+                    <div id="liveConsoTargetDetail" style="color:#aaa;font-size:0.75em;margin-top:2px;"></div>
+                </div>
             </div>
             <div id="liveRecalcNote" style="margin-top:10px;color:#ffaa00;font-size:0.85em;"></div>
         </div>
@@ -1019,58 +1183,71 @@ const firebaseConfig = {
     <div class="timeline-labels" id="timelineLabels"></div>
 </div>
 	
-         <div style="margin-top:30px;">
-            <h3 style="color:#00ff88;margin-bottom:15px;">📋 Détail des Stints</h3>
-                <table class="strategy-table">
-                    <thead>
-                        <tr>
-                            <th>Stint</th><th>👤 Pilote</th><th>Tours</th>
-                            <th>Durée Réelle</th><th>Durée Ingame</th>
-                            <th>Début Réel</th><th>Début Ingame</th>
-                            <th>Fin Réel</th><th>Fin Ingame</th>
-                            <th>EV Conso</th>
-                            <th>🏁 Arrêt Stand</th>
-                            <th id="refuelRateHeader">⛽ Refuel %<br><small style="color:#aaa;font-weight:normal;">Débit : <input type="number" id="refuelRate" value="0.4" min="0.1" max="6" step="0.1" onchange="window._liveModeActive ? recalculateLive() : calculate()" style="width:45px;padding:2px 4px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.3);border-radius:4px;color:#fff;font-size:0.9em;text-align:center;"> s/%</small></th>
-                            
-                            <th colspan="2" style="text-align:center;padding-bottom:2px;">
-                                <!-- Jauge pneus sur toute la largeur des 2 colonnes -->
-                                <div id="tyreGaugeContainer" style="display:none;margin-bottom:4px;">
-                                    <div style="
-                                        background:rgba(255,255,255,0.08);
-                                        border-radius:4px;
-                                        height:6px;
-                                        width:100%;
-                                        overflow:hidden;">
-                                        <div id="tyreGaugeBar" style="
-                                            height:6px;
-                                            border-radius:4px;
-                                            background:#ff6600;
-                                            width:100%;
-                                            transition:width 0.3s,background 0.3s;">
-                                        </div>
-                                    </div>
-                                    <div id="tyreGaugeLabel" style="
-                                        color:#ffaa00;
-                                        font-size:0.78em;
-                                        font-weight:bold;
-                                        margin-top:3px;
-                                        white-space:nowrap;
-                                        text-align:center;">
-                                    </div>
-                                </div>
-                                <!-- Sous-en-têtes côte à côte -->
-                                <div style="display:flex;justify-content:space-around;gap:4px;">
-                                    <span title="Changement pneus côté gauche">🔧 Pneus G</span>
-                                    <span title="Changement pneus côté droit">🔧 Pneus D</span>
-                                </div>
-                            </th>                                                        
-                            <th>⏱️ Pit +</th>
-                        </tr>
-                    </thead>
-                    <tbody id="strategyTableBody"></tbody>
-                </table>
-        </div>
+<div style="margin-top:30px;">
+    <h3 style="color:#00ff88;margin-bottom:15px;">📋 Détail des Stints</h3>
+<div class="strategy-table-wrapper">
+<table class="strategy-table">
+    <thead>
+        <tr>
+            <th>Stint</th>
+            <th>👤 Pilote</th>
+            <th>Tours</th>
+            <th title="Numéro du tour auquel le pit a lieu">🔢 T.Pit</th>
+            <th>Durée Réelle</th>
+            <th>Durée Ingame</th>
+            <th>Début Réel</th>
+            <th>Fin Réel</th>
+            <th>EV Conso</th>
+            <th>🏁 Arrêt Stand</th>
+            <th id="refuelRateHeader">⛽ Refuel %<br>
+                <small style="color:#aaa;font-weight:normal;">Débit :
+                    <input type="number" id="refuelRate" value="0.4" min="0.1" max="6" step="0.1"
+                        onchange="window._liveModeActive ? recalculateLive() : calculate()"
+                        style="width:45px;padding:2px 4px;background:rgba(255,255,255,0.1);
+                            border:1px solid rgba(255,255,255,0.3);border-radius:4px;
+                            color:#fff;font-size:0.9em;text-align:center;"> s/%
+                </small>
+            </th>
+            <th colspan="2" style="text-align:center;padding-bottom:2px;">
+                <div id="tyreGaugeContainer" style="display:none;margin-bottom:4px;">
+                    <div style="background:rgba(255,255,255,0.08);border-radius:4px;height:6px;width:100%;overflow:hidden;">
+                        <div id="tyreGaugeBar" style="height:6px;border-radius:4px;background:#ff6600;width:100%;transition:width 0.3s,background 0.3s;"></div>
+                    </div>
+                    <div id="tyreGaugeLabel" style="color:#ffaa00;font-size:0.78em;font-weight:bold;margin-top:3px;white-space:nowrap;text-align:center;"></div>
+                </div>
+                <div style="display:flex;justify-content:space-around;gap:4px;">
+                    <span title="Changement pneus côté gauche">🔧 Pneus G</span>
+                    <span title="Changement pneus côté droit">🔧 Pneus D</span>
+                </div>
+            </th>
+            <th id="pitPlusHeader">⏱️ Pit +</th>
+        </tr>
+    </thead>
+    <tbody id="strategyTableBody"></tbody>
+</table>
+</div>
+    <!-- ── Boutons gestion manuelle des stints ── -->     
+    <div id="stintManualControls" style="display:none;margin-top:12px;
+         display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+        <button onclick="addManualStint()"
+            style="padding:8px 18px;background:linear-gradient(135deg,#00aaff,#0077cc);
+                   border:none;border-radius:8px;color:#fff;font-size:0.95em;
+                   font-weight:bold;cursor:pointer;transition:all 0.2s;">
+            ➕ Ajouter un stint
+        </button>
+        <button onclick="removeLastManualStint()"
+            id="btnRemoveStint"
+            style="display:none;padding:8px 18px;
+                   background:linear-gradient(135deg,#ff6b6b,#cc4444);
+                   border:none;border-radius:8px;color:#fff;font-size:0.95em;
+                   font-weight:bold;cursor:pointer;transition:all 0.2s;">
+            ➖ Supprimer dernier stint
+        </button>
+        <span id="manualStintInfo"
+            style="color:#aaa;font-size:0.82em;font-style:italic;"></span>
     </div>
+</div>   
+</div>
 
     <div class="extra-info">
         <h3>📝 Notes Stratégiques</h3>
@@ -1084,76 +1261,76 @@ const firebaseConfig = {
 
 <script>
 
-		/* ══════════════════════════════
-   PROTECTION D'ACCÈS ÉQUIPE
-   ══════════════════════════════ */
+            /* ══════════════════════════════
+                PROTECTION D'ACCÈS ÉQUIPE
+             ══════════════════════════════ */
 
-		// Hash SHA-256 du mot de passe équipe.
-		// Pour générer : ouvrir la console du navigateur et taper :
-		//   crypto.subtle.digest('SHA-256', new TextEncoder().encode('monMotDePasse'))
-		//     .then(b => console.log([...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')))
-		//
-		// Remplace cette valeur par le hash de TON mot de passe :
-		const TEAM_PASSWORD_HASH = '073e03843d353e1d0a8ac41a9bc480e8e6746d5b27ad6b891a6c2c2f4bc1c80f';
-		//                          ↑ hash de "123" — À REMPLACER AVANT DÉPLOIEMENT
+            // Hash SHA-256 du mot de passe équipe.
+            // Pour générer : ouvrir la console du navigateur et taper :
+            //   crypto.subtle.digest('SHA-256', new TextEncoder().encode('monMotDePasse'))
+            //     .then(b => console.log([...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')))
+            //
+            // Remplace cette valeur par le hash de TON mot de passe :
+            const TEAM_PASSWORD_HASH = '073e03843d353e1d0a8ac41a9bc480e8e6746d5b27ad6b891a6c2c2f4bc1c80f';
+            //                          ↑ hash de "123" — À REMPLACER AVANT DÉPLOIEMENT
 
-		const ACCESS_KEY = 'lmu_strat_access_v1';
+            const ACCESS_KEY = 'lmu_strat_access_v1';
 
-		async function hashPassword(pwd) {
-			const buf  = await crypto.subtle.digest(
-				'SHA-256', new TextEncoder().encode(pwd)
-			);
-			return [...new Uint8Array(buf)]
-				.map(x => x.toString(16).padStart(2, '0'))
-				.join('');
-		}
+            async function hashPassword(pwd) {
+                const buf  = await crypto.subtle.digest(
+                    'SHA-256', new TextEncoder().encode(pwd)
+                );
+                return [...new Uint8Array(buf)]
+                    .map(x => x.toString(16).padStart(2, '0'))
+                    .join('');
+            }
 
-		async function checkAccess() {
-			const pwd = document.getElementById('gatePassword').value.trim();
-			if (!pwd) return;
+            async function checkAccess() {
+                const pwd = document.getElementById('gatePassword').value.trim();
+                if (!pwd) return;
 
-			const hash = await hashPassword(pwd);
+                const hash = await hashPassword(pwd);
 
-			if (hash === TEAM_PASSWORD_HASH) {
-				sessionStorage.setItem(ACCESS_KEY, hash);
-				document.getElementById('accessGate').remove();
-				// Initialiser seulement si pas encore fait
-				if (!_firebaseInitDone) {
-					renderSessionUI();
-					hookSyncToInputs();
-				} else {
-					// Firebase déjà prêt mais avait attendu le gate
-					renderSessionUI();
-					if (!document.querySelector('[data-hooks-attached]')) {
-						hookSyncToInputs();
-						document.body.dataset.hooksAttached = 'true';
-					}
-				}
-			} else {
-				const errEl = document.getElementById('gateError');
-				errEl.textContent = '❌ Mot de passe incorrect';
-				document.getElementById('gatePassword').value = '';
-				document.getElementById('gatePassword').focus();
-				setTimeout(() => errEl.textContent = '', 3000);
-			}
-		}
+                if (hash === TEAM_PASSWORD_HASH) {
+                    sessionStorage.setItem(ACCESS_KEY, hash);
+                    document.getElementById('accessGate').remove();
+                    // Initialiser seulement si pas encore fait
+                    if (!_firebaseInitDone) {
+                        renderSessionUI();
+                        hookSyncToInputs();
+                    } else {
+                        // Firebase déjà prêt mais avait attendu le gate
+                        renderSessionUI();
+                        if (!document.querySelector('[data-hooks-attached]')) {
+                            hookSyncToInputs();
+                            document.body.dataset.hooksAttached = 'true';
+                        }
+                    }
+                } else {
+                    const errEl = document.getElementById('gateError');
+                    errEl.textContent = '❌ Mot de passe incorrect';
+                    document.getElementById('gatePassword').value = '';
+                    document.getElementById('gatePassword').focus();
+                    setTimeout(() => errEl.textContent = '', 3000);
+                }
+            }
 
-			// Vérifier si déjà authentifié — SYNCHRONE (pas async)
-			const _storedAccess = sessionStorage.getItem(ACCESS_KEY);
-			if (_storedAccess === TEAM_PASSWORD_HASH) {
-				const _gate = document.getElementById('accessGate');
-				if (_gate) _gate.remove();
-			// onFirebaseReady() sera appelé juste après et ne verra pas de gate
-			}
+                // Vérifier si déjà authentifié — SYNCHRONE (pas async)
+                const _storedAccess = sessionStorage.getItem(ACCESS_KEY);
+                if (_storedAccess === TEAM_PASSWORD_HASH) {
+                    const _gate = document.getElementById('accessGate');
+                    if (_gate) _gate.remove();
+                // onFirebaseReady() sera appelé juste après et ne verra pas de gate
+                }
 
 
-    /* ── Validation & ajustement ── */
-    const MAX = {
-        realStartHours:23, realStartMinutes:59,
-        gameStartHours:23, gameStartMinutes:59,
-        raceHours:99,      raceMinutes:59,
-        lapMinutes:59,     lapSeconds:59,     lapMillis:9
-    };
+        /* ── Validation & ajustement ── */
+        const MAX = {
+            realStartHours:23, realStartMinutes:59,
+            gameStartHours:23, gameStartMinutes:59,
+            raceHours:99,      raceMinutes:59,
+            lapMinutes:59,     lapSeconds:59,     lapMillis:9
+        };
 
     function validateTime(input) {
         let v = parseInt(input.value);
@@ -1235,15 +1412,11 @@ const firebaseConfig = {
 	
 	// ── État du mode live (persistant entre les mises à jour) ──
 	
-		window._liveModeActive  = false;
-		window._liveMode        = false;
-		window._liveNowSec      = 0;
-		window._liveLapsDone    = 0;
-		window._liveLastNowSec  = 0;
-		window._liveLastEvPct   = 0;
-		window._liveEvPerSecond = 0;
-		window._liveAutoRefresh = false; 
-        window._applyingRemote  = false;  // verrou : on est en train d'appliquer des données distantes
+        window._liveModeActive  = false;
+        window._liveMode        = false;
+        window._liveNowSec      = 0;    // heure réelle au moment du clic "Recalculer"
+        window._liveEvAtAnchor  = 0;    // EV saisie au moment du clic
+        window._applyingRemote  = false;
 
 	/* pitState[idx] = {
          stop: bool,       // arrêt au stand activé
@@ -1256,13 +1429,17 @@ const firebaseConfig = {
     */
 
     function defaultState() {
-    return { stop: true, stopDur: 45, refuel: true, refuelPct: 100, left: false, right: false, driver: -1 };
-}
-
+        return {
+            stop: true, stopDur: 45, refuel: true, refuelPct: 100,
+            left: false, right: false, driver: -1,
+        };
+    }
+    
     /* Sauvegarde l'état des contrôles avant de vider le tbody */
-        function savePitState() {
-            // ← AJOUTER : si on applique des données distantes, ne pas écraser pitState
-            if (window._applyingRemote) return;
+    function savePitState() {
+        // Ne pas écraser pitState si application de données distantes ou mode live actif
+        if (window._applyingRemote) return;
+        if (window._liveMode) return;
 
             document.querySelectorAll('tr[data-stint-idx]').forEach(tr => {
                 const idx = parseInt(tr.dataset.stintIdx);
@@ -1272,7 +1449,6 @@ const firebaseConfig = {
 
                 const stopCb    = tr.querySelector('.stop-check');
                 const stopDurI  = tr.querySelector('.stop-dur-input');
-                const refuelCb  = tr.querySelector('.refuel-check');
                 const refuelI   = tr.querySelector('.refuel-pct-input');
                 const leftCb    = tr.querySelector('.tyre-check[data-side="left"]');
                 const rightCb   = tr.querySelector('.tyre-check[data-side="right"]');
@@ -1281,14 +1457,14 @@ const firebaseConfig = {
                 if (driverSel) pitState[idx].driver    = parseInt(driverSel.value);
                 if (stopCb)    pitState[idx].stop       = stopCb.checked;
                 if (stopDurI)  pitState[idx].stopDur    = parseFloat(stopDurI.value) || 30;
-                if (refuelCb)  pitState[idx].refuel     = refuelCb.checked;
                 if (refuelI)   pitState[idx].refuelPct  = parseFloat(refuelI.value)  || 25;
                 if (leftCb)    pitState[idx].left       = leftCb.checked;
                 if (rightCb)   pitState[idx].right      = rightCb.checked;
-
                 pitState[idx]._userSet = true;
             });
         }
+
+        
 
     /* Calcule la durée totale du pit stop pour un stint donné (secondes) */
     function getPitDuration(idx) {
@@ -1296,7 +1472,7 @@ const firebaseConfig = {
         const rate = parseFloat(document.getElementById('refuelRate')?.value) || 5;
         if (!s.stop) return 0;
         const stopSec   = s.stopDur || 0;
-        const refuelSec = s.refuel ? (s.refuelPct || 0) * rate : 0;
+        const refuelSec = (s.refuelPct || 0) * rate;
         const tyreSec   = (s.left ? TYRE_PENALTY : 0) + (s.right ? TYRE_PENALTY : 0);
         return stopSec + refuelSec + tyreSec;
     }
@@ -1352,15 +1528,112 @@ const firebaseConfig = {
             label.style.color      = '#00ff88';
             label.textContent      = `🟢 ${remaining} pneus restants (${used} utilisés)`;
         }
+    
     }
 
-    /* ── Calcul principal ── */
+/* ══════════════════════════════════════════════════════════════════
+   GESTION DES STINTS MANUELS
+   
+   _manualStintCount = nombre de stints supplémentaires ajoutés
+   manuellement par l'utilisateur au-delà du calcul automatique.
+   
+   Ces stints extra sont intégrés dans le calcul de durée :
+   le dernier stint (auto ou manuel) absorbe le temps restant
+   pour garantir Σ(roulage + pits) = totalRaceSec exactement.
+══════════════════════════════════════════════════════════════════ */
+window._manualStintCount = 0;
+
+function addManualStint() {
+    window._manualStintCount++;
+    window._liveModeActive ? recalculateLive() : calculate();
+    _updateManualStintUI();
+}
+
+function removeLastManualStint() {
+    if (window._manualStintCount <= 0) return;
+
+    // Supprimer le pitState du dernier stint manuel
+    // (le dernier index = stints.length - 1 au moment de l'appel)
+    const tbody = document.getElementById('strategyTableBody');
+    const rows  = tbody.querySelectorAll('tr[data-stint-idx]');
+    if (rows.length > 0) {
+        const lastIdx = parseInt(rows[rows.length - 1].dataset.stintIdx);
+        // Ne supprimer que si c'était un stint manuel (_userSet peut être vrai)
+        // On supprime uniquement le pitState pour libérer l'index
+        delete pitState[lastIdx];
+    }
+
+    window._manualStintCount = Math.max(0, window._manualStintCount - 1);
+    window._liveModeActive ? recalculateLive() : calculate();
+    _updateManualStintUI();
+}
+
+function _updateManualStintUI() {
+    // Afficher le bouton "supprimer" seulement s'il y a des stints manuels
+    const btnRemove = document.getElementById('btnRemoveStint');
+    const infoSpan  = document.getElementById('manualStintInfo');
+    if (btnRemove) {
+        btnRemove.style.display = window._manualStintCount > 0 ? 'inline-block' : 'none';
+    }
+    if (infoSpan) {
+        infoSpan.textContent = window._manualStintCount > 0
+            ? `${window._manualStintCount} stint(s) ajouté(s) manuellement`
+            : '';
+    }
+}
+
+/* ── Calculer depuis le bouton principal : stoppe le mode live si actif ── */
+
+function calculateFromButton() {
+    if (window._liveModeActive || window._liveMode) {
+
+        // 1. Couper tous les flags live
+        window._liveModeActive = false;
+        window._liveMode       = false;
+        window._liveNowSec     = 0;
+        window._liveEvAtAnchor = 0;
+
+        // 2. Purger le pitState des stints live
+        //    (on garde uniquement les entrées _userSet = true,
+        //     c'est-à-dire celles que l'utilisateur a modifiées manuellement)
+        Object.keys(pitState).forEach(k => {
+            if (!pitState[k]?._userSet) delete pitState[k];
+        });
+
+        // 3. Remettre les stints manuels à zéro
+        //    (ils étaient calés sur la position live, plus cohérents avec le nouveau calcul)
+        window._manualStintCount = 0;
+        _updateManualStintUI();
+
+        // 4. Resynchroniser les champs live avec les données d'entrée
+        document.getElementById('evCurrent').value      = document.getElementById('evRemaining').value;
+        document.getElementById('evPerLapReal').value   = document.getElementById('evPerLap').value;
+        document.getElementById('livelapMinutes').value = document.getElementById('lapMinutes').value;
+        document.getElementById('livelapSeconds').value = document.getElementById('lapSeconds').value;
+        document.getElementById('livelapMillis').value  = document.getElementById('lapMillis').value;
+
+        // 5. Masquer le bloc résultats live
+        const result = document.getElementById('liveRecalcResult');
+        if (result) result.style.display = 'none';
+    }
+
+    // Recalcul propre en mode normal
+    calculate();
+
+    // Synchroniser vers Firebase avec le nouvel état propre
+    setTimeout(() => pushToFirebase(true), 300);
+}
+
+/* ── Calcul principal ── */
 function calculate(overrides) {
     savePitState();
 
-    // overrides permet au mode live de passer ses propres valeurs
-    // sans toucher aux champs HTML théoriques
     const ov = overrides || {};
+
+    // ── Purger les anciens "derniers stints" automatiques ──
+    Object.keys(pitState).forEach(k => {
+        if (pitState[k]._autoLast) delete pitState[k];
+    });
 
     const lapTime          = ov.lapTime   || getLapTimeInSeconds();
     const evPerLap         = ov.evPerLap  || parseFloat(document.getElementById('evPerLap').value);
@@ -1369,7 +1642,6 @@ function calculate(overrides) {
     const multiplier       = parseInt(document.getElementById('timeMultiplier').value);
 
     const realStart = ov.realStart !== undefined ? ov.realStart : getRealStart();
-	
     const gameStart = toSec(
         parseInt(document.getElementById('gameStartHours').value)   || 0,
         parseInt(document.getElementById('gameStartMinutes').value) || 0
@@ -1379,381 +1651,920 @@ function calculate(overrides) {
     if (isNaN(evPerLap)         || evPerLap <= 0)         { alert("Conso EV/tour invalide");  return; }
     if (isNaN(evRefuelPerStint) || evRefuelPerStint <= 0) { alert("Recharge EV invalide");    return; }
 
-    // totalRaceSec : en mode live on utilise liveRaceSec,
-    // sinon la durée théorique depuis les champs
-    const totalRaceSec = ov.totalRaceSec !== undefined
-        ? ov.totalRaceSec
-        : getRaceTimeInSeconds();
-        
-		const toursParStint  = evRefuelPerStint / evPerLap;
-        const dureeStintReel = toursParStint * lapTime;
+    const totalRaceSec   = ov.totalRaceSec !== undefined ? ov.totalRaceSec : getRaceTimeInSeconds();
+    const toursParStint  = evRefuelPerStint / evPerLap;
+    const dureeStintReel = toursParStint * lapTime;
 
-        // Estimation itérative : les pit stops mangent du temps de course
-        // On converge en 3 passes (stable très rapidement)
-        let stintsRestants = totalRaceSec / dureeStintReel;
-        for (let iter = 0; iter < 3; iter++) {
-            const fullStints     = Math.floor(stintsRestants);
-            // Durée totale des pits entre les stints (pas après le dernier)
-            let totalPitSec = 0;
-            for (let i = 0; i < fullStints; i++) {
-                const ps = pitState[i] || defaultState();
-                if (ps.stop) {
-                    const rate2    = parseFloat(document.getElementById('refuelRate')?.value) || 5;
-                    const stopSec  = ps.stopDur || 0;
-                    const refSec   = ps.refuel ? (ps.refuelPct || 0) * rate2 : 0;
-                    const tyrSec   = (ps.left ? TYRE_PENALTY : 0) + (ps.right ? TYRE_PENALTY : 0);
-                    totalPitSec   += stopSec + refSec + tyrSec;
-                }
-            }
-            const roulageDisponible = totalRaceSec - totalPitSec;
-            stintsRestants = Math.max(0, roulageDisponible / dureeStintReel);
+    // ── Garde-fou cross-midnight pour le mode live ──
+    // Si la course passe minuit et que nowSec est après minuit,
+    // il faut s'assurer que raceEndSec = realStart + totalRaceSec
+    // est bien dans l'espace "étendu" (> 86400).
+    // Le realStart peut être négatif (case "hier") ou normal.
+    // Dans tous les cas, on vérifie la cohérence ici une seule fois.
+
+    /* ══════════════════════════════════════════════════════════════════
+       CALCUL ITÉRATIF — pits déduits du temps de course
+       Converge en ≤ 2 itérations sur 5.
+    ══════════════════════════════════════════════════════════════════ */
+    let toursTheorique  = 0;
+    let stintsTheorique = 0;
+    let totalPitTheoSec = 0;
+    let tempsRoulageNet = totalRaceSec;
+    let nbPitsTheo      = 0;
+
+    if (!window._liveMode) {
+
+        // Nombre total de stints visés = auto + manuels
+        // On force le nombre de stints minimum via _manualStintCount
+        let stintsEstime = totalRaceSec / (toursParStint * lapTime);
+
+        if (window._manualStintCount > 0) {
+            stintsEstime = Math.ceil(stintsEstime) + window._manualStintCount;
         }
 
-        const toursRestants  = stintsRestants * toursParStint;
+        for (let iter = 0; iter < 5; iter++) {
+            const nbStintsVises = Math.ceil(stintsEstime);
+            nbPitsTheo = Math.max(0, nbStintsVises - 1);
 
-        /* Affichage résultats */
-        document.getElementById('toursRemaining').textContent        = toursRestants.toFixed(2);
-        document.getElementById('toursRemainingDetail').textContent  = `Temps au tour : ${getLapTimeDisplay()}`;
-        document.getElementById('stintsRemaining').textContent       = stintsRestants.toFixed(2);
-        document.getElementById('stintsRemainingDetail').textContent = `(${toursRestants.toFixed(2)} tours / ${toursParStint.toFixed(2)} tours par stint)`;
-        document.getElementById('calcStintLaps').textContent         = toursParStint.toFixed(2) + ' tours';
-        document.getElementById('calcStintTime').textContent         = formatDuration(dureeStintReel);
+            totalPitTheoSec = 0;
+            for (let i = 0; i < nbPitsTheo; i++) {
+                totalPitTheoSec += getPitDuration(i);
+            }
 
-        /* Construction liste stints */
-        const stints = [];
+            tempsRoulageNet = Math.max(0, totalRaceSec - totalPitTheoSec);
+            toursTheorique  = tempsRoulageNet / lapTime;
+            stintsEstime    = toursTheorique  / toursParStint;
 
-if (window._liveMode) {
-    const _nowLive   = new Date();
-    const nowSecLive = _nowLive.getHours() * 3600
-                     + _nowLive.getMinutes() * 60
-                     + _nowLive.getSeconds();
+            if (window._manualStintCount > 0) {
+                const stintsAutoNaturel = stintsEstime;
+                stintsEstime = Math.max(
+                    stintsAutoNaturel,
+                    Math.ceil(stintsAutoNaturel) + window._manualStintCount
+                );
+            }
+        }
 
-    const raceEndOriginal  = realStart + totalRaceSec;
-    const liveRaceSecLocal = Math.max(0, raceEndOriginal - nowSecLive);
-    const tempsEcoule      = Math.max(0, nowSecLive - realStart);
+        stintsTheorique = stintsEstime;
 
-    const evCurrentLive    = parseFloat(document.getElementById('evCurrent').value) || 0;
+    } else {
+        const nowSecLive      = ov._liveNowSec !== undefined ? ov._liveNowSec : (window._liveNowSec || 0);
+        const raceEndLive     = realStart + totalRaceSec;
+        const liveRaceSecCalc = Math.max(0, raceEndLive - nowSecLive);
 
-    // ── Calcul précis du nombre de stints COMPLETS déjà passés ──
-    // Un stint est passé seulement si son temps de fin est < maintenant
-    // On se base sur lapsDone pour être plus fiable que le temps seul
-    const stintsAlreadyDone = Math.max(0,
-        Math.floor((window._liveLapsDone || 0) / toursParStint)
-    );
+        toursTheorique  = liveRaceSecCalc / lapTime;
+        stintsTheorique = toursTheorique  / toursParStint;
+    }
 
-		// ── PHASE 1 : stints ENTIÈREMENT passés ──
-		// On ne reconstruit PAS les stints passés avec lapTime (qui est le temps au tour ACTUEL).
-		// On utilise le temps réellement écoulé depuis le départ pour placer les stints passés
-		// de façon à ce qu'ils s'étalent exactement jusqu'à "maintenant".
-		//
-		// Durée totale passée réelle = nowSecLive depuis le début de course
-		// On répartit cette durée entre les stints passés de façon uniforme.
-		let cumPasse = 0;
-		const tempsEcouleTotal = Math.max(0, nowSecLive - 0); // déjà calculé : nowSecLive = raceEnd - now
-		// tempsEcouleTotal n'est pas disponible ici, on le recalcule :
-		const tempsEcoulePasse = Math.max(0, (realStart + totalRaceSec) - nowSecLive - liveRaceSecLocal);
-		// Durée réelle des stints passés = temps écoulé depuis le départ jusqu'à maintenant
-		const dureePasseeTotale = Math.max(0, nowSecLive - realStart);
+    /* ── Affichage résultats ── */
+    const totalPitMin  = Math.floor(totalPitTheoSec / 60);
+    const totalPitSecR = Math.round(totalPitTheoSec % 60);
+    const pitLabel     = totalPitTheoSec > 0
+        ? `${totalPitMin > 0 ? totalPitMin + 'min ' : ''}${totalPitSecR}s de pits déduits`
+        : 'Aucun pit';
 
-		// Si stintsAlreadyDone > 0, on distribue dureePasseeTotale entre eux uniformément
-		// (mieux que d'utiliser lapTime qui est le temps actuel et non le temps moyen passé)
-		const dureeParStintPasse = stintsAlreadyDone > 0
-			? dureePasseeTotale / stintsAlreadyDone
-			: 0;
+    document.getElementById('toursRemaining').textContent       = toursTheorique.toFixed(2);
+    document.getElementById('stintsRemaining').textContent      = stintsTheorique.toFixed(2);
+    document.getElementById('toursRemainingDetail').textContent =
+        `Temps au tour : ${getLapTimeDisplay()} · Roulage net : ${formatDuration(tempsRoulageNet)}`;
+    document.getElementById('stintsRemainingDetail').textContent =
+        `${nbPitsTheo} pit(s) · ${pitLabel}`;
+    document.getElementById('calcStintLaps').textContent        = toursParStint.toFixed(2) + ' tours';
+    document.getElementById('calcStintTime').textContent        = formatDuration(dureeStintReel);
 
-		for (let i = 0; i < stintsAlreadyDone; i++) {
-			const toursP    = toursParStint;
-			const pitSortie = getPitDuration(i);
-			// On utilise la durée réelle passée plutôt que toursP * lapTime
-			// pour que les blocs passés s'étalent exactement du début à maintenant
-			stints.push({
-				tours:          toursP,
-				fraction:       1,
-				_past:          true,
-				_pitOut:        pitSortie,
-				_durReelle:     dureeParStintPasse   // durée réelle pour la timeline
-			});
-			cumPasse += dureeParStintPasse;
-		}		
-		
-		// ── PHASE 2 : stint en cours (index = stintsAlreadyDone) ──
-		// Pour l'AFFICHAGE dans la table et la timeline, on utilise les tours
-		// DÉJÀ parcourus dans ce stint + les tours restants (= toursParStint complet
-		// si on n'est pas au dernier stint, sinon on borne par le temps restant)
-		//
-		// Tours déjà faits dans le stint courant :
-		const toursDejaFaitsStintCourant = (window._liveLapsDone || 0)
-			- stintsAlreadyDone * toursParStint;
+    /* ══════════════════════════════════════════════════════════════════
+       CONSTRUCTION DE LA LISTE DES STINTS
+    ══════════════════════════════════════════════════════════════════ */
+    const stints = [];
 
-		// Tours restants dans ce stint (limités par EV actuelle) :
-		const toursRestantsDansStint = evCurrentLive / evPerLap;
+    // Valeur EV d'ancrage pour l'affichage colonne EV Conso en mode live
+    const _liveEvDisplay = window._liveMode
+        ? (ov._liveEvCurrent !== undefined
+            ? ov._liveEvCurrent
+            : parseFloat(document.getElementById('evCurrent').value) || 0)
+        : null;
 
-		// Tours TOTAUX affichés pour ce stint = déjà faits + restants
-		// (borné par toursParStint pour ne pas dépasser la capacité)
-		const toursStintCourantAffiche = Math.min(
-			toursDejaFaitsStintCourant + toursRestantsDansStint,
-			toursParStint
-		);
+      if (window._liveMode) {
+        /* ══════════════════════════════════════════════════════════════════
+           MODE LIVE — Construction des stints à partir de l'ancrage courant.
+           
+           Stint 0  = stint en cours   (EV actuelle → jusqu'à épuisement EV ou fin de course)
+           Stint 1+ = stints futurs    (EV rechargée selon pitState[idx].refuelPct)
+           
+           pitState est PRÉSERVÉ : l'utilisateur garde la main sur
+           stop/refuel/pneus pour chaque stint futur.
+        ══════════════════════════════════════════════════════════════════ */
+        const nowSecLive    = ov._liveNowSec !== undefined ? ov._liveNowSec : (window._liveNowSec || 0);
+        const evCurrentLive = ov._liveEvCurrent !== undefined
+                            ? ov._liveEvCurrent
+                            : (parseFloat(document.getElementById('evCurrent').value) || 0);
 
-		// Valeur utilisée pour les calculs de temps restant (inchangée)
-		const toursStintCourant = toursRestantsDansStint;
+        const raceEndLive     = realStart + totalRaceSec;
+        const liveRaceSecCalc = Math.max(0, raceEndLive - nowSecLive);
 
-		if (toursStintCourantAffiche > 0.01) {
-		stints.push({
-        tours:    toursStintCourantAffiche,
-        fraction: toursStintCourantAffiche / toursParStint,
-        _current: true,
-        _toursRestants: toursStintCourant  // pour les calculs internes
-    });
+        /* ── Stint 0 : en cours ── */
+        const toursMaxEV0       = evCurrentLive / evPerLap;
+        const toursStintCourant = Math.min(toursMaxEV0, liveRaceSecCalc / lapTime);
+
+        if (toursStintCourant > 0.01) {
+            stints.push({
+                tours:    toursStintCourant,
+                fraction: toursMaxEV0 > 0 ? Math.min(1, toursStintCourant / toursMaxEV0) : 1,
+                evDebut:  evCurrentLive,
+                _current: true,
+            });
+        }
+
+        /* ── Stints suivants : propagation EV via pitState ── */
+        // Pit après stint courant
+        const pitApres0  = getPitDuration(0);
+        const ps0Live    = pitState[0] || defaultState();
+        const refuel0    = (ps0Live.stop && ps0Live.refuel) ? (ps0Live.refuelPct || 0) : 0;
+        const evFin0     = Math.max(0, evCurrentLive - toursStintCourant * evPerLap);
+        let   evFutur    = Math.min(100, evFin0 + refuel0);
+
+        let tempsRestant = Math.max(0, liveRaceSecCalc - toursStintCourant * lapTime - pitApres0);
+        let idxLive      = 1;
+
+        while (tempsRestant > lapTime * 0.1 && idxLive < 60) {
+            if (evFutur < 0.01) break;
+
+            const toursMaxEVi  = evFutur / evPerLap;
+            const dureeMaxEVi  = toursMaxEVi * lapTime;
+            const dureeIci     = Math.min(dureeMaxEVi, tempsRestant);
+            const toursIci     = dureeIci / lapTime;
+
+            if (toursIci < 0.01) break;
+
+            stints.push({
+                tours:    toursIci,
+                fraction: toursMaxEVi > 0 ? Math.min(1, toursIci / toursMaxEVi) : 0,
+                evDebut:  evFutur,
+            });
+
+            // Dernier stint : on s'arrête
+            if (dureeIci >= tempsRestant - 0.1) break;
+
+            // Pit suivant + propagation EV
+            const pitSuivant = getPitDuration(idxLive);
+            tempsRestant    -= dureeIci + pitSuivant;
+
+            const evFinIci   = Math.max(0, evFutur - toursIci * evPerLap);
+            const psNext     = pitState[idxLive] || defaultState();
+            const refuelNext = (psNext.stop && psNext.refuel) ? (psNext.refuelPct || 0) : 0;
+            evFutur          = Math.min(100, evFinIci + refuelNext);
+
+            idxLive++;
+        }
+
+        /* ── Désactiver stop/refuel sur le dernier stint si pas userSet ── */
+        const lastLiveIdx = stints.length - 1;
+        if (lastLiveIdx >= 0) {
+            if (!pitState[lastLiveIdx]) {
+                pitState[lastLiveIdx] = defaultState();
+                pitState[lastLiveIdx].stop   = false;
+                pitState[lastLiveIdx].refuel = false;
+            } else if (!pitState[lastLiveIdx]._userSet) {
+                pitState[lastLiveIdx].stop   = false;
+                pitState[lastLiveIdx].refuel = false;
+            }
+        }
+
+    } else {
+
+        /* ── MODE NORMAL avec stints manuels ──
+            Principe :
+           - On génère d'abord les stints "naturels" (limités par EV, toursParStint)
+           - On ajoute ensuite les _manualStintCount stints supplémentaires
+           - Le DERNIER stint de la liste (auto ou manuel) absorbe exactement
+             le roulage restant pour que Σ(roulage + pits) = totalRaceSec
+        ──────────────────────────────────────────────────────────────── */
+        let evDebut     = evRemaining;
+        let roulageRest = tempsRoulageNet;
+        let idx         = 0;
+
+        // ── Nombre cible de stints (auto + manuels) ──
+        // On calcule combien de stints "naturels" on aurait sans contrainte manuelle
+        const stintsNaturels      = Math.ceil(toursTheorique / toursParStint);
+        const stintsCibleTotal    = stintsNaturels + window._manualStintCount;
+
+        // ← NOUVEAU : purger les pitState au-delà du nombre de stints cible
+        // Cela évite les stints fantômes lors d'un recalcul sans réinitialisation
+        Object.keys(pitState).forEach(k => {
+            if (parseInt(k) >= stintsCibleTotal) {
+                delete pitState[k];
+            }
+        });
+
+    // ── Génération des stints ──
+    while (idx < stintsCibleTotal && idx < 60) {
+        const ps     = pitState[idx] || defaultState();
+        const isLast = (idx === stintsCibleTotal - 1);
+
+        // Contrainte EV
+        const toursEV = evDebut / evPerLap;
+
+        let toursStint;
+        if (isLast) {
+            toursStint = Math.min(toursEV, roulageRest / lapTime);
+        } else {
+            toursStint = Math.min(toursEV, toursParStint);
+        }
+        // ← Skip si rien à rouler (EV épuisée et pas de roulage restant)
+         if (toursStint < 0.01) {
+        idx++;
+        continue;
+        }
+        // ← CORRECTION : on pousse quand même un stint à 0 tour
+        // pour les stints manuels excédentaires, plutôt que de rompre
+        const dureeRoule = toursStint * lapTime;
+        const fraction   = toursStint / toursParStint;
+
+        stints.push({
+            tours:    Math.max(0, toursStint),
+            fraction: Math.min(1, Math.max(0, fraction)),
+            evDebut:  evDebut,
+            _manual:  idx >= stintsNaturels
+        });
+
+        // Propagation EV
+        const evFin  = Math.max(0, evDebut - toursStint * evPerLap);
+        const refuel = ps.stop && ps.refuel ? (ps.refuelPct || 0) : 0;
+        evDebut      = Math.min(100, evFin + refuel);
+
+        roulageRest -= dureeRoule;
+
+        idx++;
+
+        // Arrêt anticipé uniquement si on a épuisé EV ET temps,
+        // ET qu'il ne reste plus de stints manuels à forcer
+        if (evDebut <= 0.01 && roulageRest < lapTime * 0.1 && idx >= stintsCibleTotal) break;
+    }    
 }
 
-		// ── PHASE 3 : stints FUTURS ──
-		// On utilise les tours RESTANTS (pas les tours affichés) pour le calcul du temps
-			const pitApresStintActuel = getPitDuration(stintsAlreadyDone);
-			const dureeStintCourant   = toursStintCourant * lapTime;
-			let tempsRestantApres     = Math.max(0,
-            liveRaceSecLocal - dureeStintCourant - pitApresStintActuel
-        );
-  
-			let idxSuivant = stintsAlreadyDone + 1;
-			while (tempsRestantApres > lapTime * 0.1 && idxSuivant < 60) {
-				const tempsRoule = Math.min(toursParStint * lapTime, tempsRestantApres);
-				const toursIci   = tempsRoule / lapTime;
-				if (toursIci < 0.01) break;
-				stints.push({ tours: toursIci, fraction: toursIci / toursParStint });
-				const pitSuivant = getPitDuration(idxSuivant);
-				tempsRestantApres -= tempsRoule + (tempsRestantApres > tempsRoule ? pitSuivant : 0);
-				idxSuivant++;
-		}			
-	} 
-			
-			else {
-            // ── Mode normal ──
-            const full = Math.floor(stintsRestants);
-            const frac = stintsRestants - full;
-            for (let i = 0; i < full; i++) stints.push({ tours: toursParStint, fraction: 1 });
-            if (frac > 0.01) stints.push({ tours: toursParStint * frac, fraction: frac });
-        }
-		
-        /* ── Génération de la table ── */
-        const tbody = document.getElementById('strategyTableBody');
-        tbody.innerHTML = '';
-        let cR = 0, cG = 0;
-        const rate = parseFloat(document.getElementById('refuelRate')?.value) || 5;
+    /* ══════════════════════════════════════════════════════════════════
+       GÉNÉRATION DE LA TABLE
+    ══════════════════════════════════════════════════════════════════ */
+    const tbody = document.getElementById('strategyTableBody');
 
-		stints.forEach((stint, idx) => {
-			/* En mode live : les stints passés ont DÉJÀ eu leurs pits
-			On ne les réajoute pas dans le calcul de durée d'affichage.
-			Seuls les stints futurs (non _past) incluent le pit précédent. */
-				const pitPrev = (idx === 0 || (window._liveMode && stint._past))
-				? 0
-				: getPitDuration(idx - 1);            
-				
-			// Pour les stints passés en mode live, on utilise la durée réelle mesurée
-			// (répartie uniformément) plutôt que tours × lapTime actuel, qui serait faux
-			// car le lapTime actuel ≠ lapTime moyen du passé.
-				
-				const dR = (window._liveMode && stint._past && stint._durReelle !== undefined)
-					? stint._durReelle
-					: stint.tours * lapTime + pitPrev;
-				
-				const dG      = dR * multiplier;
-				const bR      = realStart + cR;
-				const bG      = gameStart + cG;
-				
-			// ── Dernier stint : désactiver stop/refuel par défaut ──
-			// CE BLOC DOIT ÊTRE AVANT la lecture de `st` pour que les valeurs
-			// corrigées soient utilisées partout dans la génération de la ligne.
-				
-				const isLastStint = (idx === stints.length - 1);
-				if (isLastStint) {
-					if (!pitState[idx]) {
-						pitState[idx] = defaultState();
-						pitState[idx].stop   = false;
-						pitState[idx].refuel = false;
-					} else if (!pitState[idx]._userSet) {
-						pitState[idx].stop   = false;
-						pitState[idx].refuel = false;
-					}
-				}
+    // Mémoriser le focus avant de vider le tbody
+    const _focusedEl    = document.activeElement;
+    const _focusedTr    = _focusedEl ? _focusedEl.closest('tr[data-stint-idx]') : null;
+    const _focusedStint = _focusedTr ? parseInt(_focusedTr.dataset.stintIdx) : -1;
+    const _focusedClass = _focusedEl ? (_focusedEl.className || '') : '';
+    const _focusedSide  = _focusedEl ? (_focusedEl.dataset?.side || '') : '';
+    const _focusedVal   = (_focusedEl && _focusedEl.tagName === 'INPUT') ? _focusedEl.value : null;
+    const _focusedSelStart = (_focusedEl && _focusedEl.type === 'text' && _focusedEl.selectionStart != null)
+        ? _focusedEl.selectionStart : null;
+    const _focusedSelEnd   = (_focusedEl && _focusedEl.type === 'text' && _focusedEl.selectionEnd != null)
+        ? _focusedEl.selectionEnd   : null;
 
-			// Lecture de st APRÈS correction éventuelle du dernier stint
+    tbody.innerHTML = '';
 
-					const st     = pitState[idx] || defaultState();
-					const dIdx   = st.driver ?? -1;
-					const dColor = dIdx >= 0 ? getDriverColor(dIdx) : COLORS[idx % COLORS.length][0];
-					const c      = dIdx >= 0
-						? [dColor, dColor + 'bb',
-						   parseInt(dColor.slice(1,3),16)*0.299
-						   + parseInt(dColor.slice(3,5),16)*0.587
-						   + parseInt(dColor.slice(5,7),16)*0.114 > 128 ? '#000' : '#fff']
-						: COLORS[idx % COLORS.length];
+    // ── En mode live, cR part de nowSec - realStart (temps déjà écoulé).
+    //    MAIS : si realStart + totalRaceSec > 86400 (course passant minuit)
+    //    ET que nowSec est après minuit (ex: 01:00 = 3600s),
+    //    il faut normaliser nowSec dans le même espace que realStart.
+    //    Sans ça, cR serait négatif ou faux.
+    let _liveNowSecNorm = 0;
+    if (window._liveMode) {
+        // Priorité : valeur passée en override (fraîche du recalculateLive)
+        // Fallback : valeur mémorisée sur window
+        _liveNowSecNorm = ov._liveNowSec !== undefined ? ov._liveNowSec : (window._liveNowSec || 0);
 
-			/* Durée pit de CE stint (pour affichage Pit+) */  
-			
-				   const pitThis    = getPitDuration(idx);
-					const pitTxt     = pitThis > 0 ? `+${pitThis}s` : '—';
-					const hasPitThis = pitThis > 0;
-
-            /* Détail du pit+ */
-			
-					let pitDetail = [];
-					if (st.stop) {
-						pitDetail.push(`Stand: ${st.stopDur}s`);
-						if (st.refuel) pitDetail.push(`Refuel: ${(st.refuelPct * rate).toFixed(0)}s`);
-						if (st.left)   pitDetail.push(`Pneu G: ${TYRE_PENALTY}s`);
-						if (st.right)  pitDetail.push(`Pneu D: ${TYRE_PENALTY}s`);
-					}
-
-            const tr = document.createElement('tr');
-            tr.dataset.stintIdx = idx;
-            tr.innerHTML = `
-<td style="color:${c[0]};font-weight:bold;">
-    Stint ${idx+1}${stint.fraction < 1 ? ' ⚑' : ''}
-</td>
-<td>
-    <select class="driver-select pit-input"
-        data-stint="${idx}"
-        onchange="window._liveModeActive ? recalculateLive() : calculate()"
-        style="width:90px;padding:4px 6px;font-size:0.70em;">
-        ${getDriverOptions(pitState[idx]?.driver ?? -1)}
-    </select>
-</td>
-<td>${stint.tours.toFixed(2)}</td>
-                <td>${formatDuration(dR)}</td>
-                <td>${formatDuration(dG)}</td>
-                <td>${formatClock(bR)}</td>
-                <td>${formatClock(bG)}</td>
-                <td>${formatClock(bR + dR)}</td>
-                <td>${formatClock(bG + dG)}</td>
-                <td>${(stint.tours * evPerLap).toFixed(1)}%</td>
-
-                <!-- Arrêt au stand -->
-                <td class="pit-cell">
-                    <div class="pit-cell-inner">
-                        <div class="pit-row">
-                            <input type="checkbox" class="stop-check"
-                                ${st.stop ? 'checked' : ''}
-                                onchange="window._liveModeActive ? recalculateLive() : calculate()"
-                                title="Activer arrêt au stand">
-                        </div>
-                        <div class="pit-row">
-                            <input type="number" class="pit-input stop-dur-input"
-                                value="${st.stopDur}" min="0" max="300" step="1"
-                                onchange="window._liveModeActive ? recalculateLive() : calculate()"
-                                title="Durée au stand (s)">
-                            <span class="pit-unit">s</span>
-                        </div>
-                    </div>
-                </td>
-
-                <!-- Refuel -->
-                <td class="pit-cell">
-                    <div class="pit-cell-inner">
-                        <div class="pit-row">
-                            ${st.stop ? `
-                                <input type="checkbox" class="refuel-check"
-                                    ${st.refuel ? 'checked' : ''}
-                                   onchange="window._liveModeActive ? recalculateLive() : calculate()"
-                                    title="Activer refuel">
-                            ` : '<span style="color:#333;font-size:0.9em;">—</span>'}
-                        </div>
-                        <div class="pit-row">
-                            ${st.stop ? `
-                                <input type="number" class="pit-input refuel-input refuel-pct-input"
-                                    value="${st.refuelPct}" min="0" max="100" step="1"
-                                    onchange="window._liveModeActive ? recalculateLive() : calculate()"
-                                    title="Quantité refuel (%)">
-                                <span class="pit-unit">%</span>
-                                <span class="pit-duration">
-                                    ${st.refuel ? `(${(st.refuelPct * rate).toFixed(0)}s)` : '(—)'}
-                                </span>
-                            ` : ''}
-                        </div>
-					</div>
-                </td>
-
-                <!-- Pneu G -->
-                <td class="tyre-cell">
-                    <div class="pit-cell-inner">
-                        ${st.stop ? `
-                            <input type="checkbox" class="tyre-check"
-                                data-stint="${idx}" data-side="left"
-                                ${st.left ? 'checked' : ''}
-                                onchange="window._liveModeActive ? recalculateLive() : calculate()"="calculate()"
-                                title="Changer pneus gauche (+${TYRE_PENALTY}s)">
-                        ` : '<span style="color:#333;font-size:0.9em;">—</span>'}
-                    </div>
-                </td>
-
-                <!-- Pneu D -->
-                <td class="tyre-cell">
-                    <div class="pit-cell-inner">
-                        ${st.stop ? `
-                            <input type="checkbox" class="tyre-check"
-                                data-stint="${idx}" data-side="right"
-                                ${st.right ? 'checked' : ''}
-                                onchange="window._liveModeActive ? recalculateLive() : calculate()"
-                                title="Changer pneus droit (+${TYRE_PENALTY}s)">
-                        ` : '<span style="color:#333;font-size:0.9em;">—</span>'}
-                    </div>
-                </td>
-
-                <!-- Pit + total -->
-                <td class="pit-extra ${hasPitThis ? '' : 'none'}"
-                    title="${pitDetail.join(' | ')}">
-                    ${pitTxt}
-                </td>`;
-
-            tbody.appendChild(tr);
-
-            // ── En mode live : griser les stints passés et désactiver leurs contrôles ──
-            if (window._liveMode && stint._past) {
-                tr.dataset.past        = 'true';   // ← marqueur pour savePitState
-                tr.style.opacity       = '0.4';
-                tr.style.background    = 'rgba(80,80,80,0.15)';
-                tr.style.pointerEvents = 'none';
-
-                tr.querySelectorAll('input, select, button').forEach(el => {
-                    el.disabled        = true;
-                    el.style.cursor    = 'not-allowed';
-                    el.style.opacity   = '0.4';
-                });
-            }
-			// ── En mode live : pour le stint courant, le cumul de départ
-			// doit correspondre à la position réelle (tours déjà parcourus × lapTime
-			// + pits des stints passés déjà inclus dans cumPasse)
-			// cR est déjà correct car les stints _past ont bien cumulé leur durée complète
-            cR += dR;
-            cG += dG;
-        });
-		updateTyreGauge();
-        buildTimeline(stints, lapTime, multiplier, realStart, gameStart, totalRaceSec);
-
-        document.querySelectorAll('.result-value').forEach(el => {
-            el.style.transform = 'scale(1.1)';
-            setTimeout(() => el.style.transform = 'scale(1)', 300);
-        });
-		
-		// ── Pousser l'état complet (pitState inclus) vers Firebase ──
-        // Ignoré automatiquement si aucune session active ou pendant une réception (_isSyncing)
-        if (!window._liveMode) {
-		pushToFirebase(true);
+        // Normalisation cross-midnight
+        const _raceEnd = realStart + totalRaceSec;
+        if (_raceEnd > 86400 && _liveNowSecNorm < realStart && _liveNowSecNorm < 43200) {
+            _liveNowSecNorm += 86400;
         }
     }
     
+    let cR = window._liveMode ? Math.max(0, _liveNowSecNorm - realStart) : 0;
+    let cG = window._liveMode ? Math.max(0, (_liveNowSecNorm - realStart) * multiplier) : 0;
+    const rate = parseFloat(document.getElementById('refuelRate')?.value) || 5;
+    
+    let cumulTours = 0;
+stints.forEach((stint, idx) => {
 
-		/* ── Timeline ── */
-	
-		function buildTimeline(stints, lapTime, multiplier, realStart, gameStart, totalRealSec) {
+    // ── Durée du pit QUI SUIT le stint précédent ──
+    // Ce pit est affiché comme faisant partie du BLOC du stint précédent
+    // (il termine ce stint-là), donc on l'ajoute à la durée du stint précédent,
+    // pas à celle du stint courant.
+    //
+    // Pour l'affichage de la DURÉE RÉELLE d'un bloc (stint + son pit de sortie) :
+    //   dR = tours × lapTime + pit_qui_suit_CE_stint
+    //
+    // Le pit qui PRÉCÈDE ce stint (= pit de sortie du stint idx-1)
+    // est déjà comptabilisé dans le bloc précédent.
+    //
+    // Exception mode live : stints passés ont leur _durReelle calculée en amont.
+
+    const pitAfter = (idx < stints.length - 1)   // pas de pit après le dernier stint
+        ? getPitDuration(idx)
+        : 0;
+
+    const dR = (window._liveMode && stint._past && stint._durReelle !== undefined)
+        ? stint._durReelle
+        : stint.tours * lapTime + pitAfter;
+
+    const dG  = dR * multiplier;
+    const bR  = realStart + cR;
+    const bG  = gameStart + cG;
+    
+        // Dernier stint : désactiver stop/refuel par défaut si pas déjà userSet
+        const isLastStint = (idx === stints.length - 1);
+        if (isLastStint) {
+            if (!pitState[idx]) {
+                pitState[idx] = defaultState();
+                pitState[idx].stop   = false;
+                pitState[idx].refuel = false;
+            } else if (!pitState[idx]._userSet) {
+                pitState[idx].stop   = false;
+                pitState[idx].refuel = false;
+            }
+        }
+
+        const st     = pitState[idx] || defaultState();
+        cumulTours  += stint.tours;
+        const tourPitDisplay = (idx < stints.length - 1)
+            ? `T.${Math.round(cumulTours)}`
+            : '—';
+
+        const evDebutStint = stint.evDebut !== undefined ? stint.evDebut : null;
+
+        const dIdx   = st.driver ?? -1;
+        const dColor = dIdx >= 0 ? getDriverColor(dIdx) : COLORS[idx % COLORS.length][0];
+        const c      = dIdx >= 0
+            ? [dColor, dColor + 'bb',
+               parseInt(dColor.slice(1,3),16)*0.299
+               + parseInt(dColor.slice(3,5),16)*0.587
+               + parseInt(dColor.slice(5,7),16)*0.114 > 128 ? '#000' : '#fff']
+            : COLORS[idx % COLORS.length];
+
+        const pitThis    = getPitDuration(idx);
+        const pitTxt     = pitThis > 0 ? `+${pitThis}s` : '—';
+        const hasPitThis = pitThis > 0;
+
+        let pitDetail = [];
+        if (st.stop) {
+            pitDetail.push(`Stand: ${st.stopDur}s`);
+            if (st.refuel) pitDetail.push(`Refuel: ${(st.refuelPct * rate).toFixed(0)}s`);
+            if (st.left)   pitDetail.push(`Pneu G: ${TYRE_PENALTY}s`);
+            if (st.right)  pitDetail.push(`Pneu D: ${TYRE_PENALTY}s`);
+        }
+
+        // Label stint : badge "✏️ Manuel" pour les stints ajoutés manuellement
+        const stintLabel = stint._manual
+            ? `<span style="color:#00aaff;font-weight:bold;">Stint ${idx+1}</span>
+               <span style="font-size:0.7em;color:#00aaff;opacity:0.8;"> ✏️</span>`
+            : `<span style="color:${c[0]};font-weight:bold;">Stint ${idx+1}${stint.fraction < 1 ? ' ⚑' : ''}</span>`;
+
+        const tr = document.createElement('tr');
+        tr.dataset.stintIdx = idx;
+        if (stint._manual) tr.dataset.manual = 'true';
+
+        tr.innerHTML = `
+            <td>${stintLabel}</td>
+
+            <td>
+                <select class="driver-select pit-input"
+                    data-stint="${idx}"
+                    style="width:90px;padding:4px 6px;">
+                    ${getDriverOptions(pitState[idx]?.driver ?? -1)}
+                </select>
+            </td>
+
+            <td style="text-align:center;">
+                <span style="font-weight:bold;color:#fff;font-size:0.95em;">
+                    ${stint.tours.toFixed(2)}
+                </span>
+                ${evDebutStint !== null ? `
+                <div style="font-size:0.68em;color:#88ccff;margin-top:1px;"
+                    title="EV de départ de ce stint">
+                    ⚡${evDebutStint.toFixed(1)}%
+                </div>` : ''}
+            </td>
+            <td style="color:#aaffcc;font-weight:bold;font-size:0.82em;"
+                title="Tour auquel a lieu ce pit stop">
+                ${tourPitDisplay}
+            </td>
+            <td>${formatDuration(dR)}</td>
+            <td>${formatDuration(dG)}</td>
+            <td>${formatClock(bR)}</td>
+            <td>${formatClock(bR + dR)}</td>
+            <td>
+                ${(window._liveMode && stint._current && _liveEvDisplay !== null)
+                    ? `<strong style="color:#00ff88;">${_liveEvDisplay.toFixed(1)}%</strong>
+                    <div style="font-size:0.7em;color:#aaa;">actuelle</div>`
+                    : `${(stint.tours * evPerLap).toFixed(1)}%`
+                }
+            </td>
+            <td class="pit-cell">
+                <div class="pit-cell-inner">
+                    <div class="pit-row">
+                        <input type="checkbox" class="stop-check"
+                            ${st.stop ? 'checked' : ''}
+                            title="Activer arrêt au stand">
+                    </div>
+                    <div class="pit-row">
+                        <input type="number" class="pit-input stop-dur-input"
+                            value="${st.stopDur}" min="0" max="300" step="1"
+                            title="Durée au stand (s)">
+                        <span class="pit-unit">s</span>
+                    </div>
+                </div>
+            </td>
+
+            <td class="pit-cell">
+                <div class="pit-cell-inner">
+                ${st.stop ? `
+                <div class="pit-row">
+                    <input type="number" class="refuel-pct-input"
+                        value="${st.refuelPct}" min="0" max="100" step="1"
+                        title="Quantité refuel (%)">
+                    <span class="pit-unit">%</span>
+                </div>
+                <div style="text-align:center;margin-top:2px;">
+                    <span class="pit-duration">(${(st.refuelPct * rate).toFixed(0)}s)</span>
+                </div>
+            ` : '<div class="pit-row"><span style="color:#333;font-size:0.9em;">—</span></div>'}
+                </div>
+            </td>
+
+            <td class="tyre-cell">
+                <div class="pit-cell-inner">
+                    ${st.stop ? `
+                        <input type="checkbox" class="tyre-check"
+                            data-stint="${idx}" data-side="left"
+                            ${st.left ? 'checked' : ''}
+                            title="Changer pneus gauche (+${TYRE_PENALTY}s)">
+                    ` : '<span style="color:#333;font-size:0.9em;">—</span>'}
+                </div>
+            </td>
+
+            <td class="tyre-cell">
+                <div class="pit-cell-inner">
+                    ${st.stop ? `
+                        <input type="checkbox" class="tyre-check"
+                            data-stint="${idx}" data-side="right"
+                            ${st.right ? 'checked' : ''}
+                            title="Changer pneus droit (+${TYRE_PENALTY}s)">
+                    ` : '<span style="color:#333;font-size:0.9em;">—</span>'}
+                </div>
+            </td>
+
+            <td class="pit-extra ${hasPitThis ? '' : 'none'}"
+                title="${pitDetail.join(' | ')}">
+                ${pitTxt}
+            </td>`;
+
+        tbody.appendChild(tr);
+
+        if (window._liveMode) {
+            // cR est déjà la position AVANT ce stint (avant le += dR ci-dessous)
+            const stintAbsStart = realStart + cR;
+            const stintAbsEnd   = stintAbsStart + dR;
+            // Normaliser liveNow dans le même espace que realStart
+            let liveNow = window._liveNowSec || 0;
+            const _raceEndChk = realStart + totalRaceSec;
+            if (_raceEndChk > 86400 && liveNow < realStart && liveNow < 43200) {
+                liveNow += 86400;
+            }
+
+            if (stintAbsEnd <= liveNow) {
+                // Stint entièrement passé
+                tr.dataset.past        = 'true';
+                tr.style.opacity       = '0.45';
+                tr.style.background    = 'rgba(60,60,60,0.25)';
+                tr.style.pointerEvents = 'none';
+                tr.querySelectorAll('input, select, button').forEach(el => {
+                    el.disabled      = true;
+                    el.style.cursor  = 'not-allowed';
+                    el.style.opacity = '0.35';
+                });
+            } else if (stint._current) {
+                // Stint courant : surligné
+                tr.style.background  = 'rgba(0,255,136,0.07)';
+                tr.style.borderLeft  = '3px solid #00ff88';
+                tr.style.boxShadow   = 'inset 0 0 12px rgba(0,255,136,0.08)';
+            }
+        }
+
+        cR += dR;
+        cG += dG;
+    });
+
+    updateTyreGauge();
+
+    // Afficher les contrôles manuels une fois la table générée
+    const manualControls = document.getElementById('stintManualControls');
+    if (manualControls) manualControls.style.display = 'flex';
+    _updateManualStintUI();
+
+    /* ══════════════════════════════════════════════════════════════════
+       INDICATEUR DE COHÉRENCE
+    ══════════════════════════════════════════════════════════════════ */
+    if (!window._liveMode) {
+        let totalRoulageReel = 0;
+        let totalPitReel     = 0;
+
+        stints.forEach((stint, idx) => {
+            totalRoulageReel += stint.tours * lapTime;
+            if (idx < stints.length - 1) totalPitReel += getPitDuration(idx);
+        });
+
+        const totalReel = totalRoulageReel + totalPitReel;
+        const ecartSec  = totalRaceSec - totalReel;
+        const ecartAbs  = Math.abs(ecartSec);
+        const ecartMin  = Math.floor(ecartAbs / 60);
+        const ecartSecR = Math.round(ecartAbs % 60);
+
+        const pitMin     = Math.floor(totalPitReel / 60);
+        const pitSecR    = Math.round(totalPitReel % 60);
+        const roulageH   = Math.floor(totalRoulageReel / 3600);
+        const roulageMin = Math.floor((totalRoulageReel % 3600) / 60);
+        const roulageSec = Math.round(totalRoulageReel % 60);
+
+        let badgeColor, badgeBorder, icon, ecartLabel;
+        if (ecartAbs < 10) {
+            badgeColor  = 'rgba(0,255,136,0.12)';
+            badgeBorder = '#00ff88';
+            icon        = '✅';
+            ecartLabel  = `Écart : ${ecartAbs.toFixed(1)}s — Stratégie cohérente`;
+        } else if (ecartAbs < 60) {
+            badgeColor  = 'rgba(255,170,0,0.12)';
+            badgeBorder = '#ffaa00';
+            icon        = '⚠️';
+            ecartLabel  = `Écart : ${ecartAbs.toFixed(1)}s — Ajustez le refuel ou les durées de pit`;
+        } else {
+            badgeColor  = 'rgba(255,60,60,0.15)';
+            badgeBorder = '#ff4444';
+            icon        = '🔴';
+            ecartLabel  = `Écart : ${ecartMin > 0 ? ecartMin + 'min ' : ''}${ecartSecR}s — `
+                        + (ecartSec > 0
+                            ? 'Temps non couvert par les stints'
+                            : 'Stints dépassent la durée de course');
+        }
+
+        let coherenceBox = document.getElementById('coherenceBox');
+        if (!coherenceBox) {
+            coherenceBox = document.createElement('div');
+            coherenceBox.id = 'coherenceBox';
+            coherenceBox.style.cssText =
+                'margin-top:16px;padding:14px 18px;border-radius:10px;'
+              + 'border-left:4px solid;display:flex;flex-wrap:wrap;'
+              + 'gap:20px;align-items:center;font-size:0.88em;';
+            tbody.closest('.strategy-table-wrapper').insertAdjacentElement('afterend', coherenceBox);
+        }
+
+        coherenceBox.style.display    = 'flex';
+        coherenceBox.style.background  = badgeColor;
+        coherenceBox.style.borderColor = badgeBorder;
+        coherenceBox.innerHTML = `
+            <div style="font-size:1.3em;">${icon}</div>
+            <div style="flex:1;min-width:180px;">
+                <div style="color:${badgeBorder};font-weight:bold;margin-bottom:4px;">
+                    ${ecartLabel}
+                </div>
+                <div style="color:#aaa;font-size:0.9em;">
+                    Durée cible : <strong style="color:#fff">${formatDuration(totalRaceSec)}</strong>
+                    &nbsp;·&nbsp;
+                    Total calculé : <strong style="color:#fff">${formatDuration(totalReel)}</strong>
+                    ${window._manualStintCount > 0
+                        ? `&nbsp;·&nbsp;<span style="color:#00aaff;">
+                            ✏️ ${window._manualStintCount} stint(s) manuel(s)
+                          </span>`
+                        : ''}
+                </div>
+            </div>
+            <div style="display:flex;gap:24px;flex-wrap:wrap;">
+                <div style="text-align:center;">
+                    <div style="color:#999;font-size:0.85em;text-transform:uppercase;letter-spacing:0.5px;">
+                        🏎 Roulage net
+                    </div>
+                    <div style="color:#fff;font-weight:bold;font-size:1.15em;">
+                        ${String(roulageH).padStart(2,'0')}:${String(roulageMin).padStart(2,'0')}:${String(roulageSec).padStart(2,'0')}
+                    </div>
+                </div>
+                <div style="text-align:center;">
+                    <div style="color:#999;font-size:0.85em;text-transform:uppercase;letter-spacing:0.5px;">
+                        🔧 Temps pits
+                    </div>
+                    <div style="color:#ffaa00;font-weight:bold;font-size:1.15em;">
+                        ${pitMin > 0 ? pitMin + 'min ' : ''}${pitSecR}s
+                    </div>
+                </div>
+                <div style="text-align:center;">
+                    <div style="color:#999;font-size:0.85em;text-transform:uppercase;letter-spacing:0.5px;">
+                        ⛽ Pits prévus
+                    </div>
+                    <div style="color:#fff;font-weight:bold;font-size:1.15em;">
+                        ${stints.length - 1}
+                    </div>
+                </div>
+            </div>`;
+
+    } else {
+        // ── MODE LIVE : indicateur de cohérence adapté ──
+        let totalRoulageLive = 0;
+        let totalPitLive     = 0;
+
+        stints.forEach((stint, idx) => {
+            const pitAfterLive = (idx < stints.length - 1) ? getPitDuration(idx) : 0;
+            const durLive      = (stint._past && stint._durReelle !== undefined)
+                ? stint._durReelle
+                : stint.tours * lapTime + pitAfterLive;
+            if (!stint._past) {
+                totalRoulageLive += stint.tours * lapTime;
+                if (idx < stints.length - 1) totalPitLive += getPitDuration(idx);
+            }
+        });
+
+        // Temps déjà écoulé depuis le début de la course (réel)
+        const _nowCoh   = new Date();
+        let   nowSecCoh = _nowCoh.getHours() * 3600
+                        + _nowCoh.getMinutes() * 60
+                        + _nowCoh.getSeconds();
+        if (realStart + totalRaceSec > 86400 && nowSecCoh < realStart) nowSecCoh += 86400;
+        const tempsEcoule     = Math.max(0, nowSecCoh - realStart);
+        const tempsRestantCoh = Math.max(0, totalRaceSec - tempsEcoule);
+
+        // Total projeté = roulage futur + pits futurs
+        const totalProjeteLive = totalRoulageLive + totalPitLive;
+        const ecartLiveSec     = tempsRestantCoh - totalProjeteLive;
+        const ecartLiveAbs     = Math.abs(ecartLiveSec);
+        const ecartLiveMin     = Math.floor(ecartLiveAbs / 60);
+        const ecartLiveSecR    = Math.round(ecartLiveAbs % 60);
+
+        const pitMinL  = Math.floor(totalPitLive / 60);
+        const pitSecRL = Math.round(totalPitLive % 60);
+        const rolH     = Math.floor(totalRoulageLive / 3600);
+        const rolMin   = Math.floor((totalRoulageLive % 3600) / 60);
+        const rolSec   = Math.round(totalRoulageLive % 60);
+
+        let badgeColorL, badgeBorderL, iconL, ecartLabelL;
+        if (ecartLiveAbs < 10) {
+            badgeColorL  = 'rgba(0,255,136,0.12)';
+            badgeBorderL = '#00ff88';
+            iconL        = '✅';
+            ecartLabelL  = `Écart : ${ecartLiveAbs.toFixed(1)}s — Stratégie live cohérente`;
+        } else if (ecartLiveAbs < 60) {
+            badgeColorL  = 'rgba(255,170,0,0.12)';
+            badgeBorderL = '#ffaa00';
+            iconL        = '⚠️';
+            ecartLabelL  = `Écart : ${ecartLiveAbs.toFixed(1)}s — Ajustez le refuel ou les pits`;
+        } else {
+            badgeColorL  = 'rgba(255,60,60,0.15)';
+            badgeBorderL = '#ff4444';
+            iconL        = '🔴';
+            ecartLabelL  = `Écart : ${ecartLiveMin > 0 ? ecartLiveMin + 'min ' : ''}${ecartLiveSecR}s — `
+                         + (ecartLiveSec > 0
+                             ? 'Temps restant non couvert'
+                             : 'Stints futurs dépassent le temps restant');
+        }
+
+        let coherenceBox = document.getElementById('coherenceBox');
+        if (!coherenceBox) {
+            coherenceBox = document.createElement('div');
+            coherenceBox.id = 'coherenceBox';
+            coherenceBox.style.cssText =
+                'margin-top:16px;padding:14px 18px;border-radius:10px;'
+              + 'border-left:4px solid;display:flex;flex-wrap:wrap;'
+              + 'gap:20px;align-items:center;font-size:0.88em;';
+            document.getElementById('strategyTableBody')
+                tbody.closest('.strategy-table-wrapper').insertAdjacentElement('afterend', coherenceBox);
+        }
+
+        coherenceBox.style.display    = 'flex';
+        coherenceBox.style.background  = badgeColorL;
+        coherenceBox.style.borderColor = badgeBorderL;
+        coherenceBox.innerHTML = `
+            <div style="font-size:1.3em;">${iconL}</div>
+            <div style="flex:1;min-width:180px;">
+                <div style="color:${badgeBorderL};font-weight:bold;margin-bottom:4px;">
+                    🔴 LIVE — ${ecartLabelL}
+                </div>
+                <div style="color:#aaa;font-size:0.9em;">
+                    Temps restant : <strong style="color:#fff">${formatDuration(tempsRestantCoh)}</strong>
+                    &nbsp;·&nbsp;
+                    Projeté futur : <strong style="color:#fff">${formatDuration(totalProjeteLive)}</strong>
+                </div>
+            </div>
+            <div style="display:flex;gap:24px;flex-wrap:wrap;">
+                <div style="text-align:center;">
+                    <div style="color:#999;font-size:0.85em;text-transform:uppercase;letter-spacing:0.5px;">
+                        🏎 Roulage futur
+                    </div>
+                    <div style="color:#fff;font-weight:bold;font-size:1.15em;">
+                        ${String(rolH).padStart(2,'0')}:${String(rolMin).padStart(2,'0')}:${String(rolSec).padStart(2,'0')}
+                    </div>
+                </div>
+                <div style="text-align:center;">
+                    <div style="color:#999;font-size:0.85em;text-transform:uppercase;letter-spacing:0.5px;">
+                        🔧 Pits futurs
+                    </div>
+                    <div style="color:#ffaa00;font-weight:bold;font-size:1.15em;">
+                        ${pitMinL > 0 ? pitMinL + 'min ' : ''}${pitSecRL}s
+                    </div>
+                </div>
+                <div style="text-align:center;">
+                    <div style="color:#999;font-size:0.85em;text-transform:uppercase;letter-spacing:0.5px;">
+                        ⛽ Pits restants
+                    </div>
+                    <div style="color:#fff;font-weight:bold;font-size:1.15em;">
+                        ${stints.filter(s => !s._past).length - 1}
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    /* ── Total temps pit dans le header ── */
+    let totalPitSec = 0;
+    stints.forEach((_, idx) => {
+        if (idx < stints.length - 1) totalPitSec += getPitDuration(idx);
+    });
+    const pitHeaderEl = document.getElementById('pitPlusHeader');
+    if (pitHeaderEl) {
+        const pitMin = Math.floor(totalPitSec / 60);
+        const pitSec = Math.round(totalPitSec % 60);
+        pitHeaderEl.innerHTML = `⏱️ Pit +<br>
+            <span style="color:#ffaa00;font-size:0.85em;font-weight:normal;">
+                Σ ${pitMin > 0 ? pitMin + 'min ' : ''}${pitSec}s
+            </span>`;
+    }
+
+     buildTimeline(stints, lapTime, multiplier, realStart, gameStart, totalRaceSec);
+    // Léger délai pour laisser le DOM se stabiliser avant de mesurer les largeurs
+    requestAnimationFrame(() => initColumnResizers());
+
+    document.querySelectorAll('.result-value').forEach(el => {
+        el.style.transform = 'scale(1.1)';
+        setTimeout(() => el.style.transform = 'scale(1)', 300);
+    });
+
+        // Restaurer le focus sur l'élément qui était actif avant la reconstruction
+    if (_focusedStint >= 0 && _focusedClass) {
+        requestAnimationFrame(() => {
+            const newTr = tbody.querySelector(`tr[data-stint-idx="${_focusedStint}"]`);
+            if (!newTr) return;
+
+            let target = null;
+
+            if (_focusedClass.includes('stop-dur-input')) {
+                target = newTr.querySelector('.stop-dur-input');
+            } else if (_focusedClass.includes('refuel-pct-input')) {
+                target = newTr.querySelector('.refuel-pct-input');
+            } else if (_focusedClass.includes('driver-name-input')) {
+                // Récupérer l'index pilote depuis l'id du champ (driverName_0, etc.)
+                const match = _focusedEl?.id?.match(/driverName_(\d+)/);
+                if (match) target = document.getElementById(`driverName_${match[1]}`);
+            } else if (_focusedClass.includes('tyre-check') && _focusedSide) {
+                target = newTr.querySelector(`.tyre-check[data-side="${_focusedSide}"]`);
+            }
+
+            if (target) {
+                target.focus();
+                // Restaurer la valeur et la sélection pour les inputs texte/nombre
+                if (_focusedVal !== null && target.tagName === 'INPUT'
+                    && target.type !== 'checkbox' && target.type !== 'color') {
+                    target.value = _focusedVal;
+                    if (_focusedSelStart !== null && target.setSelectionRange) {
+                        try { target.setSelectionRange(_focusedSelStart, _focusedSelEnd); } catch(e) {}
+                    }
+                }
+            }
+        });
+    }
+
+    if (!window._liveMode) pushToFirebase(true);
+}
+    
+
+            /* ── Normalise deux secondes pour comparaison cross-midnight ──
+        Retourne refSec ramené dans la même "fenêtre" de 86400s que baseSec */
+        function normalizeToWindow(baseSec, refSec) {
+            // Si baseSec dépasse 86400 (course passant minuit),
+            // on veut que nowSec soit comparable.
+            // On ajoute 86400 à refSec si celui-ci est "avant" le départ
+            // (ex: nowSec = 2h = 7200, realStart = 18h30 → nowSec est le lendemain)
+            if (baseSec > 86400) return refSec; // baseSec est déjà dans l'espace étendu
+            if (refSec < baseSec - 43200) return refSec + 86400; // passage minuit
+            return refSec;
+        }
+
+        /* ── Colonnes redimensionnables ── */
+function initColumnResizers() {
+    const table = document.querySelector('.strategy-table');
+    if (!table) return;
+
+    // Supprimer les anciens resizers pour éviter les doublons
+    table.querySelectorAll('.col-resizer').forEach(r => r.remove());
+
+    const ths = table.querySelectorAll('thead th');
+
+    ths.forEach((th, i) => {
+        // Ne pas ajouter de resizer sur la dernière colonne
+        if (i === ths.length - 1) return;
+
+        // Fixer la largeur actuelle en px pour qu'elle soit manipulable
+        if (!th.style.width) {
+            th.style.width = th.offsetWidth + 'px';
+        }
+        th.style.overflow  = 'hidden';
+        th.style.whiteSpace = 'nowrap';
+
+        const resizer = document.createElement('div');
+        resizer.className = 'col-resizer';
+        th.appendChild(resizer);
+
+        let startX    = 0;
+        let startW    = 0;
+        let isResizing = false;
+
+        resizer.addEventListener('mousedown', e => {
+            e.preventDefault();
+            isResizing = true;
+            startX     = e.clientX;
+            startW     = th.offsetWidth;
+            resizer.classList.add('resizing');
+
+            const onMove = e => {
+                if (!isResizing) return;
+                const delta = e.clientX - startX;
+                const newW  = Math.max(30, startW + delta);
+                th.style.width = newW + 'px';
+
+                // Appliquer aussi à toutes les <td> de cette colonne
+                const colIdx = Array.from(th.parentElement.children).indexOf(th);
+                table.querySelectorAll(`tbody tr td:nth-child(${colIdx + 1})`).forEach(td => {
+                    td.style.width    = newW + 'px';
+                    td.style.maxWidth = newW + 'px';
+                    td.style.overflow = 'hidden';
+                });
+            };
+
+            const onUp = () => {
+                isResizing = false;
+                resizer.classList.remove('resizing');
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup',  onUp);
+            };
+
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup',   onUp);
+        });
+
+        // Support tactile
+        resizer.addEventListener('touchstart', e => {
+            const touch = e.touches[0];
+            startX = touch.clientX;
+            startW = th.offsetWidth;
+            resizer.classList.add('resizing');
+
+            const onMove = e => {
+                const t   = e.touches[0];
+                const delta = t.clientX - startX;
+                const newW  = Math.max(30, startW + delta);
+                th.style.width = newW + 'px';
+                const colIdx = Array.from(th.parentElement.children).indexOf(th);
+                table.querySelectorAll(`tbody tr td:nth-child(${colIdx + 1})`).forEach(td => {
+                    td.style.width    = newW + 'px';
+                    td.style.maxWidth = newW + 'px';
+                    td.style.overflow = 'hidden';
+                });
+            };
+
+            const onEnd = () => {
+                resizer.classList.remove('resizing');
+                document.removeEventListener('touchmove', onMove);
+                document.removeEventListener('touchend',  onEnd);
+            };
+
+            document.addEventListener('touchmove', onMove);
+            document.addEventListener('touchend',  onEnd);
+        }, { passive: true });
+    });
+
+    // Fixer table-layout pour que les largeurs soient respectées
+    table.style.tableLayout = 'fixed';
+}
+
+/* ── Timeline ── */
+
+function buildTimeline(stints, lapTime, multiplier, realStart, gameStart, totalRealSec) {
+
 		const track  = document.getElementById('timelineTrack');
 		const labels = document.getElementById('timelineLabels');
 		track.innerHTML = labels.innerHTML = '';
 
 		/* ── nowSec déclaré ici pour être disponible partout dans la fonction ── */
 		
-			const _now   = new Date();
-			const nowSec = _now.getHours() * 3600 + _now.getMinutes() * 60 + _now.getSeconds();
+            const _now   = new Date();
+            let nowSec = _now.getHours() * 3600 + _now.getMinutes() * 60 + _now.getSeconds();
+            // Si la course dépasse minuit et qu'on est après minuit → ajouter 86400
+            if (realStart + totalRealSec > 86400 && nowSec < realStart) {
+                nowSec += 86400;
+            }
+
 			const N = 8;
 			const wrapper = document.createElement('div');
 			wrapper.style.cssText = 'display:flex;flex-direction:column;gap:6px;width:100%;min-width:600px;';
@@ -1777,24 +2588,41 @@ if (window._liveMode) {
 		
         const stintRow = document.createElement('div');
         stintRow.style.cssText = 'position:relative;width:100%;height:50px;background:rgba(0,0,0,0.25);border-radius:8px;overflow:visible;';
-        let cum = 0;
 
-		stints.forEach((stint, idx) => {
-			const pitPrev = (idx === 0 || (window._liveMode && stint._past))
-				? 0
-				: getPitDuration(idx - 1);
+        // ── En mode live, les stints générés commencent à nowSec.
+        //    cum doit donc partir de (nowSec - realStart) pour que
+        //    les barres soient positionnées correctement sur la timeline.
+        let _liveNowSecTimeline = window._liveNowSec || 0;
+        if (window._liveMode) {
+            const _raceEndTL = realStart + totalRealSec;
+            if (_raceEndTL > 86400 && _liveNowSecTimeline < realStart && _liveNowSecTimeline < 43200) {
+                _liveNowSecTimeline += 86400;
+            }
+        }
+        let cum = window._liveMode ? Math.max(0, _liveNowSecTimeline - realStart) : 0;
 
-			// Pour les stints passés en mode live, utiliser la durée réelle mesurée
-			// (distribuée uniformément sur le temps écoulé depuis le départ),
-			// exactement comme dans la table — sinon les barres sont calculées
-			// avec le lapTime ACTUEL qui ne correspond pas au passé.
-			const dR = (window._liveMode && stint._past && stint._durReelle !== undefined)
-				? stint._durReelle
-				: stint.tours * lapTime + pitPrev;
+                /* Initiales du pilote : "Pilote 1" → "P1", "Jean Dupont" → "JD" */
+        function getInitials(name) {
+            const parts = name.trim().split(/\s+/);
+            if (parts.length === 1) {
+                const letter = parts[0][0].toUpperCase();
+                const num    = parts[0].match(/\d+/);
+                return num ? letter + num[0] : letter;
+            }
+            return parts.map(p => p[0].toUpperCase()).join('');
+        }
 
-			const sp  = cum / totalRealSec * 100;
-			const wp  = dR  / totalRealSec * 100;			
+stints.forEach((stint, idx) => {
+    // Même logique : pit APRÈS ce stint (pas avant)
+    const pitAfter = (idx < stints.length - 1) ? getPitDuration(idx) : 0;
 
+    const dR = (window._liveMode && stint._past && stint._durReelle !== undefined)
+        ? stint._durReelle
+        : stint.tours * lapTime + pitAfter;
+
+    const sp  = cum / totalRealSec * 100;
+    const wp  = dR  / totalRealSec * 100;    
+    
 			const st     = pitState[idx] || defaultState();
 			const hasStop = st.stop;
 			const dIdx   = st.driver ?? -1;
@@ -1809,34 +2637,21 @@ if (window._liveMode) {
             const bar = document.createElement('div');
             bar.style.cssText = `position:absolute;left:${sp}%;width:calc(${wp}% - 3px);top:5px;height:40px;background:linear-gradient(135deg,${c[0]},${c[1]});border-radius:5px;display:flex;align-items:center;justify-content:center;color:${c[2]};font-weight:bold;font-size:0.8em;overflow:hidden;white-space:nowrap;border:1px solid rgba(255,255,255,0.25);cursor:pointer;transition:transform 0.2s,box-shadow 0.2s;z-index:1;`;
 
-            /* Initiales du pilote : "Pilote 1" → "P1", "Jean Dupont" → "JD" */
-            function getInitials(name) {
-                const parts = name.trim().split(/\s+/);
-                if (parts.length === 1) {
-                    // Un seul mot : première lettre + premier chiffre trouvé
-                    const letter = parts[0][0].toUpperCase();
-                    const num    = parts[0].match(/\d+/);
-                    return num ? letter + num[0] : letter;
-                }
-                // Plusieurs mots : initiale de chaque mot
-                return parts.map(p => p[0].toUpperCase()).join('');
-            }
+
 
             const dName    = dIdx >= 0 ? getDriverName(dIdx) : '';
             const initials = dName ? getInitials(dName) : null;
 
             let label = '';
-            if (wp > 2) {
+            if (wp > 1.5) {
                 if (initials) {
-                    // Pilote désigné : initiales uniquement, pas de numéro de stint
-                    label = wp > 3 ? initials : '';
+                    label = initials;
                 } else {
-                    // Pas de pilote : numéro de stint
                     label = `S${idx + 1}`;
                 }
-			}
-			bar.textContent = label;
-			
+            }
+            bar.textContent = label;			
+            
             const pitD = getPitDuration(idx);
             bar.title = `Stint ${idx+1} — ${stint.tours.toFixed(1)} tours${pitD > 0 ? ` | Pit: +${pitD}s` : ''}`;
             bar.onmouseenter = () => { bar.style.transform = 'scaleY(1.2)'; bar.style.boxShadow = `0 4px 16px ${c[0]}88`; };
@@ -1848,7 +2663,8 @@ if (window._liveMode) {
             const stintAbsEnd   = stintAbsStart + dR;
 
             if (window._liveMode) {
-                const liveNow = window._liveNowSec || nowSec;
+                // Utiliser _liveNowSecTimeline déjà normalisé ci-dessus
+                const liveNow = _liveNowSecTimeline || nowSec;
                 if (stintAbsEnd <= liveNow) {
                     // Stint entièrement passé : bloc grisé uniforme
                     bar.style.background = 'rgba(120,120,120,0.25)';
@@ -1916,19 +2732,28 @@ if (window._liveMode) {
         const anyDriverAssigned = stints.some((_, i) => (pitState[i] || defaultState()).driver >= 0);
 
         if (anyDriverAssigned) {
-            const nowDate2 = new Date();
-            const nowSec2  = nowDate2.getHours() * 3600 + nowDate2.getMinutes() * 60 + nowDate2.getSeconds();
+        const nowDate2 = new Date();
+        let nowSec2    = nowDate2.getHours() * 3600 + nowDate2.getMinutes() * 60 + nowDate2.getSeconds();
+        if (realStart + totalRealSec > 86400 && nowSec2 < realStart) {
+            nowSec2 += 86400;
+        }
+            // ── Offset de départ : en mode live les stints commencent à nowSec, pas à realStart
+            const _liveNowNDL = (() => {
+                if (!window._liveMode) return 0;
+                let n = window._liveNowSec || 0;
+                if (realStart + totalRealSec > 86400 && n < realStart && n < 43200) n += 86400;
+                return Math.max(0, n - realStart);
+            })();
 
             // 1. Trouver le pilote du stint en cours
             let currentDriverIdx = -1;
-            let elapsedCur = 0;
+            let elapsedCur = _liveNowNDL;
             for (let i = 0; i < stints.length; i++) {
-                const pp  = (i === 0 || (window._liveMode && stints[i]._past)) ? 0 : getPitDuration(i - 1);
                 const dur = (window._liveMode && stints[i]._past && stints[i]._durReelle !== undefined)
                     ? stints[i]._durReelle
-                    : stints[i].tours * lapTime + pp;
-                const s   = realStart + elapsedCur;
-                const e   = s + dur;
+                    : stints[i].tours * lapTime + (i < stints.length - 1 ? getPitDuration(i) : 0);
+                const s = realStart + elapsedCur;
+                const e = s + dur;
                 if (nowSec2 >= s && nowSec2 < e) {
                     currentDriverIdx = (pitState[i] || defaultState()).driver;
                     break;
@@ -1937,12 +2762,11 @@ if (window._liveMode) {
             }
 
             // 2. Chercher le prochain stint avec un pilote DIFFÉRENT du pilote actuel
-            let elapsedNext = 0;
+            let elapsedNext = _liveNowNDL;
             for (let i = 0; i < stints.length; i++) {
-                const pp        = (i === 0 || (window._liveMode && stints[i]._past)) ? 0 : getPitDuration(i - 1);
-                const dur       = (window._liveMode && stints[i]._past && stints[i]._durReelle !== undefined)
+                const dur        = (window._liveMode && stints[i]._past && stints[i]._durReelle !== undefined)
                     ? stints[i]._durReelle
-                    : stints[i].tours * lapTime + pp;
+                    : stints[i].tours * lapTime + (i < stints.length - 1 ? getPitDuration(i) : 0);
                 const stintStart = realStart + elapsedNext;
 
                 if (stintStart > nowSec2) {
@@ -1950,13 +2774,10 @@ if (window._liveMode) {
                     const thisDriver = ps.driver;
 
                     if (thisDriver >= 0 && thisDriver !== currentDriverIdx) {
-                        // En mode live : calculer le temps RESTANT depuis maintenant
-                        // jusqu'au début de ce stint (et non depuis le début de course)
                         const secsUntil  = stintStart - nowSec2;
-                        const minUntil   = Math.round(secsUntil / 60);
                         const posRatioN  = (stintStart - realStart) / totalRealSec;
                         const driverName = getDriverName(thisDriver);
-
+                        
                         const badge = document.createElement('div');
                         badge.style.cssText = `
                             position:absolute;
@@ -1973,10 +2794,12 @@ if (window._liveMode) {
                             z-index:5;
                             pointer-events:none;
                             box-shadow:0 2px 6px rgba(0,0,0,0.4);`;
+                        const untilHH = String(Math.floor(secsUntil / 3600)).padStart(2, '0');
+                        const untilMM = String(Math.floor((secsUntil % 3600) / 60)).padStart(2, '0');
                         badge.textContent = secsUntil > 0
-                            ? `👤 ${driverName} dans ${minUntil} min`
-                            : `👤 ${driverName} maintenant`;
-                        nextDriverLabel.appendChild(badge);
+                            ? `👤 ${driverName} dans ${untilHH}:${untilMM}`
+                            : `👤 ${driverName} maintenant`;                        
+                            nextDriverLabel.appendChild(badge);
                         break;
                     }
                 }
@@ -2051,7 +2874,29 @@ if (window._liveMode) {
                 text-align:center;`;
 
             const line1 = `🕐 ${formatClock(nowSec)}`;
-            const line2 = `⏳ ${remainingMin} min restantes · 🔢 ${remainingTours.toFixed(1)} tours`;
+                       const remainingHH = String(Math.floor(remainingSec / 3600)).padStart(2, '0');
+            const remainingMM = String(Math.floor((remainingSec % 3600) / 60)).padStart(2, '0');
+            // Déduire les pits futurs du temps restant pour le calcul des tours
+            let totalPitsFuturs = 0;
+            for (let i = 0; i < stints.length - 1; i++) {
+                const stintAbsStart = realStart + (() => {
+                    let c = window._liveMode
+                        ? Math.max(0, (_liveNowSecTimeline || nowSec) - realStart)
+                        : 0;
+                    for (let j = 0; j < i; j++) {
+                        const pa = (j < stints.length - 1) ? getPitDuration(j) : 0;
+                        c += stints[j].tours * lapTime + pa;
+                    }
+                    return c;
+                })();
+                if (stintAbsStart >= nowSec) {
+                    totalPitsFuturs += getPitDuration(i);
+                }
+            }
+            const remainingToursNet = Math.max(0, remainingSec - totalPitsFuturs) / lapTime;
+            const line2 = `⏳ ${remainingHH}:${remainingMM} restantes · 🔢 ${remainingToursNet.toFixed(1)} tours`;
+    
+
             const line3 = currentDriver ? `👤 ${currentDriver}` : '';
 
             nowBadge.innerHTML = `
@@ -2139,6 +2984,13 @@ if (window._liveMode) {
         document.getElementById('timelineLabels').innerHTML          = '';
         if (document.getElementById('tyreBudget'))
         document.getElementById('tyreBudget').value = '6';
+        
+        // Remettre à zéro les stints manuels
+        window._manualStintCount = 0;
+        _updateManualStintUI();
+        const cb = document.getElementById('coherenceBox');
+        if (cb) cb.style.display = 'none';
+    
     }
 
 /* ── Driver defaults ── */
@@ -2170,345 +3022,233 @@ function getDriverOptions(selectedIdx) {
     return html;
 }
 
-function renderDriverInputs() {
+/* Debounce timer pour les noms de pilotes */
+let _driverNameDebounce = null;
+
+function renderDriverInputs(preserveValues) {
     const n = getDriverCount();
     const container = document.getElementById('driverInputsContainer');
+
+    /* Sauvegarder les valeurs actuelles avant de vider le container */
+    const savedNames  = [];
+    const savedColors = [];
+    for (let i = 0; i < n; i++) {
+        const nameEl  = document.getElementById(`driverName_${i}`);
+        const colorEl = document.getElementById(`driverColor_${i}`);
+        savedNames[i]  = nameEl  ? nameEl.value  : (DEFAULT_DRIVER_NAMES[i]);
+        savedColors[i] = colorEl ? colorEl.value : (DRIVER_COLORS[i % DRIVER_COLORS.length]);
+    }
+
     container.innerHTML = '';
     for (let i = 0; i < n; i++) {
         const row = document.createElement('div');
         row.className = 'driver-input-row';
+
+        /* Utiliser preserveValues (données distantes) si fourni,
+           sinon les valeurs sauvegardées localement */
+        const nameVal  = (preserveValues && preserveValues[i]?.name  !== undefined)
+            ? preserveValues[i].name
+            : savedNames[i];
+        const colorVal = (preserveValues && preserveValues[i]?.color !== undefined)
+            ? preserveValues[i].color
+            : savedColors[i];
+
         row.innerHTML = `
             <input type="color" id="driverColor_${i}"
                 class="driver-color-swatch"
-                value="${DRIVER_COLORS[i % DRIVER_COLORS.length]}"
+                value="${colorVal}"
                 onchange="window._liveModeActive ? recalculateLive() : calculate()"
                 title="Couleur du pilote ${i+1}">
             <input type="text" id="driverName_${i}"
                 class="driver-name-input"
                 placeholder="${DEFAULT_DRIVER_NAMES[i]}"
-                value="${DEFAULT_DRIVER_NAMES[i]}"
-                oninput="calculate()">
+                value="${nameVal}"
+                oninput="onDriverNameInput()">
         `;
         container.appendChild(row);
     }
     calculate();
 }
 
+/* Appelé à chaque frappe dans un champ nom de pilote.
+   Le recalcul est différé de 1000ms pour ne pas reconstruire
+   le DOM (et perdre le focus) à chaque caractère. */
+function onDriverNameInput() {
+    clearTimeout(_driverNameDebounce);
+    _driverNameDebounce = setTimeout(() => {
+        window._liveModeActive ? recalculateLive() : calculate();
+    }, 1000);
+}
+
 window.onload = () => {
     renderDriverInputs();
 
-    // ── Compte à rebours à la seconde (affichage temps restant + EV) ──
-    setInterval(() => {
-        if (!window._liveModeActive) return;
-
-        const realStart    = toSec(
-            parseInt(document.getElementById('realStartHours').value)   || 0,
-            parseInt(document.getElementById('realStartMinutes').value) || 0
-        );
-        const totalRaceSec = getRaceTimeInSeconds();
-        const raceEndSec   = realStart + totalRaceSec;
-        const now          = new Date();
-        const nowSec       = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
-        const liveRaceSec  = Math.max(0, raceEndSec - nowSec);
-  
-        
-        // Mise à jour du temps restant uniquement
-        const el = document.getElementById('liveTempsRestant');
-        if (el) el.textContent = formatDuration(liveRaceSec);
-    }, 1000);
-	
+// ── Compte à rebours à la seconde ──
+        setInterval(() => {
+            if (!window._liveModeActive) return;
+            const realStart    = getRealStart();
+            const totalRaceSec = getRaceTimeInSeconds();
+            const raceEndSec   = realStart + totalRaceSec;
+            const now          = new Date();
+            let nowSec         = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+            if (raceEndSec > 86400 && nowSec < realStart) nowSec += 86400;
+            const el = document.getElementById('liveTempsRestant');
+            if (el) el.textContent = formatDuration(Math.max(0, raceEndSec - nowSec));
+        }, 1000);	
     
 
     // ── Recalcul complet toutes les 30secondes ──
         setInterval(() => {
             if (document.getElementById('timelineTrack').children.length > 0) {
                 if (window._liveModeActive) {
-                    _liveAutoRefresh = true;
                     recalculateLive();
-                    _liveAutoRefresh = false;
                 } else {
                     calculate();
                 }
             }
         }, 30000);
-};	
+    };	
 
 	/* ── Recalcul en cours de course ── */
 
 function recalculateLive() {
-    const lapsDone   = parseFloat(document.getElementById('lapsDone').value)    || 0;
+    const evCurrent  = parseFloat(document.getElementById('evCurrent').value);
     const evPerLapR  = parseFloat(document.getElementById('evPerLapReal').value);
     const evRefuel   = parseFloat(document.getElementById('evRefuelPerStint').value);
 
-    // Temps au tour réel
     const ltM = parseInt(document.getElementById('livelapMinutes').value) || 0;
     const ltS = parseInt(document.getElementById('livelapSeconds').value) || 0;
     const ltD = parseInt(document.getElementById('livelapMillis').value)  || 0;
     const liveLapTime = ltM * 60 + ltS + ltD / 10;
 
-    if (isNaN(evPerLapR) || evPerLapR <= 0) { alert("Conso EV réelle invalide"); return; }
-    if (isNaN(evRefuel)  || evRefuel  <= 0) { alert("Recharge EV invalide");     return; }
+    if (isNaN(evPerLapR) || evPerLapR <= 0) { alert("Conso EV réelle invalide");   return; }
+    if (isNaN(evRefuel)  || evRefuel  <= 0) { alert("Recharge EV invalide");       return; }
     if (liveLapTime <= 0)                   { alert("Temps au tour réel invalide"); return; }
+    if (isNaN(evCurrent) || evCurrent < 0)  { alert("EV actuelle invalide");       return; }
 
-    // Calcul du temps restant à partir de l'heure réelle
-
-	const realStart = getRealStart();
-
+    const realStart    = getRealStart();
     const totalRaceSec = getRaceTimeInSeconds();
     const raceEndSec   = realStart + totalRaceSec;
-    const now          = new Date();
-    const nowSec       = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
-    const liveRaceSec  = Math.max(0, raceEndSec - nowSec);
 
+    const _now = new Date();
+    let nowSec = _now.getHours() * 3600 + _now.getMinutes() * 60 + _now.getSeconds();
+
+    // Normalisation cross-midnight :
+    // Si la course finit après minuit (raceEndSec > 86400)
+    // ET que l'heure actuelle est après minuit mais avant realStart
+    // (ex: realStart=18h30, maintenant=17h01 → c'est bien le même jour,
+    //  mais si maintenant=00h30 → c'est le lendemain → +86400)
+    if (raceEndSec > 86400 && nowSec < realStart && nowSec < 43200) {
+        nowSec += 86400;
+    }
+
+    const liveRaceSec = Math.max(0, raceEndSec - nowSec);
     if (liveRaceSec <= 0) { alert("La course est déjà terminée selon l'heure réelle."); return; }
 
-    // ── Calcul de la vitesse de conso EV ──
-    // evPerLapR (%/tour) / liveLapTime (s/tour) = %/seconde
-    const evConsoPerSec = evPerLapR / liveLapTime;
+    // Mémoriser l'ancrage
+    window._liveNowSec     = nowSec;
+    window._liveEvAtAnchor = evCurrent;
+    window._liveModeActive = true;
 
-    const evCurrentInput = parseFloat(document.getElementById('evCurrent').value);
-    const evCurrentSaisi = isNaN(evCurrentInput) ? 100 : evCurrentInput;
+    /* ── Calcul du récapitulatif live (panneau résultats) ── */
+    const toursParStintRef  = evRefuel / evPerLapR;
+    const toursStintCourant = Math.min(evCurrent / evPerLapR, liveRaceSec / liveLapTime);
+    const dureeStintCourant = toursStintCourant * liveLapTime;
 
-    if (!window._liveModeActive) {
-        // Premier lancement : on mémorise l'EV saisie comme point de départ
-        window._liveLastEvPct   = evCurrentSaisi;
-        window._liveLastNowSec  = nowSec;
-        window._liveEvPerSecond = evConsoPerSec;       
-		window._liveModeActive  = true;
-    } else {
-        // Mode live déjà actif
-        // Calcul de ce que l'EV devrait être selon l'extrapolation
-        const elapsedRaw2      = nowSec - window._liveLastNowSec;
-        const elapsed2         = elapsedRaw2 >= 0 ? elapsedRaw2 : elapsedRaw2 + 86400;
-        const evExtrapolee     = Math.max(0,
-            window._liveLastEvPct - elapsed2 * window._liveEvPerSecond
-        );
+    const pitCourant = getPitDuration(0);
+    const ps0        = pitState[0] || defaultState();
+    const refuel0    = (ps0.stop && ps0.refuel) ? (ps0.refuelPct || 0) : 0;
+    const evFinCourant = Math.max(0, evCurrent - toursStintCourant * evPerLapR);
+    let   evSuivant    = Math.min(100, evFinCourant + refuel0);
 
-        // Détection mise à jour manuelle uniquement (le refresh auto est géré plus bas)
-        if (!window._liveAutoRefresh && Math.abs(evCurrentSaisi - evExtrapolee) > 0.2) {
-            window._liveLastEvPct  = evCurrentSaisi;
-            window._liveLastNowSec = nowSec;
-        }
+    let tempsRestant      = Math.max(0, liveRaceSec - dureeStintCourant - pitCourant);
+    let stintsFutursCount = 0;
+    let toursFuturs       = 0;
+    let idxSuivant        = 1;
 
-        // Mise à jour de la vitesse de conso si les paramètres ont changé
-        window._liveEvPerSecond = evConsoPerSec;
-    }
-	
-    // Calcul de l'EV actuelle par extrapolation depuis le dernier clic
-    const elapsedSinceLastClick = nowSec - window._liveLastNowSec;
-    // Gérer le passage minuit (nowSec peut être < _liveLastNowSec)
-    const elapsedCorrected = elapsedSinceLastClick >= 0
-        ? elapsedSinceLastClick
-        : elapsedSinceLastClick + 86400;
-    const evCurrentCalc = Math.max(0,
-        window._liveLastEvPct - elapsedCorrected * window._liveEvPerSecond
-    );
+    while (tempsRestant > liveLapTime * 0.1 && idxSuivant < 60) {
+        if (evSuivant < 0.01) break;
 
-        // Rebase APRÈS avoir calculé evCurrentCalc
-    if (window._liveAutoRefresh) {
-        // Refresh auto : on rebase depuis la valeur fraîchement calculée
-        window._liveLastEvPct  = evCurrentCalc; 
-        window._liveLastNowSec = nowSec;
+        const toursMaxEV    = evSuivant / evPerLapR;
+        const dureeMaxEV    = toursMaxEV * liveLapTime;
+        const dureeStintIci = Math.min(dureeMaxEV, tempsRestant);
+        const toursIci      = dureeStintIci / liveLapTime;
+
+        stintsFutursCount++;
+        toursFuturs += toursIci;
+
+        if (dureeStintIci >= tempsRestant - 0.1) break;
+
+        const pitSuivant = getPitDuration(idxSuivant);
+        tempsRestant    -= dureeStintIci + pitSuivant;
+
+        const evFinIci   = Math.max(0, evSuivant - toursIci * evPerLapR);
+        const psNext     = pitState[idxSuivant] || defaultState();
+        const refuelNext = (psNext.stop && psNext.refuel) ? (psNext.refuelPct || 0) : 0;
+        evSuivant        = Math.min(100, evFinIci + refuelNext);
+
+        idxSuivant++;
     }
 
-    // Mettre à jour le champ EV actuelle visuellement
-    const evCurrentEl = document.getElementById('evCurrent');
-    evCurrentEl.value = evCurrentCalc.toFixed(1);
-        let indicator = document.getElementById('evExtrapolLabel');
-    if (!indicator) {
-        indicator = document.createElement('div');
-        indicator.id = 'evExtrapolLabel';
-        indicator.style.cssText =
-            'font-size:0.75em;margin-top:3px;font-style:italic;';
-        evCurrentEl.parentNode.appendChild(indicator);
-    }
-
-    const minsAgo = Math.round(elapsedCorrected / 60);
-    const evStr   = `${evCurrentCalc.toFixed(1)}%`;
-
-    if (minsAgo < 30) {
-        indicator.style.color   = '#00ff88';
-        indicator.textContent   = `📡 ${evStr} · Extrapolé (< 30 min)`;
-    } else if (minsAgo < 60) {
-        indicator.style.color   = '#ffaa00';
-        indicator.textContent   = `📡 ${evStr} · Extrapolé (${minsAgo} min)`;
-    } else {
-        indicator.style.color   = '#ff4444';
-        indicator.textContent   = `⚠️ ${evStr} · Extrapolé (${minsAgo} min) — mettre à jour !`;
-    }
-
-    // ── Calcul des stints futurs basé sur EV actuelle + temps restant ──
-    const rate2             = parseFloat(document.getElementById('refuelRate')?.value) || 5;
-    const toursParStintLive = evRefuel / evPerLapR;          // tours par stint complet
-    const dureeStintLive    = toursParStintLive * liveLapTime; // durée d'un stint complet (s)
-
-    // Nombre de tours restants dans le stint en cours (limité par l'EV actuelle)
-    // Le pilote roule jusqu'à épuiser l'EV actuelle (ou jusqu'à la fin de course)
-    const toursStintEnCours  = evCurrentCalc / evPerLapR;     // tours restants avant pit
-    const dureeStintEnCours  = toursStintEnCours * liveLapTime; // durée restante du stint actuel (s)
-
-    // Pit stop de fin du stint en cours (pitState de l'index correspondant)
-    const stintsAlreadyDone  = Math.max(0, Math.floor(lapsDone / toursParStintLive));
-    const pitCourant         = getPitDuration(stintsAlreadyDone);
-
-    // Temps restant APRÈS la fin du stint en cours et son pit
-    const tempsApresStintActuel = Math.max(0, liveRaceSec - dureeStintEnCours - pitCourant);
-
-    // Nombre de stints complets supplémentaires après le stint actuel
-    let stintsFutursApres = tempsApresStintActuel / dureeStintLive;
-
-    // Correction itérative pour les pits futurs
-    for (let iter = 0; iter < 3; iter++) {
-        const fullFuture        = Math.floor(stintsFutursApres);
-        let   totalPitFutureSec = 0;
-        for (let i = 0; i < fullFuture; i++) {
-            const psIdx = stintsAlreadyDone + 1 + i; // +1 car le stint actuel est déjà compté
-            const ps    = pitState[psIdx] || defaultState();
-            if (ps.stop) {
-                const stopSec = ps.stopDur || 0;
-                const refSec  = ps.refuel  ? (ps.refuelPct || 0) * rate2 : 0;
-                const tyrSec  = (ps.left ? TYRE_PENALTY : 0) + (ps.right ? TYRE_PENALTY : 0);
-                totalPitFutureSec += stopSec + refSec + tyrSec;
-            }
-        }
-        stintsFutursApres = Math.max(0, tempsApresStintActuel - totalPitFutureSec) / dureeStintLive;
-    }
-
-    // Stints restants total = stint en cours (fraction) + stints futurs
-    // Le stint en cours vaut 1 si on a encore de l'EV, sinon fraction
+    const toursRestantsTotal = toursStintCourant + toursFuturs;
+    // Stints restants en dixièmes : stint courant (fraction) + stints futurs entiers
+    const toursParStintRef2  = evRefuel / evPerLapR;   // tours max par stint complet
+    const fractionStintCourant = toursParStintRef2 > 0
+        ? toursStintCourant / toursParStintRef2
+        : 1;
+    const stintsRestants = fractionStintCourant + stintsFutursCount;
     
-	const fractionStintActuel = Math.min(1, dureeStintEnCours > 0
-        ? Math.min(dureeStintEnCours, liveRaceSec) / dureeStintLive
-        : 0);
-
-    const stintsLive        = fractionStintActuel + stintsFutursApres;
-    const toursRestantsLive = toursStintEnCours + stintsFutursApres * toursParStintLive;
-	
-    // Affichage résumé
     const result = document.getElementById('liveRecalcResult');
     result.style.display = 'block';
-    document.getElementById('liveTempsRestant').textContent   =
-        formatDuration(liveRaceSec);
-    document.getElementById('liveToursRestants').textContent  = toursRestantsLive.toFixed(1) + ' tours';
-	
-      // Prochain pit = tours restants avant d'épuiser l'EV actuelle
-    const prochainPitTours = evCurrentCalc / evPerLapR;
-    const prochainPitTemps = prochainPitTours * liveLapTime;
-    document.getElementById('liveToursParStint').textContent  =
-        prochainPitTours.toFixed(1) + ' tours (' + formatDuration(prochainPitTemps) + ')';
-	
-    document.getElementById('liveStintsRestants').textContent = stintsLive.toFixed(2);
-    document.getElementById('liveDureeStint').textContent     = formatDuration(dureeStintLive);
-
-	// Écart vs théorique
-		const noteEl = document.getElementById('liveRecalcNote');
-        const lapTimeTheo      = getLapTimeInSeconds();
-		const toursTheo        = lapTimeTheo > 0 ? totalRaceSec / lapTimeTheo : 0;
-		const toursTheoRestants = Math.max(0, toursTheo - lapsDone);
-		const toursDiff        = toursRestantsLive - toursTheoRestants;
-		const sign             = toursDiff >= 0 ? '+' : '';
-
-		// Calculer le temps au tour moyen
-		let avgLapStr = '';
-		const lapsDoneNote = parseFloat(document.getElementById('lapsDone').value) || 0;
-		if (lapsDoneNote > 0) {
-			const realStartNote = getRealStart();
-			const nowNote = new Date();
-			let tempsEcouleNote = nowNote.getHours() * 3600 + nowNote.getMinutes() * 60
-								+ nowNote.getSeconds() - realStartNote;
-			if (tempsEcouleNote < 0) tempsEcouleNote += 86400;
-			if (tempsEcouleNote > 0) {
-				const avg   = tempsEcouleNote / lapsDoneNote;
-				const aMin  = Math.floor(avg / 60);
-				const aSec  = Math.floor(avg % 60);
-				const aDixi = Math.round((avg % 1) * 10);
-				avgLapStr = ` | ⏱ Moy. : ${aMin}:${String(aSec).padStart(2,'0')}.${aDixi}`;
-			}
-		}
-
-    noteEl.textContent =
-        `Écart vs théorique : ${sign}${toursDiff.toFixed(1)} tours`
-    + ` | Tours totaux attendus : ${(lapsDone + toursRestantsLive).toFixed(1)}`
-    + avgLapStr;
-		
-    // ── Régénération table et timeline via calculate() avec overrides ──
-    // On ne touche JAMAIS aux champs HTML théoriques.
-    // realStart reste l'heure de début originale : ex. 9h + 3h = fin à 12h.
-		window._liveMode     = true;
-		window._liveNowSec   = nowSec;
-		window._liveLapsDone = lapsDone;
-
-    // On passe le realStart ORIGINAL pour que la timeline couvre toute la course
-    // Le passé sera grisé par buildTimeline (window._liveMode + window._liveNowSec)
-    // La durée totale = durée originale complète (passé + futur)
-    
-	    // ── Calcul de la conso cible pour économiser 1 pit stop ──
-    // Objectif : faire (stintsTotal - 1) stints au lieu de stintsTotal
-    // => chaque stint doit durer plus longtemps = consommer moins par tour
-    //
-    // On cherche evPerLapCible tel que :
-    //   toursParStintCible = evRefuel / evPerLapCible
-    //   (lapsDone + toursStintEnCours + (N-1) * toursParStintCible) couvre la course
-    //
-    // Formule simplifiée :
-    //   stintsRestantsCible = ceil(stintsLive) - 1
-    //   Si stintsRestantsCible <= 0 → pas de pit à économiser
-    //   toursParStintCible = toursRestantsLive / max(1, stintsRestantsCible)
-    //   evPerLapCible = evRefuel / toursParStintCible
+    document.getElementById('liveTempsRestant').textContent  = formatDuration(liveRaceSec);
+    document.getElementById('liveToursRestants').textContent = toursRestantsTotal.toFixed(1) + ' tours';
+    document.getElementById('liveToursParStint').textContent =
+        toursStintCourant.toFixed(1) + ' tours (' + formatDuration(dureeStintCourant) + ')';
+    document.getElementById('liveStintsRestants').textContent = stintsRestants.toFixed(1);
+    document.getElementById('liveDureeStint').textContent     = formatDuration(toursParStintRef * liveLapTime);
 
     const elConsoTarget       = document.getElementById('liveConsoTarget');
     const elConsoTargetDetail = document.getElementById('liveConsoTargetDetail');
+    const stintsCibleMoins1   = stintsRestants - 1;
 
-    const stintsRestantsCibles = Math.ceil(stintsLive) - 1;
-
-    if (stintsRestantsCibles <= 0 || toursRestantsLive <= 0) {
-        // Déjà au dernier stint ou fin de course
+    if (stintsCibleMoins1 <= 0 || toursRestantsTotal <= 0) {
         if (elConsoTarget)       elConsoTarget.textContent       = '—';
         if (elConsoTargetDetail) elConsoTargetDetail.textContent = 'Dernier stint en cours';
     } else {
-        // Tours par stint nécessaires pour tenir en stintsRestantsCibles stints
-        const toursParStintCible = toursRestantsLive / stintsRestantsCibles;
+        const toursParStintCible = toursRestantsTotal / stintsCibleMoins1;
+        const evPerLapCible      = evRefuel / toursParStintCible;
+        const economiePct        = evPerLapR - evPerLapCible;
+        const ratio              = Math.abs(economiePct) / evPerLapR;
 
-        // EV conso cible par tour
-        const evPerLapCible = evRefuel / toursParStintCible;
+        const message = ratio <= 0.02 ? '🟢 Lift & Coast'
+                      : ratio <= 0.04 ? '🟡 Lift & Coast possible'
+                      :                 '🔴 Pas de Lift & Coast';
 
-        // Économie par rapport à la conso actuelle
-        const economiePct = evPerLapR - evPerLapCible;
-        const sign        = economiePct >= 0 ? '-' : '+';
-        const absEco      = Math.abs(economiePct);
+        if (elConsoTarget) {
+            elConsoTarget.textContent = `${evPerLapCible.toFixed(2)}%/tour ${message}`;
+            elConsoTarget.style.color = ratio > 0.04 ? '#ff4444'
+                                      : ratio > 0.02 ? '#ffaa00'
+                                      : '#00ff88';
+        }
+    }
 
-		if (elConsoTarget) {
-			const ratio = absEco / evPerLapR;
-			// ratio ≤ 2%  → Lift & Coast facile (vert)
-			// ratio 2–4%  → Lift & Coast possible (orange)
-			// ratio > 4%  → Pas de Lift & Coast (rouge)
-			let message = '';
-			if (ratio <= 0.02) {
-				message = '🟢 Lift & Coast';
-			} else if (ratio <= 0.04) {
-				message = '🟡 Lift & Coast possible';
-			} else {
-				message = '🔴 Pas de Lift & Coast';
-			}
-			elConsoTarget.textContent = `${evPerLapCible.toFixed(2)}%/tour ${message}`;
-			elConsoTarget.style.color =
-				ratio > 0.04 ? '#ff4444' :
-				ratio > 0.02 ? '#ffaa00' :
-				'#00ff88';
-		}
-      
-		
-	}
-	
-		// ── Pousser l'état live vers Firebase ──
-		pushToFirebase(true);
-	
-		calculate({
-        lapTime:      liveLapTime,
-        evPerLap:     evPerLapR,
-        realStart:    realStart,          // ← heure de début originale
-        totalRaceSec: totalRaceSec        // ← durée totale originale
+    document.getElementById('liveRecalcNote').textContent =
+        `Ancrage : ${formatClock(nowSec)} · EV : ${evCurrent.toFixed(1)}% · `
+      + `Fin prévue : ${formatClock(raceEndSec)}`;
+
+    /* ── Déclencher le recalcul complet de la table et de la timeline ── */
+    window._liveMode = true;
+    pushToFirebase(true);
+
+    calculate({
+        lapTime:        liveLapTime,
+        evPerLap:       evPerLapR,
+        realStart:      realStart,
+        totalRaceSec:   totalRaceSec,
+        _liveNowSec:    nowSec,
+        _liveEvCurrent: evCurrent,
     });
+
     window._liveMode = false;
 }
 
@@ -2750,17 +3490,17 @@ function _doFirebasePush() {
 }            
 	/* ── Collecter toutes les valeurs du formulaire ── */
 	function collectFormData(includePitState = true) {
-		const ids = [
-			'realStartHours','realStartMinutes',
-			'gameStartHours','gameStartMinutes',
-			'timeMultiplier','raceHours','raceMinutes',
-			'lapMinutes','lapSeconds','lapMillis',
-			'evRemaining','evPerLap','evRefuelPerStint',
-			'refuelRate','driverCount',
-			'lapsDone','evCurrent','evPerLapReal',
-			'livelapMinutes','livelapSeconds','livelapMillis',
+        const ids = [
+            'realStartHours','realStartMinutes',
+            'gameStartHours','gameStartMinutes',
+            'timeMultiplier','raceHours','raceMinutes',
+            'lapMinutes','lapSeconds','lapMillis',
+            'evRemaining','evPerLap','evRefuelPerStint',
+            'refuelRate','driverCount',
+            'evCurrent','evPerLapReal',
+            'livelapMinutes','livelapSeconds','livelapMillis',
             'tyreBudget'
-		];
+        ];
 
 		const form = {};
 		ids.forEach(id => {
@@ -2786,12 +3526,9 @@ function _doFirebasePush() {
 		}
 		
 		// ── État live à synchroniser ──
-		form._liveModeActive = window._liveModeActive || false;
-		form._liveLapsDone   = window._liveLapsDone   || 0;
-		form._liveLastEvPct  = window._liveLastEvPct  || 0;
-		form._liveLastNowSec = window._liveLastNowSec || 0;
-		form._liveEvPerSecond= window._liveEvPerSecond|| 0;
-		
+        form._liveModeActive = window._liveModeActive || false;
+        form._liveEvAtAnchor = window._liveEvAtAnchor || 0;
+        form._liveNowSec     = window._liveNowSec     || 0;		
 
 		return form;
 	    }
@@ -2803,17 +3540,17 @@ function _doFirebasePush() {
             //   d'écraser pitState ou de renvoyer vers Firebase pendant l'application
             window._applyingRemote = true;
 
-            const ids = [
-                'realStartHours','realStartMinutes',
-                'gameStartHours','gameStartMinutes',
-                'timeMultiplier','raceHours','raceMinutes',
-                'lapMinutes','lapSeconds','lapMillis',
-                'evRemaining','evPerLap','evRefuelPerStint',
-                'refuelRate',
-                'lapsDone','evCurrent','evPerLapReal',
-                'livelapMinutes','livelapSeconds','livelapMillis',
-                'tyreBudget'  
-            ];
+                const ids = [
+                    'realStartHours','realStartMinutes',
+                    'gameStartHours','gameStartMinutes',
+                    'timeMultiplier','raceHours','raceMinutes',
+                    'lapMinutes','lapSeconds','lapMillis',
+                    'evRemaining','evPerLap','evRefuelPerStint',
+                    'refuelRate',
+                    'evCurrent','evPerLapReal',
+                    'livelapMinutes','livelapSeconds','livelapMillis',
+                    'tyreBudget'
+                ];
 
             ids.forEach(id => {
                 const el = document.getElementById(id);
@@ -2826,75 +3563,63 @@ function _doFirebasePush() {
                 ydEl.checked = data.realStartYesterday;
             }
 
-            // Nombre de pilotes
-            if (data.driverCount) {
-                const sel = document.getElementById('driverCount');
-                if (sel) {
-                    sel.value = data.driverCount;
-                    const n = parseInt(data.driverCount) || 1;
-                    const container = document.getElementById('driverInputsContainer');
-                    container.innerHTML = '';
-                    for (let i = 0; i < n; i++) {
-                        const row = document.createElement('div');
-                        row.className = 'driver-input-row';
-                        row.innerHTML = `
-                            <input type="color" id="driverColor_${i}"
-                                class="driver-color-swatch"
-                                value="${DRIVER_COLORS[i % DRIVER_COLORS.length]}"
-                                onchange="window._liveModeActive ? recalculateLive() : calculate()"
-                                title="Couleur du pilote ${i+1}">
-                            <input type="text" id="driverName_${i}"
-                                class="driver-name-input"
-                                placeholder="${DEFAULT_DRIVER_NAMES[i]}"
-                                value="${DEFAULT_DRIVER_NAMES[i]}"
-                                oninput="calculate()">
-                        `;
-                        container.appendChild(row);
-                    }
+        // Nombre de pilotes + noms/couleurs
+        if (data.driverCount) {
+            const sel = document.getElementById('driverCount');
+            const currentCount = sel ? parseInt(sel.value) : -1;
+            const newCount     = parseInt(data.driverCount);
+
+            if (sel && currentCount !== newCount) {
+                // Le nombre de pilotes a changé : reconstruction nécessaire
+                sel.value = data.driverCount;
+                renderDriverInputs(Array.isArray(data.drivers) ? data.drivers : undefined);
+            } else {
+                // Même nombre : on met à jour les valeurs SANS reconstruire le DOM
+                if (Array.isArray(data.drivers)) {
+                    data.drivers.forEach((d, i) => {
+                        const nameEl  = document.getElementById(`driverName_${i}`);
+                        const colorEl = document.getElementById(`driverColor_${i}`);
+                        if (nameEl  && d.name  !== undefined
+                            && document.activeElement !== nameEl)  nameEl.value  = d.name;
+                        if (colorEl && d.color !== undefined)      colorEl.value = d.color;
+                    });
                 }
             }
+        } else if (Array.isArray(data.drivers)) {
+            data.drivers.forEach((d, i) => {
+                const nameEl  = document.getElementById(`driverName_${i}`);
+                const colorEl = document.getElementById(`driverColor_${i}`);
+                if (nameEl  && d.name  !== undefined
+                    && document.activeElement !== nameEl)  nameEl.value  = d.name;
+                if (colorEl && d.color !== undefined)      colorEl.value = d.color;
+            });
+        }
 
-            // Noms et couleurs des pilotes
-            if (Array.isArray(data.drivers)) {
-                data.drivers.forEach((d, i) => {
-                    const nameEl  = document.getElementById(`driverName_${i}`);
-                    const colorEl = document.getElementById(`driverColor_${i}`);
-                    if (nameEl  && d.name  !== undefined) nameEl.value  = d.name;
-                    if (colorEl && d.color !== undefined) colorEl.value = d.color;
-                });
-            }
-
-            // ← pitState appliqué ICI, AVANT calculate(), et protégé par _applyingRemote
+            // pitState — ne pas écraser les stints dont un champ est en cours d'édition locale
             if (data.pitState) {
-                if (window._liveModeActive) {
-                    const stintsAlreadyDone = Math.max(0,
-                        Math.floor((window._liveLapsDone || 0) /
-                        (parseFloat(document.getElementById('evRefuelPerStint').value) /
-                        parseFloat(document.getElementById('evPerLapReal').value)))
-                    );
-                    Object.keys(data.pitState).forEach(k => {
-                        if (parseInt(k) >= stintsAlreadyDone) {
-                            pitState[k] = data.pitState[k];
-                        }
-                    });
-                } else {
-                    // Remplacement complet + timestamps pour résolution de conflits
-                    pitState = {};
-                    Object.keys(data.pitState).forEach(k => {
-                        pitState[k] = data.pitState[k];
-                    });
-                }
-            }
+                // Collecter les indices de stints actuellement édités
+                const editingIndices = new Set();
+                document.querySelectorAll('[data-local-editing="true"]').forEach(el => {
+                    const tr = el.closest('tr[data-stint-idx]');
+                    if (tr) editingIndices.add(parseInt(tr.dataset.stintIdx));
+                });
 
+                Object.keys(data.pitState).forEach(k => {
+                    if (!editingIndices.has(parseInt(k))) {
+                        pitState[k] = data.pitState[k];
+                    }
+                    // Si l'indice est en cours d'édition, on garde le pitState local
+                });
+                // Ajouter les clés absentes du remote mais présentes localement (édition en cours)
+                // → rien à faire, elles sont déjà dans pitState
+            }
+        
             // Restauration état live
             if (data._liveModeActive !== undefined) {
-                window._liveModeActive  = data._liveModeActive;
-                window._liveLapsDone    = data._liveLapsDone    || 0;
-                window._liveLastEvPct   = data._liveLastEvPct   || 0;
-                window._liveLastNowSec  = data._liveLastNowSec  || 0;
-                window._liveEvPerSecond = data._liveEvPerSecond || 0;
+                window._liveModeActive = data._liveModeActive;
+                window._liveEvAtAnchor = data._liveEvAtAnchor || 0;
+                window._liveNowSec     = data._liveNowSec     || 0;
             }
-
             // ← Désactiver le verrou AVANT le recalcul
             //   (calculate() doit pouvoir lire pitState normalement,
             //    mais savePitState() ne doit toujours pas écraser — on le laisse actif
@@ -2907,13 +3632,14 @@ function _doFirebasePush() {
                 {
                     recalculateLive();
                     window._applyingRemote = false;   // ← libération immédiate après recalcul
-                }, 50);
+                }, 800);
             } else 
                 {
                 calculate();
                 window._applyingRemote = false;       // ← libération synchrone, pas de délai
                 }        
         }		
+
 		/* ── Indicateur de statut ── */
 
         function setSyncStatus(text, color) {
@@ -2934,63 +3660,101 @@ function _doFirebasePush() {
 
 		/* ── Intercepter tous les changements pour pousser vers Firebase ── */
         function hookSyncToInputs() {
-            document.addEventListener('change', e => {
+        document.addEventListener('change', e => {
                 if (_isSyncing || window._applyingRemote) return;
                 const t = e.target;
 
                 const isPit = t.matches(
-                    '.stop-check, .refuel-check, .tyre-check, ' +
+                    '.stop-check, .tyre-check, ' +
                     '.stop-dur-input, .refuel-pct-input, .driver-select, #refuelRate'
                 ) || !!t.closest(
-                    '.stop-check, .refuel-check, .tyre-check, ' +
+                    '.stop-check, .tyre-check, ' +
                     '.stop-dur-input, .refuel-pct-input, .driver-select'
                 );
 
-                // Pour les éléments pit : commit immédiat dans pitState
-                // avant que calculate() ne reconstruise le DOM
+                // Commit immédiat dans pitState AVANT le recalcul
                 if (isPit) {
                     const tr = t.closest('tr[data-stint-idx]');
                     if (tr && tr.dataset.past !== 'true') {
                         const idx = parseInt(tr.dataset.stintIdx);
                         if (!pitState[idx]) pitState[idx] = defaultState();
 
-                        if (t.classList.contains('stop-check'))   pitState[idx].stop      = t.checked;
-                        if (t.classList.contains('refuel-check'))  pitState[idx].refuel    = t.checked;
+                        if (t.classList.contains('stop-check'))      pitState[idx].stop      = t.checked;
                         if (t.classList.contains('tyre-check')) {
-                            if (t.dataset.side === 'left')         pitState[idx].left      = t.checked;
-                            else                                   pitState[idx].right     = t.checked;
+                            if (t.dataset.side === 'left')            pitState[idx].left      = t.checked;
+                            else                                      pitState[idx].right     = t.checked;
                         }
-                        if (t.classList.contains('stop-dur-input'))  pitState[idx].stopDur   = parseFloat(t.value) || 0;
+                        if (t.classList.contains('stop-dur-input'))   pitState[idx].stopDur   = parseFloat(t.value) || 0;
                         if (t.classList.contains('refuel-pct-input')) pitState[idx].refuelPct = parseFloat(t.value) || 0;
-                        if (t.classList.contains('driver-select'))   pitState[idx].driver    = parseInt(t.value);
+                        if (t.classList.contains('driver-select'))    pitState[idx].driver    = parseInt(t.value);
 
                         pitState[idx]._userSet = true;
                     }
+
+                    // Déclencher le recalcul APRÈS le commit dans pitState
+                    window._liveModeActive ? recalculateLive() : calculate();
                 }
 
                 pushToFirebase(!!isPit);
             });
+
+            /* Debounce pour les inputs numériques pit (refuel, durée stand) :
+               on commit immédiatement dans pitState (pas de perte de valeur),
+               mais on diffère le recalcul DOM de 800ms pour ne pas
+               reconstruire le tableau à chaque frappe. */
+            let _pitInputDebounce = null;
 
             document.addEventListener('input', e => {
                 if (_isSyncing || window._applyingRemote) return;
                 const t = e.target;
-                const isPit = t.matches('.stop-dur-input, .refuel-pct-input, #refuelRate')
-                    || !!t.closest('.stop-dur-input, .refuel-pct-input');
 
-                // Commit immédiat pour les inputs numériques pit
-                if (isPit && t.closest) {
+                const isPitNumeric = t.matches('.stop-dur-input, .refuel-pct-input')
+                    || !!t.closest('.stop-dur-input, .refuel-pct-input');
+                const isRefuelRate = t.matches('#refuelRate');
+
+                if (isPitNumeric && t.closest) {
                     const tr = t.closest('tr[data-stint-idx]');
                     if (tr && tr.dataset.past !== 'true') {
                         const idx = parseInt(tr.dataset.stintIdx);
                         if (!pitState[idx]) pitState[idx] = defaultState();
-                        if (t.classList.contains('stop-dur-input'))   pitState[idx].stopDur   = parseFloat(t.value) || 0;
-                        if (t.classList.contains('refuel-pct-input')) pitState[idx].refuelPct = parseFloat(t.value) || 0;
+
+                        // Commit immédiat dans pitState (valeur conservée)
+                        if (t.classList.contains('stop-dur-input'))
+                            pitState[idx].stopDur   = parseFloat(t.value) || 0;
+                        if (t.classList.contains('refuel-pct-input'))
+                            pitState[idx].refuelPct = parseFloat(t.value) || 0;
                         pitState[idx]._userSet = true;
+
+                        // Bloquer la réception Firebase pendant la saisie :
+                        // on marque le champ comme "en cours d'édition locale"
+                        t.dataset.localEditing = 'true';
+
+                        // Recalcul ET push différés — délai allongé à 1200ms
+                        // pour laisser l'utilisateur finir de taper
+                        clearTimeout(_pitInputDebounce);
+                        _pitInputDebounce = setTimeout(() => {
+                            delete t.dataset.localEditing;
+                            window._liveModeActive ? recalculateLive() : calculate();
+                            pushToFirebase(true);
+                        }, 1200);
+
+                        return;
                     }
                 }
 
-                pushToFirebase(!!isPit);
+                if (isRefuelRate) {
+                    clearTimeout(_pitInputDebounce);
+                    _pitInputDebounce = setTimeout(() => {
+                        window._liveModeActive ? recalculateLive() : calculate();
+                        pushToFirebase(true);
+                    }, 1200);
+                    return;
+                }
+
+                // Tous les autres inputs (non-pit) : push normal
+                pushToFirebase(false);
             });
+
         }            
         /* ── Démarrage ── */
 		
@@ -3058,20 +3822,15 @@ function resetTimelineZoom() {
 
 		function resetLiveMode() {
 			// Réinitialiser tous les flags live
-				window._liveModeActive  = false;
-				window._liveMode        = false;
-				window._liveNowSec      = 0;
-				window._liveLapsDone    = 0;
-				window._liveLastNowSec  = 0;
-				window._liveLastEvPct   = 0;
-				window._liveEvPerSecond = 0;
-
+            window._liveModeActive = false;
+            window._liveMode       = false;
+            window._liveNowSec     = 0;
+            window._liveEvAtAnchor = 0;
 				
 			// Remettre les champs live à zéro
 			
-			document.getElementById('lapsDone').value      = '0';
-			document.getElementById('evCurrent').value     = '100';
-			document.getElementById('evPerLapReal').value  = document.getElementById('evPerLap').value;
+            document.getElementById('evCurrent').value     = '100';		
+        	document.getElementById('evPerLapReal').value  = document.getElementById('evPerLap').value;
 			document.getElementById('livelapMinutes').value = document.getElementById('lapMinutes').value;
 			document.getElementById('livelapSeconds').value = document.getElementById('lapSeconds').value;
 			document.getElementById('livelapMillis').value  = document.getElementById('lapMillis').value;
