@@ -1126,6 +1126,12 @@ body.live-mode #startTyresBlock {
         <input id="sessionPasswordInput" placeholder="🔒 Mot de passe" type="password" style="padding:4px 8px;border-radius:6px;border:1px solid #ffaa00;
                    background:#111;color:#fff;font-size:0.9em;width:140px;">
 
+        <button onclick="copySessionId()" title="Copier l'ID de session (à donner à lmu_firebase_connector.py)"
+            style="padding:4px 10px;background:rgba(0,170,255,0.15);color:#00aaff;border:1px solid #00aaff;
+                   border-radius:6px;font-size:0.85em;cursor:pointer;">
+            📋 Copier l'ID session
+        </button>
+
         <div style="margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:1px;">
             <span id="syncStatus" style="font-size:0.8em;color:#888;">
                 ⬤ Non connecté
