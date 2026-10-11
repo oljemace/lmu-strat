@@ -1131,6 +1131,10 @@ body.live-mode #startTyresBlock {
                    border-radius:6px;font-size:0.85em;cursor:pointer;">
             📋 Copier l'ID session
         </button>
+        <span id="sessionIdDisplay" title="ID de session — sélectionnez le texte puis Ctrl+C pour le copier manuellement"
+            style="display:none;padding:4px 8px;background:rgba(255,255,255,0.08);border:1px dashed rgba(0,170,255,0.5);
+                   border-radius:6px;color:#88ccff;font-family:monospace;font-size:0.82em;
+                   user-select:all;cursor:text;"></span>
 
         <div style="margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:1px;">
             <span id="syncStatus" style="font-size:0.8em;color:#888;">
@@ -6450,6 +6454,10 @@ function renderSessionUI() {
                    border-radius:6px;font-size:0.85em;cursor:pointer;">
             📋 Copier l'ID session
         </button>
+        <span id="sessionIdDisplay" title="ID de session — sélectionnez le texte puis Ctrl+C pour le copier manuellement"
+            style="display:none;padding:4px 8px;background:rgba(255,255,255,0.08);border:1px dashed rgba(0,170,255,0.5);
+                   border-radius:6px;color:#88ccff;font-family:monospace;font-size:0.82em;
+                   user-select:all;cursor:text;"></span>
         <div style="margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:1px;">
             <span id="syncStatus"
                 style="font-size:0.8em;color:#888;">
@@ -6571,6 +6579,7 @@ function createSession() {
 			if (_unsubscribeTelemetry) { _unsubscribeTelemetry(); _unsubscribeTelemetry = null; }
 
 			_sessionId = id;
+			updateSessionIdDisplay();
 			setSyncStatus('🟡 Vérification…', '#ffaa00');
 
 			const sessionRef = window._firebaseRef(window._firebaseDb, `sessions/${id}`);
@@ -6626,22 +6635,41 @@ function createSession() {
 				setSyncStatus('🟢 Connecté', '#00ff88');
 
 			}, { onlyOnce: true });
+		    }
+
+            /* ── Affiche en permanence l'ID de session en texte sélectionnable :
+               solution la plus fiable, indépendante de l'API Clipboard (souvent
+               bloquée en file://) et des boîtes de dialogue (parfois bloquées par
+               un navigateur/antivirus). L'utilisateur peut toujours faire un
+               triple-clic + Ctrl+C dessus. ── */
+            function updateSessionIdDisplay() {
+                const el = document.getElementById('sessionIdDisplay');
+                if (!el) return;
+                if (_sessionId) {
+                    el.textContent = _sessionId;
+                    el.style.display = 'inline-block';
+                } else {
+                    el.style.display = 'none';
+                }
+            }
 
             /* ── Copier l'ID de session (pour lmu_firebase_connector.py) ── */
             function copySessionId() {
                 if (!_sessionId) {
-                    alert("Aucune session active — créez ou rejoignez une session d'abord.");
+                    alert("Aucune session active — créez ou rejoignez une session d'abord "
+                        + "(bouton \"+ Nouvelle\" ou liste déroulante \"Choisir une session\").");
                     return;
                 }
-                const done = () => setSyncStatus('📋 ID copié : ' + _sessionId, '#00aaff');
+                // Copie automatique best-effort : échoue silencieusement sur un fichier
+                // ouvert en file:// (pas un "contexte sécurisé" pour l'API Clipboard), donc
+                // on ne compte jamais dessus seule — la boîte de dialogue ci-dessous est
+                // TOUJOURS affichée, avec la valeur déjà sélectionnée (Ctrl+C pour copier).
                 if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(_sessionId).then(done).catch(() => prompt('ID de session :', _sessionId));
-                } else {
-                    prompt('ID de session :', _sessionId);
-                    done();
+                    navigator.clipboard.writeText(_sessionId).catch(() => {});
                 }
+                window.prompt("ID de session — déjà sélectionné, faites Ctrl+C pour copier :", _sessionId);
+                setSyncStatus('📋 ID : ' + _sessionId, '#00aaff');
             }
-		    }
 
             function pushToFirebase(includePitState = false) {
                 if (!_sessionId || !window._firebaseDb || window._applyingRemote) return;
@@ -9869,9 +9897,15 @@ function _applyLiveStatsToForm(data) {
     const evInput = document.getElementById('evRemaining');
     if (evInput && data.veCurrentPct != null) evInput.value = data.veCurrentPct.toFixed(1);
 
-    // Conso EV/tour — moyenne des 10 derniers tours
+    // Conso EV/tour — moyenne des 10 derniers tours. Reste à 0 tant que la voiture
+    // n'a pas roulé de vrai tour (aux stands/garage, ou connecteur tout juste
+    // (re)lancé) : dans ce cas on NE L'ÉCRASE PAS — on garde la dernière valeur
+    // connue plutôt que d'envoyer 0 à calculate(), qui refuserait avec une alerte
+    // "Conso EV/tour invalide" et bloquerait tout recalcul.
     const evPerLapInput = document.getElementById('evPerLap');
-    if (evPerLapInput && data.avgVePerLapLast10 != null) evPerLapInput.value = data.avgVePerLapLast10.toFixed(2);
+    if (evPerLapInput && data.avgVePerLapLast10 != null && data.avgVePerLapLast10 > 0) {
+        evPerLapInput.value = data.avgVePerLapLast10.toFixed(2);
+    }
 
     // Temps au tour réel — moyenne des 10 derniers tours
     if (data.avgLapTimeLast10 != null) {
