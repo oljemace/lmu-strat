@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LMU Stratégie – FAQ</title>
+<style>
+  :root { --bg:#0f1424; --card:#1a2140; --text:#e8ecf7; --muted:#9aa4c0; --accent:#00ff88; --border:#2a3560; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:16px/1.55 "Segoe UI", system-ui, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 28px 16px 60px; }
+  h1 { color: var(--accent); margin: 0 0 4px; font-size: 1.9rem; }
+  .sub { color: var(--muted); margin: 0 0 24px; }
+  .cta { display:flex; flex-wrap:wrap; gap:12px; margin: 0 0 28px; }
+  .btn { display:inline-block; padding: 12px 20px; border-radius: 8px; font-weight: 700; text-decoration:none;
+         background: var(--accent); color:#04130b; }
+  .btn.alt { background: var(--card); color: var(--text); border:1px solid var(--border); }
+  details { background: var(--card); border:1px solid var(--border); border-radius: 10px; margin: 0 0 10px; }
+  summary { cursor:pointer; padding: 14px 16px; font-weight: 600; }
+  details[open] summary { color: var(--accent); }
+  details > div { padding: 0 16px 14px; color: var(--text); }
+  details p { margin: 0 0 10px; }
+  ol, ul { margin: 0 0 10px; padding-left: 22px; }
+  code { background:#0b1020; padding: 1px 6px; border-radius: 4px; }
+  .note { color: var(--muted); font-size: .9rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>LMU Stratégie</h1>
+  <p class="sub">La calculette de stratégie d'endurance de l'équipe, avec la télémétrie en direct de notre pilote.</p>
+
+  <div class="cta">
+    <a class="btn" href="index.html">Ouvrir la calculette</a>
+    <a class="btn alt" href="https://github.com/oljemace/lmu-strat/releases/latest/download/LMU-Strategie-Connecteur.exe">Télécharger le programme pilote (Windows)</a>
+  </div>
+
+  <details open>
+    <summary>C'est quoi, en deux mots ?</summary>
+    <div>
+      <p>Un site pour préparer et suivre la stratégie de course (relais, énergie, pneus, arrêts) et un petit programme
+      que le pilote lance sur son PC. Le programme envoie à l'équipe ce qui se passe en piste : tout le monde le voit en direct sur le site.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Qui doit installer le programme ?</summary>
+    <div>
+      <p><b>Seulement le pilote qui roule.</b> Les ingénieurs et les pilotes qui ne sont pas en piste n'installent rien :
+      ils ouvrent le site dans leur navigateur.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Comment j'accède au site ?</summary>
+    <div>
+      <ol>
+        <li>Demandez à un admin de l'équipe un <b>lien d'invitation</b> (il précise votre rôle : admin, pilote ou lecteur).</li>
+        <li>Ouvrez le lien, créez votre compte (e-mail + mot de passe) et vous arrivez dans l'équipe.</li>
+        <li>Ouvrez ensuite la <b>session</b> de la course dans la liste.</li>
+      </ol>
+      <p class="note">Seuls les membres de l'équipe voient les sessions et la télémétrie.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Pilote : comment installer et lancer le programme ?</summary>
+    <div>
+      <ol>
+        <li>Téléchargez <code>LMU-Strategie-Connecteur.exe</code> avec le bouton ci-dessus. Il n'y a <b>rien à installer</b> : double-clic.</li>
+        <li>Connectez-vous avec le même e-mail et mot de passe que sur le site.</li>
+        <li>Choisissez la <b>session</b> (ou créez-la avec <b>« + Nouvelle session »</b>), vérifiez votre nom, puis <b>« Démarrer l'envoi »</b>.</li>
+        <li>Laissez la fenêtre ouverte (vous pouvez la réduire) et lancez le jeu. L'envoi démarre dès que vous roulez.</li>
+      </ol>
+      <p>Au changement de pilote : le pilote qui sort clique sur <b>« Arrêter »</b>, le suivant lance le programme et choisit la <b>même session</b>.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Windows affiche « Windows a protégé votre ordinateur ». C'est normal ?</summary>
+    <div>
+      <p>Oui : le programme n'est pas signé numériquement, donc Windows se méfie de tout nouveau fichier. Cliquez sur
+      <b>« Informations complémentaires »</b> puis <b>« Exécuter quand même »</b>. Votre antivirus peut aussi demander confirmation la première fois.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Que fait le programme sur mon PC ?</summary>
+    <div>
+      <ul>
+        <li>Il <b>lit</b> les données du jeu (en lecture seule, il ne modifie rien dans LMU).</li>
+        <li>Il les envoie à l'équipe, pas ailleurs.</li>
+        <li>Votre mot de passe n'est <b>jamais enregistré</b> ; vous restez simplement connecté aux lancements suivants.
+        « Changer de compte » vous déconnecte.</li>
+      </ul>
+    </div>
+  </details>
+
+  <details>
+    <summary>Ingénieur / pilote hors piste : comment voir le pilote en direct ?</summary>
+    <div>
+      <ol>
+        <li>Ouvrez la session de l'équipe sur le site.</li>
+        <li>Allez dans <b>Mode Live</b> et choisissez la source <b>« 🌐 À distance — pilote au volant »</b>.</li>
+        <li>Vous voyez la carte, le classement, les tours et la stratégie recalculée. En cas de relais, le site suit tout seul le pilote qui roule.</li>
+      </ol>
+      <p class="note">Les valeurs arrivent environ 2 fois par seconde. Le Mode Live à distance est en <b>lecture seule</b> :
+      regarder ne modifie rien dans la session partagée.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Le pilote apparaît « hors ligne », ou le Mode Live reste vide</summary>
+    <div>
+      <ul>
+        <li>Le pilote a-t-il bien <b>lancé le programme</b>, choisi <b>la même session</b> que vous, et il est <b>en piste</b> (pas seulement dans les menus) ?</li>
+        <li>« hors ligne · 20 s » veut dire : plus aucune donnée depuis 20 secondes. Le pilote peut regarder la fenêtre du programme, qui indique l'état du jeu et de l'envoi (bouton « Journal » pour le détail).</li>
+        <li>Quelques secondes de retard à l'arrivée sur la piste, c'est normal.</li>
+      </ul>
+    </div>
+  </details>
+
+  <details>
+    <summary>J'ai oublié mon mot de passe, ou je n'ai pas le bon rôle</summary>
+    <div>
+      <p>Mot de passe : utilisez « mot de passe oublié » sur la page de connexion du site. Rôle (lecteur → pilote, par exemple) :
+      demandez à un admin de l'équipe.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Qui peut créer une session ?</summary>
+    <div>
+      <p>Les <b>admins</b> et les <b>pilotes</b>, depuis le site (« + Nouvelle ») ou depuis la fenêtre du programme. Seuls les admins peuvent renommer ou supprimer une session.</p>
+    </div>
+  </details>
+</main>
+</body>
+</html>
