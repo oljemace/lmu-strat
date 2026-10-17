@@ -952,6 +952,12 @@
         <!-- ── Connexion ── -->
         <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:16px;">
             <span id="liveMapStatusDot" style="width:10px;height:10px;border-radius:50%;background:#666;display:inline-block;"></span>
+            <label style="color:#ffaa66;font-size:0.85em;">Source :</label>
+            <select id="liveSourceSelect" onchange="onLiveSourceChange()" title="Mon PC : le programme tourne sur cet ordinateur. À distance : données diffusées par le pilote via l'équipe."
+                style="padding:6px;border:2px solid rgba(255,136,0,0.4);border-radius:6px;background:#1e2646;color:#fff;max-width:260px;">
+                <option value="local">💻 Mon PC (programme lancé ici)</option>
+                <option value="auto">🌐 À distance — pilote au volant</option>
+            </select>
             <label style="color:#ffaa66;font-size:0.85em;">Port local :</label>
             <input type="number" id="liveMapPort" value="8777" min="1" max="65535" style="width:80px;padding:6px;border:2px solid rgba(255,136,0,0.4);border-radius:6px;background:rgba(255,255,255,0.1);color:#fff;">
             <button id="liveMapToggleBtn" onclick="toggleLiveMap()" style="padding:8px 16px;background:rgba(0,255,136,0.2);border:1px solid #00ff88;border-radius:8px;color:#00ff88;font-weight:bold;cursor:pointer;">
@@ -1903,14 +1909,15 @@
 <script src="js/drivers.js?v=20261013d"></script>
 <script src="js/live-mode.js?v=20261013d"></script>
 <script src="js/firebase-sync.js?v=20261017a"></script>
-<script src="js/team-telemetry.js?v=20261015b"></script>
+<script src="js/team-telemetry.js?v=20261018c"></script>
+<script src="js/remote-live.js?v=20261018b"></script>
 <script src="js/timeline-zoom.js?v=20261013d"></script>
 <script src="js/tyres-wear.js?v=20261013d"></script>
 <script src="js/ui-tabs.js?v=20261013d"></script>
 <script src="js/circuits-ui.js?v=20261013d"></script>
 <script src="js/telemetry-import.js?v=20261013d"></script>
 <script src="js/circuits-db.js?v=20261015b"></script>
-<script src="js/live-telemetry.js?v=20261013d"></script>
+<script src="js/live-telemetry.js?v=20261018b"></script>
 
 
 

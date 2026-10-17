@@ -56,15 +56,20 @@ function _liveMapStart() {
     window._liveStats.inFlight = false;
     const btn = document.getElementById('liveMapToggleBtn');
     if (btn) { btn.textContent = '⏸️ Déconnecter'; btn.style.background = 'rgba(255,68,102,0.2)'; btn.style.borderColor = '#ff4466'; btn.style.color = '#ff4466'; }
+    // Source « à distance » : on lit Firebase (publié par le programme du pilote) au lieu du serveur local.
+    const remote = typeof liveSourceIsRemote === 'function' && liveSourceIsRemote();
+    if (remote) remoteLiveStart();
     _liveMapPollOnce();
     _liveStatsPollOnce();
     window._liveMap.pollTimer = setInterval(_liveMapPollOnce, 500);
     // Télémétrie détaillée (pneus/freins/pédales/vitesse…) rafraîchie à 50Hz (20ms),
     // alignée sur la fréquence de lecture par défaut du collecteur (--poll-hz 50).
-    window._liveStats.pollTimer = setInterval(_liveStatsPollOnce, 20);
+    // À distance les données n'arrivent que 2 fois par seconde : inutile d'interroger plus vite.
+    window._liveStats.pollTimer = setInterval(_liveStatsPollOnce, remote ? 250 : 20);
 }
 
 function _liveMapStop() {
+    if (typeof remoteLiveStop === 'function') remoteLiveStop();
     window._liveMap.active = false;
     if (window._liveMap.pollTimer) clearInterval(window._liveMap.pollTimer);
     window._liveMap.pollTimer = null;
@@ -92,6 +97,15 @@ async function _liveMapPollOnce() {
     const dot = document.getElementById('liveMapStatusDot');
     const txt = document.getElementById('liveMapStatusText');
     try {
+        if (window._liveRemote && window._liveRemote.active) {
+            const rdata = remoteMapData();
+            const st = remoteStatusText();
+            if (dot) dot.style.background = st.color;
+            if (txt) txt.textContent = st.text;
+            if (rdata.connected) { _liveMapAccumulateTrail(rdata); _liveMapDraw(rdata); }
+            else _liveMapDraw({connected: false});
+            return;
+        }
         const resp = await fetch(window._liveMap.url, {cache: 'no-store'});
         if (!resp.ok) throw new Error('HTTP ' + resp.status);
         const data = await resp.json();
@@ -106,7 +120,7 @@ async function _liveMapPollOnce() {
         _liveMapDraw(data);
     } catch (e) {
         if (dot) dot.style.background = '#ff4466';
-        if (txt) txt.textContent = '❌ Serveur local introuvable sur ce port. Vérifiez que lmu_live_map_server.py tourne bien sur votre PC.';
+        if (txt) txt.textContent = '❌ Serveur local introuvable sur ce port. Lancez le connecteur LMU Stratégie sur le PC du jeu (ou lmu_telemetry_logger.py) et vérifiez le port.';
         window._liveMap.lastError = e;
     }
 }
@@ -281,9 +295,18 @@ async function _liveStatsPollOnce() {
     if (window._liveStats.inFlight) return;
     window._liveStats.inFlight = true;
     try {
-        const resp = await fetch(window._liveStats.url, {cache: 'no-store'});
-        if (!resp.ok) throw new Error('HTTP ' + resp.status);
-        const data = await resp.json();
+        const remote = !!(window._liveRemote && window._liveRemote.active);
+        let data;
+        if (remote) {
+            data = remoteStatsData();
+            // Donnée identique à la précédente (le pilote publie 2 fois/s) : rien à retraiter.
+            if (data.connected && data._ver === window._liveStats.lastRemoteVer) return;
+            window._liveStats.lastRemoteVer = data._ver;
+        } else {
+            const resp = await fetch(window._liveStats.url, {cache: 'no-store'});
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+            data = await resp.json();
+        }
         if (!data.connected) return; // en attente du jeu — rien à mettre à jour pour l'instant
 
         window._liveTrackName   = data.trackName   || window._liveTrackName   || null;
@@ -291,7 +314,7 @@ async function _liveStatsPollOnce() {
 
         _updateLiveTelemetryExtras(data);
         window._liveStats.tickCount = (window._liveStats.tickCount || 0) + 1;
-        const isHeavyTick = window._liveStats.tickCount % _LIVE_HEAVY_UPDATE_EVERY_N_TICKS === 0;
+        const isHeavyTick = remote || window._liveStats.tickCount % _LIVE_HEAVY_UPDATE_EVERY_N_TICKS === 0;
         if (!isHeavyTick) return;
 
         const recentLaps = Array.isArray(data.recentLaps) ? data.recentLaps : [];
