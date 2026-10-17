@@ -75,6 +75,12 @@ function renderSessionUI() {
         <input data-requires-write id="sessionNameInput" placeholder="Nom de la session"
             style="padding:4px 8px;border-radius:6px;border:1px solid #555;
                    background:#111;color:#fff;font-size:0.9em;width:140px;">
+        <button data-requires-admin id="renameSessionBtn" onclick="renameSession()" title="Renommer la session sélectionnée"
+            style="display:none;padding:4px 10px;background:transparent;color:#00ff88;border:1px solid #00ff88;
+                   border-radius:6px;font-size:0.85em;cursor:pointer;">✏️ Renommer</button>
+        <button data-requires-admin id="deleteSessionBtn" onclick="deleteSession()" title="Supprimer la session sélectionnée"
+            style="display:none;padding:4px 10px;background:transparent;color:#ff6b6b;border:1px solid #ff6b6b;
+                   border-radius:6px;font-size:0.85em;cursor:pointer;">🗑️ Supprimer</button>
         <div style="margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:1px;">
             <span id="syncStatus"
                 style="font-size:0.8em;color:#888;">
@@ -175,6 +181,77 @@ function createSession() {
     });
 }
 
+/* ── Renommer / supprimer la session sélectionnée (admin d'équipe uniquement) ──
+   L'interface masque ces boutons aux autres rôles ; c'est surtout une commodité :
+   les règles Firebase (sessions/$sessionId .write) refusent de toute façon l'écriture
+   à un non-admin. */
+function _selectedSession() {
+    const sel = document.getElementById('sessionSelect');
+    if (!sel || !sel.value) return null;
+    const opt = sel.options[sel.selectedIndex];
+    return { id: sel.value, name: opt ? opt.textContent : sel.value };
+}
+
+function renameSession() {
+    if (!window._firebaseDb) { alert("Firebase non connecté — réessayez dans un instant."); return; }
+    if (window._teamRole !== 'admin') { alert("Seul un admin de l'équipe peut renommer une session."); return; }
+    const cur = _selectedSession();
+    if (!cur) { alert("Choisissez d'abord une session dans la liste."); return; }
+
+    const input = prompt('Nouveau nom de la session :', cur.name);
+    if (input === null) return;                       // annulé
+    const name = input.trim();
+    if (!name) { alert('Le nom ne peut pas être vide.'); return; }
+    if (name.length > 80) { alert('Nom trop long (80 caractères maximum).'); return; }
+    if (name === cur.name) return;
+
+    const nameRef = window._firebaseRef(window._firebaseDb, teamPath(`sessions/${cur.id}/name`));
+    setSyncStatus('🔄 Renommage…', '#ffaa00');
+    window._firebaseSet(nameRef, name)
+        .then(() => setSyncStatus('🟢 Session renommée', '#00ff88'))
+        .catch(err => {
+            console.error('Erreur renommage session:', err);
+            setSyncStatus('🔴 Erreur renommage', '#ff4444');
+            alert('Renommage refusé : ' + err.message);
+        });
+}
+
+function deleteSession() {
+    if (!window._firebaseDb) { alert("Firebase non connecté — réessayez dans un instant."); return; }
+    if (window._teamRole !== 'admin') { alert("Seul un admin de l'équipe peut supprimer une session."); return; }
+    const cur = _selectedSession();
+    if (!cur) { alert("Choisissez d'abord une session dans la liste."); return; }
+
+    if (!confirm(`Supprimer définitivement la session « ${cur.name} » ?\n\n`
+        + `Toutes ses données (stratégie, pneus, télémétrie de l'équipe) seront perdues pour toute l'équipe. `
+        + `Cette action est irréversible.`)) return;
+
+    // Si c'est la session ouverte : couper l'écoute et l'envoi AVANT la suppression,
+    // sinon un envoi tardif recréerait une session fantôme.
+    if (cur.id === _sessionId) {
+        if (_unsubscribe) { _unsubscribe(); _unsubscribe = null; }
+        if (typeof stopTeamTelemetryWatch === 'function') stopTeamTelemetryWatch();
+        clearTimeout(_syncTimeout);
+        _dirtyFields.clear(); _dirtyPitState = false; _dirtyTyreWear = false; _dirtyDrivers = false;
+        _pendingPushAfterLock = false;
+        _sessionId = null;
+    }
+
+    const ref = window._firebaseRef(window._firebaseDb, teamPath(`sessions/${cur.id}`));
+    setSyncStatus('🔄 Suppression…', '#ffaa00');
+    window._firebaseRemove(ref)
+        .then(() => {
+            const sel = document.getElementById('sessionSelect');
+            if (sel) sel.value = '';
+            setSyncStatus('🟢 Session supprimée', '#00ff88');
+        })
+        .catch(err => {
+            console.error('Erreur suppression session:', err);
+            setSyncStatus('🔴 Erreur suppression', '#ff4444');
+            alert('Suppression refusée : ' + err.message);
+        });
+}
+
 /* ── Rejoindre une session (écoute temps réel) ── */
 		let _unsubscribe = null;
 
@@ -193,9 +270,26 @@ function createSession() {
 
 				// Écoute temps réel des données de la session
 				const dataRef = window._firebaseRef(window._firebaseDb, teamPath(`sessions/${id}/data`));
+				let _hadRemoteData = false;
 				_unsubscribe = window._firebaseOnValue(dataRef, snap2 => {
 					const remote = snap2.val();
-					if (!remote) return;
+					if (!remote) {
+						// La session était là et vient de disparaître : un admin l'a supprimée.
+						// On cesse d'écrire dedans, sinon un envoi tardif la recréerait sans nom.
+						if (_hadRemoteData && _sessionId === id) {
+							if (_unsubscribe) { _unsubscribe(); _unsubscribe = null; }
+							if (typeof stopTeamTelemetryWatch === 'function') stopTeamTelemetryWatch();
+							clearTimeout(_syncTimeout);
+							_dirtyFields.clear(); _dirtyPitState = false; _dirtyTyreWear = false; _dirtyDrivers = false;
+							_pendingPushAfterLock = false;
+							_sessionId = null;
+							const sel = document.getElementById('sessionSelect');
+							if (sel) sel.value = '';
+							setSyncStatus('⚠️ Session supprimée par un admin', '#ffaa00');
+						}
+						return;
+					}
+					_hadRemoteData = true;
 					if (_isSyncing) return;
 					if (Date.now() - _lastLocalPushTime < 2000) return;
 					_isSyncing = true;

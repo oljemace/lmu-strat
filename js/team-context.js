@@ -116,6 +116,10 @@ function renderTeamBadge() {
     document.querySelectorAll('[data-requires-write]').forEach(el => {
         el.style.display = canWriteTeamData() ? '' : 'none';
     });
+    // Renommer / supprimer une session : admin d'équipe uniquement
+    document.querySelectorAll('[data-requires-admin]').forEach(el => {
+        el.style.display = window._teamRole === 'admin' ? '' : 'none';
+    });
 }
 
 /** Écran affiché quand le compte n'appartient à aucune équipe. */

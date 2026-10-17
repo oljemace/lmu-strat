@@ -179,6 +179,11 @@
         <input data-requires-write id="sessionNameInput" placeholder="Nom de la session" style="padding:4px 8px;border-radius:6px;border:1px solid #555;
                    background:#111;color:#fff;font-size:0.9em;width:140px;">
 
+        <button data-requires-admin id="renameSessionBtn" onclick="renameSession()" title="Renommer la session sélectionnée" style="display:none;padding:4px 10px;background:transparent;color:#00ff88;border:1px solid #00ff88;
+                   border-radius:6px;font-size:0.85em;cursor:pointer;">✏️ Renommer</button>
+        <button data-requires-admin id="deleteSessionBtn" onclick="deleteSession()" title="Supprimer la session sélectionnée" style="display:none;padding:4px 10px;background:transparent;color:#ff6b6b;border:1px solid #ff6b6b;
+                   border-radius:6px;font-size:0.85em;cursor:pointer;">🗑️ Supprimer</button>
+
         <div style="margin-left:auto;display:flex;align-items:center;gap:14px;">
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;">
                 <span id="syncStatus" style="font-size:0.8em;color:#888;">
@@ -1887,7 +1892,7 @@
 <script type="module" src="js/firebase-init.js?v=20261015d"></script>
 
 <!-- Logique applicative : ordre identique à l'original (scope global partagé) -->
-<script src="js/team-context.js?v=20261015e"></script>
+<script src="js/team-context.js?v=20261017a"></script>
 <script src="js/team-admin.js?v=20261015d"></script>
 <script src="js/access-gate.js?v=20261015e"></script>
 <script src="js/strategy-state.js?v=20261013d"></script>
@@ -1897,7 +1902,7 @@
 <script src="js/tyres-start.js?v=20261013d"></script>
 <script src="js/drivers.js?v=20261013d"></script>
 <script src="js/live-mode.js?v=20261013d"></script>
-<script src="js/firebase-sync.js?v=20261015d"></script>
+<script src="js/firebase-sync.js?v=20261017a"></script>
 <script src="js/team-telemetry.js?v=20261015b"></script>
 <script src="js/timeline-zoom.js?v=20261013d"></script>
 <script src="js/tyres-wear.js?v=20261013d"></script>
