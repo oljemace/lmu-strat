@@ -841,9 +841,12 @@ function _updateLiveTyreWearLabels() {
 	        
 	        // ── Synchroniser l'arrêt du mode live vers Firebase ──
 	        // On attend que calculate() ait fini avant de pousser
-	        _dirtyPitState = true;
-	        _dirtyFields.add('_liveModeActive');
-	        _dirtyFields.add('_liveTyreState');
-	        setTimeout(() => pushToFirebase(true), 300);
+	        // (suivi à distance : « Fin live » ne concerne que cet écran, la session partagée n'est pas touchée)
+	        if (!(typeof liveRemoteReadOnly === 'function' && liveRemoteReadOnly())) {
+	            _dirtyPitState = true;
+	            _dirtyFields.add('_liveModeActive');
+	            _dirtyFields.add('_liveTyreState');
+	            setTimeout(() => pushToFirebase(true), 300);
+	        }
 		}
 	

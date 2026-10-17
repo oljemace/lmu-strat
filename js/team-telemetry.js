@@ -10,6 +10,13 @@ let _teamTelemetryUnsubscribe = null;
 let _teamTelemetryData = {};        // { driverId: liveObject }
 let _teamTelemetryRefreshTimer = null;
 
+let _serverOffsetUnsub = null;
+window._serverOffsetMs = 0;   // écart entre l'horloge de ce PC et celle du serveur Firebase
+
+/** Heure « serveur » : les horodatages des pilotes sont posés par Firebase, pas par leur PC. Ainsi une horloge
+ *  réglée de travers (chez le pilote OU chez le spectateur) ne fait plus passer un pilote en « hors ligne ». */
+function teamNow() { return Date.now() + (window._serverOffsetMs || 0); }
+
 let _atWheelId = null;   // pilote actuellement « au volant » (mémorisé : évite de sauter de l'un à l'autre)
 
 /**
@@ -18,7 +25,7 @@ let _atWheelId = null;   // pilote actuellement « au volant » (mémorisé : é
  * tant qu'il remplit ces conditions — sinon deux programmes ouverts feraient alterner l'affichage à chaque envoi.
  */
 function teamAtWheelDriver() {
-    const now = Date.now();
+    const now = teamNow();
     const online = Object.entries(_teamTelemetryData)
         .filter(([, d]) => d && d.connected !== false && d.ts && now - d.ts <= TEAM_TELEMETRY_STALE_MS);
     const driving = online.filter(([, d]) => !d.inPits);
@@ -36,6 +43,10 @@ function startTeamTelemetryWatch(sessionId) {
     window._teamTelemetrySessionId = sessionId || null;   // lu par le Mode Live à distance (remote-live.js)
     if (!sessionId || !window._firebaseDb || !window._firebaseRef || !window._firebaseOnValue) return;
 
+    try {
+        _serverOffsetUnsub = window._firebaseOnValue(window._firebaseRef(window._firebaseDb, '.info/serverTimeOffset'),
+            snap => { window._serverOffsetMs = Number(snap.val()) || 0; });
+    } catch (e) { /* sans correction d'horloge : on compare à l'heure locale */ }
     const teleRef = window._firebaseRef(window._firebaseDb, teamPath(`sessions/${sessionId}/telemetry`));
     _teamTelemetryUnsubscribe = window._firebaseOnValue(teleRef, snap => {
         const all = snap.val() || {};
@@ -56,6 +67,7 @@ function startTeamTelemetryWatch(sessionId) {
 function stopTeamTelemetryWatch() {
     if (_teamTelemetryUnsubscribe) { _teamTelemetryUnsubscribe(); _teamTelemetryUnsubscribe = null; }
     if (_teamTelemetryRefreshTimer) { clearInterval(_teamTelemetryRefreshTimer); _teamTelemetryRefreshTimer = null; }
+    if (_serverOffsetUnsub) { _serverOffsetUnsub(); _serverOffsetUnsub = null; }
     _teamTelemetryData = {};
     window._teamTelemetrySessionId = null;
     renderTeamTelemetry();
@@ -79,7 +91,7 @@ function renderTeamTelemetry() {
     section.style.display = driverIds.length > 0 ? '' : 'none';
     if (driverIds.length === 0) { list.innerHTML = ''; return; }
 
-    const now = Date.now();
+    const now = teamNow();
     // Relais de pilotes : seul celui qui envoie réellement en ce moment est « au volant » ; les autres
     // (arrêtés, ou silencieux depuis plus de 15 s) passent en « hors ligne » et sont rangés après.
     const isOffline = d => d.connected === false || !d.ts || (now - d.ts) > TEAM_TELEMETRY_STALE_MS;
@@ -104,7 +116,7 @@ function renderTeamTelemetry() {
                             border-radius:10px;padding:12px 14px;min-width:210px;${stale ? 'opacity:0.55;' : ''}">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
                         <strong style="color:#00ff88;">${name}</strong>
-                        ${driverId === atWheel ? '<span style="font-size:0.72em;color:#00ff88;border:1px solid rgba(0,255,136,0.4);border-radius:8px;padding:1px 6px;">🏁 au volant</span>' : (stale ? '<span style="font-size:0.72em;color:#888;">hors ligne</span>' : '')}
+                        ${driverId === atWheel ? '<span style="font-size:0.72em;color:#00ff88;border:1px solid rgba(0,255,136,0.4);border-radius:8px;padding:1px 6px;">🏁 au volant</span>' : (stale ? `<span style="font-size:0.72em;color:#888;">hors ligne${d.ts ? ' · ' + (age < 120000 ? Math.round(age / 1000) + ' s' : Math.round(age / 60000) + ' min') : ''}</span>` : '')}
                         <span title="Dernière donnée reçue il y a ${ageLabel}"
                               style="width:8px;height:8px;border-radius:50%;display:inline-block;
                                      background:${stale ? '#ff4444' : '#00ff88'};"></span>

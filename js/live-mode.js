@@ -172,11 +172,14 @@ function recalculateLive(silent) {
     // le récapitulatif, dont les chiffres en dépendent).
     function _runLiveCalculate() {
     window._liveMode = true;
-    _dirtyPitState = true;
-    ['_liveModeActive','_liveEvAtAnchor','_liveNowSec','evCurrent','evPerLapReal',
-     'livelapMinutes','livelapSeconds','livelapMillis','liveLapsCompleted']
-        .forEach(k => _dirtyFields.add(k));
-    pushToFirebase(true);
+    // Mode Live suivi à distance : lecture seule, rien n'est poussé dans la session partagée.
+    if (!(typeof liveRemoteReadOnly === 'function' && liveRemoteReadOnly())) {
+        _dirtyPitState = true;
+        ['_liveModeActive','_liveEvAtAnchor','_liveNowSec','evCurrent','evPerLapReal',
+         'livelapMinutes','livelapSeconds','livelapMillis','liveLapsCompleted']
+            .forEach(k => _dirtyFields.add(k));
+        pushToFirebase(true);
+    }
 
     window._livePlanStints = null;
 calculate({

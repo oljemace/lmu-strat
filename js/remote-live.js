@@ -1,7 +1,7 @@
 /* ══════════════════════════════════════════════
    🌐 MODE LIVE À DISTANCE
    Alternative au serveur local (127.0.0.1:8777) : lit dans Firebase ce que le programme du
-   pilote publie sous teams/{équipe}/sessions/{session}/telemetry/{pilote}/stream/
+   pilote publie sous teams/{équipe}/sessions/{session}/stream/{pilote}/
    (voir run_remote_publisher dans collector/lmu_firebase_connector.py) et le remet sous la
    forme exacte de /live et /positions, pour que le Mode Live affiche la même chose qu'au
    PC du pilote. Lecture seule : ce fichier n'écrit jamais rien dans Firebase.
@@ -28,6 +28,12 @@ window._liveRemote = {
     seededTrailKey: null,
     defaulted: false,
 };
+
+/** Vrai tant que le Mode Live suit un pilote à distance : on regarde, on n'écrit RIEN dans les données
+ *  partagées de la session (ni état live, ni tableau des relais, ni « Fin live »). */
+function liveRemoteReadOnly() {
+    return !!(window._liveRemote && window._liveRemote.active);
+}
 
 /* ── Choix de la source ── */
 function liveSourceChoice() {
@@ -67,7 +73,7 @@ function refreshLiveSourceOptions() {
         current = saved || (window._teamRole === 'viewer' ? 'auto' : 'local');
     }
     const data = _remoteTeamData();
-    const now = Date.now();
+    const now = typeof teamNow === 'function' ? teamNow() : Date.now();
     const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const opts = [['local', '💻 Mon PC (programme lancé ici)'], ['auto', '🌐 À distance — pilote au volant']];
     Object.entries(data)
@@ -95,7 +101,8 @@ function _remoteSubscribe(driverId) {
     R.driverId = driverId;
     const sid = window._teamTelemetrySessionId;
     if (!driverId || !sid || !window._firebaseDb || !window._firebaseRef || !window._firebaseOnValue) return;
-    const streamRef = window._firebaseRef(window._firebaseDb, teamPath(`sessions/${sid}/telemetry/${driverId}/stream`));
+    const streamRef = window._firebaseRef(window._firebaseDb, teamPath(`sessions/${sid}/stream/${driverId}`));
+    // Nœud séparé de « telemetry » : la carte d'équipe (toujours écoutée) ne télécharge pas ce flux.
     R.unsub = window._firebaseOnValue(streamRef, snap => {
         const v = snap.val() || {};
         R.parts = { live: _remoteParse(v.live), laps: _remoteParse(v.laps),
@@ -163,7 +170,7 @@ function _remoteSeedTrail(trail) {
 /* ── Lecture par le Mode Live ── */
 function _remoteAgeMs() {
     const live = window._liveRemote.parts.live;
-    return live ? Date.now() - live.ts : Infinity;
+    return live ? (typeof teamNow === 'function' ? teamNow() : Date.now()) - live.ts : Infinity;
 }
 
 function remoteStatsData() {
