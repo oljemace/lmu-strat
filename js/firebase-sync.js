@@ -103,24 +103,82 @@ function renderSessionUI() {
         if (this.value) joinSession(this.value);
     });
 }
-/* ── Charger la liste des sessions depuis Firebase ── */
+/* ── Charger la liste des sessions depuis Firebase ──
+   Une fois l'équipe migrée (drapeau teams/{équipe}/meta/sessionIndexReady posé par tools/build_session_index.py),
+   la liste lit l'INDEX léger teams/{équipe}/sessionIndex (identifiant → nom) et non le nœud « sessions » :
+   celui-ci contient la télémétrie et la diffusion Mode Live du pilote (plusieurs mises à jour par seconde)
+   que chaque visiteur du site téléchargerait en continu. Tant que le drapeau n'est pas posé (ou illisible),
+   on garde l'ancienne lecture et on n'écrit pas l'index : une liste à moitié remplie masquerait des sessions. */
+let _sessionFlagUnsub   = null;   // écouteur du drapeau « index prêt »
+let _sessionIdxUnsub    = null;   // écouteur de l'index
+let _sessionLegacyUnsub = null;   // écouteur de l'ancienne méthode
+let _sessionListSig     = null;   // empreinte (id + nom) de la liste affichée
+window._sessionIndexReady = false;
+
+function sessionListSignature(data) {
+    return JSON.stringify(Object.entries(data).map(([id, s]) => [id, (s && s.name) || id]));
+}
+
+function _stopUnsub(un) { if (un) { try { un(); } catch (e) { /* déjà arrêté */ } } }
+
+function _stopListListeners() {
+    _stopUnsub(_sessionIdxUnsub);    _sessionIdxUnsub = null;
+    _stopUnsub(_sessionLegacyUnsub); _sessionLegacyUnsub = null;
+}
+
+/** data : { idSession: { name, … } } */
+function _renderSessionList(data) {
+    const sel = document.getElementById('sessionSelect');
+    if (!sel) return;
+    // On ne reconstruit la liste déroulante que si les noms/identifiants ont changé : une reconstruction
+    // la refermait ou perdait la sélection pendant que le spectateur cliquait.
+    const sig = sessionListSignature(data);
+    if (sig === _sessionListSig) return;
+    _sessionListSig = sig;
+    const current = sel.value;
+    sel.innerHTML = '<option value="">— Choisir une session —</option>';
+    Object.entries(data).forEach(([id, s]) => {
+        const opt = document.createElement('option');
+        opt.value       = id;
+        opt.textContent = (s && s.name) || id;
+        if (id === current) opt.selected = true;
+        sel.appendChild(opt);
+    });
+}
+
+function _useSessionListSource(indexReady) {
+    window._sessionIndexReady = !!indexReady;
+    _stopListListeners();
+    _sessionListSig = null;
+    const db = window._firebaseDb;
+    if (indexReady) {
+        _sessionIdxUnsub = window._firebaseOnValue(window._firebaseRef(db, teamPath('sessionIndex')),
+            snap => _renderSessionList(snap.val() || {}),
+            () => _useSessionListSource(false));                  // index illisible : ancienne méthode
+    } else {
+        _sessionLegacyUnsub = window._firebaseOnValue(window._firebaseRef(db, teamPath('sessions')),
+            snap => _renderSessionList(snap.val() || {}));
+    }
+}
+
 function loadSessionList() {
     if (!window._firebaseDb) return;
-    const sessionsRef = window._firebaseRef(window._firebaseDb, teamPath('sessions'));
-    window._firebaseOnValue(sessionsRef, snap => {
-        const data = snap.val() || {};
-        const sel  = document.getElementById('sessionSelect');
-        if (!sel) return;
-        const current = sel.value;
-        sel.innerHTML  = '<option value="">— Choisir une session —</option>';
-        Object.entries(data).forEach(([id, s]) => {
-            const opt = document.createElement('option');
-            opt.value       = id;
-            opt.textContent = s.name || id;
-            if (id === current) opt.selected = true;
-            sel.appendChild(opt);
-        });
-    }, { onlyOnce: false });
+    _stopUnsub(_sessionFlagUnsub); _sessionFlagUnsub = null;
+    _stopListListeners();
+    let last = null;
+    _sessionFlagUnsub = window._firebaseOnValue(window._firebaseRef(window._firebaseDb, teamPath('meta/sessionIndexReady')),
+        snap => {
+            const ready = snap.val() === true;
+            if (ready !== last) { last = ready; _useSessionListSource(ready); }
+        },
+        () => { if (last !== false) { last = false; _useSessionListSource(false); } });
+}
+
+/** Écrit session + index en UNE écriture atomique (les règles contrôlent chaque chemin) quand l'index est prêt ;
+ *  sinon la session seule, comme avant. */
+function _sessionUpdate(withIndex, sessionOnly) {
+    const root = window._firebaseRef(window._firebaseDb, teamPath('').replace(/\/$/, ''));
+    return window._firebaseUpdate(root, window._sessionIndexReady ? withIndex : sessionOnly);
 }
 
 /* ── Créer une nouvelle session ── */
@@ -150,20 +208,25 @@ function createSession() {
     let formData = {};
     try {
         formData = collectFormData();
+        // Firebase refuse toute valeur « undefined » (ex. état des pneus pas encore renseigné) : on les retire.
+        formData = JSON.parse(JSON.stringify(formData));
     } catch(e) {
         console.warn('collectFormData error:', e);
     }
 
-    const sessionRef = window._firebaseRef(window._firebaseDb, teamPath(`sessions/${id}`));
-
     setSyncStatus('🔄 Création…', '#ffaa00');
 
-    window._firebaseSet(sessionRef, {
+    const createdAt = Date.now();
+    const sessionRec = {
         name,
-        createdAt: Date.now(),
+        createdAt,
         createdBy: window._firebaseAuth?.currentUser?.uid || null,
         data:      formData
-    })
+    };
+    _sessionUpdate(
+        { [`sessions/${id}`]: sessionRec, [`sessionIndex/${id}`]: { name: name.slice(0, 200), createdAt } },
+        { [`sessions/${id}`]: sessionRec }
+    )
     .then(() => {
         nameInput.value = '';
         setSyncStatus('✅ Session créée', '#00ff88');
@@ -205,9 +268,11 @@ function renameSession() {
     if (name.length > 80) { alert('Nom trop long (80 caractères maximum).'); return; }
     if (name === cur.name) return;
 
-    const nameRef = window._firebaseRef(window._firebaseDb, teamPath(`sessions/${cur.id}/name`));
     setSyncStatus('🔄 Renommage…', '#ffaa00');
-    window._firebaseSet(nameRef, name)
+    _sessionUpdate(
+        { [`sessions/${cur.id}/name`]: name, [`sessionIndex/${cur.id}/name`]: name },
+        { [`sessions/${cur.id}/name`]: name }
+    )
         .then(() => setSyncStatus('🟢 Session renommée', '#00ff88'))
         .catch(err => {
             console.error('Erreur renommage session:', err);
@@ -237,9 +302,11 @@ function deleteSession() {
         _sessionId = null;
     }
 
-    const ref = window._firebaseRef(window._firebaseDb, teamPath(`sessions/${cur.id}`));
     setSyncStatus('🔄 Suppression…', '#ffaa00');
-    window._firebaseRemove(ref)
+    _sessionUpdate(
+        { [`sessions/${cur.id}`]: null, [`sessionIndex/${cur.id}`]: null },
+        { [`sessions/${cur.id}`]: null }
+    )
         .then(() => {
             const sel = document.getElementById('sessionSelect');
             if (sel) sel.value = '';
