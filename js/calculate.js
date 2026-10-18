@@ -512,6 +512,16 @@ function calculate(overrides) {
         const _h = document.documentElement.scrollHeight;
         document.body.style.minHeight = _h + 'px';
         requestAnimationFrame(() => requestAnimationFrame(() => { document.body.style.minHeight = ''; }));
+        // Mesuré en direct : la table des stints est reconstruite en deux temps (lignes,
+        // puis barres pneus/redimensionneurs dans des rAF) et se raccourcit d'environ
+        // 22px pendant ~3ms, ce qui fait remonter puis redescendre tout ce qui est en
+        // dessous. On fige donc la hauteur du bloc de la table jusqu'à la fin du rebuild.
+        const _wrap = tbody.closest('.strategy-table-wrapper');
+        if (_wrap) {
+            _wrap.style.minHeight = _wrap.offsetHeight + 'px';
+            clearTimeout(_wrap._unfreezeT);
+            _wrap._unfreezeT = setTimeout(() => { _wrap.style.minHeight = ''; }, 400);
+        }
     }
 
     tbody.innerHTML = '';
