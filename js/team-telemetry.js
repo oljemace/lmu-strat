@@ -135,7 +135,7 @@ function renderTeamTelemetry() {
                         </span>
                         <span>Arrêts</span><span style="text-align:right;">${d.numPitstops ?? '—'}</span>
                     </div>
-                    ${d.inPits ? '<div style="margin-top:6px;color:#ffaa00;font-size:0.8em;font-weight:bold;">🔧 Aux stands</div>' : ''}
+                    ${!stale && d.inPits ? '<div style="margin-top:6px;color:#ffaa00;font-size:0.8em;font-weight:bold;">🔧 Aux stands</div>' : ''}
                 </div>
             `;
         }).join('');
