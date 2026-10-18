@@ -62,3 +62,17 @@ function _updateManualStintUI(mode) {
             : '';
     }
 }
+
+/* Les stints manuels ne valent que pour la configuration où ils ont été ajoutés :
+   si on change la durée de course, le temps au tour ou la consommation, le nombre
+   de stints naturels change et un compteur resté en mémoire scinderait le dernier
+   stint en deux (ex. 2 stints à 49 %) sans que l'utilisateur l'ait demandé. */
+['raceHours', 'raceMinutes', 'lapMinutes', 'lapSeconds', 'lapMillis',
+ 'evPerLap', 'evRefuelPerStint', 'evRemaining'].forEach(id => {
+    document.getElementById(id)?.addEventListener('change', () => {
+        if (window._manualStintCount > 0) {
+            window._manualStintCount = 0;
+            _updateManualStintUI('planning');
+        }
+    }, true);
+});

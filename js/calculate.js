@@ -430,12 +430,11 @@ function calculate(overrides) {
         // Contrainte EV
         const toursEV = evDebut / evPerLap;
 
-        // Stints pleins : plafonnés par l'EV. Groupe final (dernier stint naturel
-        // + stints manuels) : le roulage restant est réparti à parts égales, le
-        // tout dernier absorbant exactement le reste.
+        // Stints pleins (plafonnés par l'EV) ; seul le tout dernier stint (auto ou
+        // manuel) absorbe exactement le roulage restant.
         let toursStint;
-        if (idx >= stintsNaturels - 1) {
-            toursStint = Math.min(toursEV, (roulageRest / lapTime) / (stintsCibleTotal - idx));
+        if (idx === stintsCibleTotal - 1) {
+            toursStint = Math.min(toursEV, roulageRest / lapTime);
         } else {
             toursStint = Math.min(toursEV, toursParStint);
         }

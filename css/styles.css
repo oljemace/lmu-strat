@@ -1008,11 +1008,6 @@ tr[data-manual="true"] {
 .tab-panel { display: none; }
 .tab-panel.active { display: block; }
 
-/* Masquer le bloc pneus de départ en mode live */
-body.live-mode #startTyresBlock {
-    display: none !important;
-}
-
 /* ── Graphiques d'évolution par tour + trace accélérateur/frein (mode live) ── */
 .live-chart-card {
     background: rgba(255,255,255,0.04);
