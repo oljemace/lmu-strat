@@ -23,14 +23,30 @@ const TYRE_UI = {
     hard:   { color: '#ff6060', letter: 'H', name: 'Hard'   },
     wet:    { color: '#3399ff', letter: 'W', name: 'Wet'    },
 };
-let _laneCtx = null;   // contexte du dernier rendu (créneaux, lignes pneus) pour le glisser depuis le stock
+let _laneCtxs = { plan: null, live: null };   // contexte du dernier rendu (créneaux, lignes pneus) pour le glisser depuis le stock
+const _laneCtxOf = live => _laneCtxs[live ? 'live' : 'plan'];
+/* Table des stints liée à la timeline (planification ou live) */
+const _laneTbody = live => document.getElementById(live ? 'liveStrategyTableBody' : 'strategyTableBody');
+const _laneRow = (i, live) => { const tb = _laneTbody(live); return tb && tb.querySelector(`tr[data-stint-idx="${i}"]`); };
+/* Recalcul de la bonne vue. */
+function _laneRecalc(live) {
+    if (live) { if (typeof recalculateLive === 'function') recalculateLive(true); }
+    else calculate();
+}
+/* Seul le rôle « lecture seule » ne peut pas modifier. Un ingénieur / pilote qui ne conduit pas (live à distance)
+   ajuste les stints futurs ; le stint en cours (créneau 0) n'est jamais modifiable en live. */
+function _laneReadOnly() { return window._teamRole === 'viewer'; }
+const _laneRemote = live => !!(live && typeof liveRemoteReadOnly === 'function' && liveRemoteReadOnly());
 
-function _lanesCommit() {
+function _lanesCommit(live) {
+    // Live local : recalculateLive() pousse déjà pitState. Live à distance : il ne pousse rien,
+    // on envoie donc la stratégie (pitState) ici, sans toucher à l'état live du pilote.
+    if (live && !_laneRemote(live)) return;
     try { _dirtyPitState = true; } catch (e) { /* firebase-sync non chargé */ }
     try { pushToFirebase(true); } catch (e) { /* hors équipe / hors ligne */ }
 }
 
-function _lanesApplyDrivers(newDrivers) {
+function _lanesApplyDrivers(newDrivers, live) {
     // newDrivers : { stintIdx: driverIdx }
     Object.keys(newDrivers).forEach(k => {
         const i = parseInt(k);
@@ -39,17 +55,20 @@ function _lanesApplyDrivers(newDrivers) {
         pitState[i]._userSet = true;
         // calculate() relit les contrôles de la table (savePitState) : le menu pilote
         // de la ligne doit donc refléter le changement, sinon il l'écraserait.
-        const sel = document.querySelector(`tr[data-stint-idx="${i}"] .driver-select`);
+        const sel = _laneRow(i, live)?.querySelector('.driver-select');
         if (sel) sel.value = String(newDrivers[k]);
     });
-    calculate();
-    _lanesCommit();
+    _laneRecalc(live);
+    _lanesCommit(live);
 }
 
 /* Gommes posées sur un côté : [{slot, compound}] (slot 0 = départ, slot j = arrêt après le stint j-1) */
-function _laneFitments(side, nSlots) {
+function _laneFitments(side, nSlots, live) {
     const out = [];
-    const c0 = (window._startTyres || {})[side] || 'none';
+    let c0 = (window._startTyres || {})[side] || 'none';
+    // Live : les gommes actuellement montées sont celles de la voiture
+    if (live && window._liveModeActive && window._liveTyreState)
+        c0 = (side === 'left' ? window._liveTyreState.compoundLeft : window._liveTyreState.compoundRight) || 'none';
     if (c0 !== 'none') out.push({ slot: 0, compound: c0 });
     for (let j = 1; j < nSlots; j++) {
         const ps = pitState[j - 1];
@@ -61,11 +80,13 @@ function _laneFitments(side, nSlots) {
 }
 
 /* ops : [{side, slot, compound}] ; compound 'none' = retirer. Un seul recalcul à la fin. */
-function _tyresApply(ops) {
+function _tyresApply(ops, live) {
     let startChanged = false;
     ops.forEach(op => {
         const c = op.compound;
-        if (op.slot === 0) {
+        if (op.slot === 0 && live) {
+            return;   // live : les gommes montées ne se changent pas depuis la timeline
+        } else if (op.slot === 0) {
             window._startTyres = Object.assign({ left: 'none', right: 'none' }, window._startTyres, { [op.side]: c });
             const sel = document.getElementById(op.side === 'left' ? 'startTyreLeft' : 'startTyreRight');
             if (sel) sel.value = c;
@@ -74,7 +95,7 @@ function _tyresApply(ops) {
             const i = op.slot - 1;
             if (!pitState[i]) pitState[i] = defaultState();
             const ps = pitState[i];
-            const tr = document.querySelector(`tr[data-stint-idx="${i}"]`);
+            const tr = _laneRow(i, live);
             if (c !== 'none') {
                 ps.stop = true;   // une gomme n'est posée que si l'arrêt a lieu
                 const cb = tr && tr.querySelector('.stop-check');
@@ -94,28 +115,37 @@ function _tyresApply(ops) {
         _updateStartTyreLifeInfo();
         try { _dirtyFields.add('_startTyres'); } catch (e) { /* ignore */ }
     }
-    calculate();
-    updateTyreGauge();
-    _lanesCommit();
+    _laneRecalc(live);
+    if (!live) updateTyreGauge();
+    _lanesCommit(live);
 }
 
 /* Stock global (toutes gommes confondues) : restant = « Stock de pneus neufs » − 2 pneus par gomme posée. */
-function _updateTyreStock(fitL, fitR) {
-    const rem = document.getElementById('tyreStockRemaining');
+function _updateTyreStock(fitL, fitR, live) {
+    const rem = document.getElementById(live ? 'liveTyreStockRemaining' : 'tyreStockRemaining');
     if (!rem) return;
-    const total = parseInt(document.getElementById('tyreBudget')?.value) || 0;
-    const used = 2 * (fitL.length + fitR.length);
+    const liveBudget = document.getElementById('liveTyreBudget')?.value;
+    // Live : le stock est la valeur du champ « Stock pneus restant » (vide = inconnu)
+    if (live && (liveBudget === '' || liveBudget == null)) {
+        rem.textContent = '-'; rem.style.color = '#fff'; rem.title = 'Renseigner « Stock pneus restant »';
+        const t0 = document.getElementById('liveTyreStockTotal'); if (t0) t0.textContent = '-';
+        return;
+    }
+    const total = live ? (parseInt(liveBudget) || 0) : (parseInt(document.getElementById('tyreBudget')?.value) || 0);
+    // Live : la gomme déjà montée (créneau 0) n'est plus dans le stock
+    const n = f => f.filter(x => !(live && x.slot === 0)).length;
+    const used = 2 * (n(fitL) + n(fitR));
     const left = total - used;
     rem.textContent = left;
     rem.style.color = left < 0 ? '#ff4444' : left === 0 ? '#ffaa00' : '#fff';
     rem.title = left < 0 ? `${-left} pneu(x) à réutiliser !` : `${used} utilisé(s) sur ${total}`;
-    const t = document.getElementById('tyreStockTotal');
+    const t = document.getElementById(live ? 'liveTyreStockTotal' : 'tyreStockTotal');
     if (t) t.textContent = total;
 }
 
 /* Glisser une gomme (depuis le stock ou une barre déjà posée) vers une ligne G / D. */
 function _startTyreDrag(ev, info) {
-    if (ev.button !== 0 || !_laneCtx) return;
+    if (ev.button !== 0 || !_laneCtxOf(info.live) || _laneReadOnly()) return;
     ev.preventDefault();
     const ui = TYRE_UI[info.compound];
     const ghost = document.createElement('div');
@@ -128,7 +158,7 @@ function _startTyreDrag(ev, info) {
     const grab = info.srcEl ? ev.clientX - info.srcEl.getBoundingClientRect().left : 0;
 
     const locate = (cx, cy) => {
-        const ctx = _laneCtx;
+        const ctx = _laneCtxOf(info.live);
         let side = null;
         ['left', 'right'].forEach(sd => {
             const r = ctx.rows[sd].getBoundingClientRect();
@@ -138,15 +168,17 @@ function _startTyreDrag(ev, info) {
         const r = ctx.rows[side].getBoundingClientRect();
         const refX = info.srcEl ? cx - grab : cx;   // barre déplacée : on aligne son bord gauche
         const sec = Math.min(Math.max((refX - r.left) / r.width, 0), 1) * ctx.total;
-        let best = ctx.slots[0];
-        ctx.slots.forEach(s => { if (Math.abs(s.start - sec) < Math.abs(best.start - sec)) best = s; });
+        const cand = ctx.slots.filter(s => !(info.live && s.idx === 0));   // live : créneau 0 = gommes montées
+        if (!cand.length) return null;
+        let best = cand[0];
+        cand.forEach(s => { if (Math.abs(s.start - sec) < Math.abs(best.start - sec)) best = s; });
         return { side, slot: best.idx, start: best.start };
     };
     const showMarker = t => {
         ['left', 'right'].forEach(sd => {
-            const m = _laneCtx.rows[sd].querySelector('.tyre-drop-marker');
+            const m = _laneCtxOf(info.live).rows[sd].querySelector('.tyre-drop-marker');
             if (!m) return;
-            if (t && t.side === sd) { m.style.display = 'block'; m.style.left = `${t.start / _laneCtx.total * 100}%`; m.style.background = ui.color; }
+            if (t && t.side === sd) { m.style.display = 'block'; m.style.left = `${t.start / _laneCtxOf(info.live).total * 100}%`; m.style.background = ui.color; }
             else m.style.display = 'none';
         });
     };
@@ -169,7 +201,7 @@ function _startTyreDrag(ev, info) {
             if (info.srcEl) info.srcEl.style.opacity = '';
             return;
         }
-        _tyresApply(ops);
+        _tyresApply(ops, info.live);
     };
     document.addEventListener('pointermove', move);
     document.addEventListener('pointerup', finish);
@@ -178,18 +210,26 @@ function _startTyreDrag(ev, info) {
 
 /* Icônes du stock : branchées une seule fois (le contexte de rendu est relu au moment du glisser). */
 (function initTyreStock() {
-    document.querySelectorAll('#tyreStockStrip .tyre-stock-icon[data-compound]').forEach(icon => {
-        icon.addEventListener('pointerdown', ev => _startTyreDrag(ev, { compound: icon.dataset.compound }));
+    document.querySelectorAll('#tyreStockStrip .tyre-stock-icon[data-compound], #liveTyreStockStrip .tyre-stock-icon[data-compound]').forEach(icon => {
+        const live = !!icon.closest('#liveTyreStockStrip');
+        icon.addEventListener('pointerdown', ev => _startTyreDrag(ev, { compound: icon.dataset.compound, live }));
     });
 })();
 
-function renderDriverLanes(wrapper, stints, lapTime, realStart, totalRealSec) {
-    _laneCtx = null;
+function renderDriverLanes(wrapper, stints, lapTime, realStart, totalRealSec, live) {
+    live = !!live;
+    _laneCtxs[live ? 'live' : 'plan'] = null;
     if (!(totalRealSec > 0) || !stints.length) return;
 
     // Créneaux : début de roulage, durée de roulage et tours cumulés de chaque stint.
+    // Live : le premier stint commence « maintenant » (même ancrage que calculate()).
     const slots = [];
     let cum = 0, cumLaps = 0;
+    if (live) {
+        let n = window._liveNowSec || 0;
+        if (realStart + totalRealSec > 86400 && n < realStart && n < 43200) n += 86400;
+        cum = Math.max(0, n - realStart);
+    }
     stints.forEach((stint, idx) => {
         const drive = stint.tours * lapTime;
         const pit   = idx < stints.length - 1 ? getPitDuration(idx) : 0;
@@ -271,15 +311,15 @@ function renderDriverLanes(wrapper, stints, lapTime, realStart, totalRealSec) {
                 + `display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:0.78em;overflow:hidden;white-space:nowrap;cursor:grab;touch-action:none;z-index:1;`;
             blk.textContent = s.drive / totalRealSec > 0.02 ? fmtM(s.drive) : '';
             blk.title = `Stint ${s.idx + 1} — ${stints[s.idx].tours.toFixed(1)} tours (${fmtM(s.drive)}) · ${formatClock(realStart + s.start)}`;
-            attachDrag(blk, s, track);
+            if (!_laneReadOnly() && !(live && s.idx === 0)) attachDrag(blk, s, track);   // live : stint en cours figé
             track.appendChild(blk);
         });
         tracks.push({ driver: d, el: track });
     });
 
     /* ── Lignes pneus G / D ── */
-    const fitL = _laneFitments('left',  slots.length);
-    const fitR = _laneFitments('right', slots.length);
+    const fitL = _laneFitments('left',  slots.length, live);
+    const fitR = _laneFitments('right', slots.length, live);
     const lapsToTime = L => {
         for (const s of slots) if (L <= s.lapsBefore + s.tours) return s.start + Math.max(0, L - s.lapsBefore) * lapTime;
         return totalRealSec;
@@ -297,7 +337,7 @@ function renderDriverLanes(wrapper, stints, lapTime, realStart, totalRealSec) {
         fits.forEach((f, k) => {
             const slot = slots[f.slot];
             const ui = TYRE_UI[f.compound] || { color: '#aaa', letter: '?', name: f.compound };
-            const wear = getSideWearTheoretical(side, f.compound);
+            const wear = (live && window._liveModeActive && f.slot === 0) ? getSideWear(side, f.compound, 0) : getSideWearTheoretical(side, f.compound);
             const maxLaps = wear > 0 ? getTyreMaxLaps(wear) : 0;
             const nextStart = k + 1 < fits.length ? slots[fits[k + 1].slot].start : totalRealSec;
             const lifeEnd = maxLaps > 0 ? lapsToTime(slot.lapsBefore + maxLaps) : nextStart;
@@ -316,16 +356,18 @@ function renderDriverLanes(wrapper, stints, lapTime, realStart, totalRealSec) {
                 + (maxLaps > 0 ? `${maxLaps.toFixed(1)} tours (${(maxLaps * lapTime / 60).toFixed(0)} min), posé à ${formatClock(realStart + slot.start)}`
                                : 'durée inconnue (renseigner l\'usure %/tour de cette gomme)')
                 + (worn ? ' — USÉE avant le prochain changement' : '')
-                + '\nGlisser : déplacer · hors des lignes ou double-clic : retirer';
-            seg.addEventListener('pointerdown', ev => _startTyreDrag(ev, { compound: f.compound, fromSide: side, fromSlot: f.slot, srcEl: seg }));
-            seg.addEventListener('dblclick', () => _tyresApply([{ side, slot: f.slot, compound: 'none' }]));
+                + ((live && f.slot === 0) ? ' (gomme montée)' : '\nGlisser : déplacer · hors des lignes ou double-clic : retirer');
+            if (!(live && f.slot === 0) && !_laneReadOnly()) {   // live : gommes montées non modifiables
+                seg.addEventListener('pointerdown', ev => _startTyreDrag(ev, { compound: f.compound, fromSide: side, fromSlot: f.slot, srcEl: seg, live }));
+                seg.addEventListener('dblclick', () => _tyresApply([{ side, slot: f.slot, compound: 'none' }], live));
+            } else seg.style.cursor = 'default';
             track.appendChild(seg);
         });
         tyreRows[side] = track;
     });
 
-    _laneCtx = { rows: tyreRows, slots, total: totalRealSec };
-    _updateTyreStock(fitL, fitR);
+    _laneCtxs[live ? 'live' : 'plan'] = { rows: tyreRows, slots, total: totalRealSec };
+    _updateTyreStock(fitL, fitR, live);
 
     function attachDrag(blk, slot, homeTrack) {
         blk.addEventListener('pointerdown', ev => {
@@ -360,20 +402,20 @@ function renderDriverLanes(wrapper, stints, lapTime, realStart, totalRealSec) {
                 blk.removeEventListener('pointercancel', cancel);
                 if (!moved) { blk.style.cursor = 'grab'; return; }
                 const tg = target(e.clientX, e.clientY);
-                if (!tg.track) { calculate(); return; }   // lâché hors des lignes : annule
+                if (!tg.track || (live && tg.slot.idx === 0)) { _laneRecalc(live); return; }   // lâché hors des lignes : annule
                 const srcIdx = slot.idx, dstIdx = tg.slot.idx;
                 const srcDriver = driverOf(srcIdx);
                 const upd = {};
                 if (dstIdx !== srcIdx) upd[srcIdx] = driverOf(dstIdx);   // le pilote déplacé prend la place…
                 upd[dstIdx] = tg.track.driver;                           // …et la ligne visée reçoit le créneau
-                if (dstIdx === srcIdx && tg.track.driver === srcDriver) { calculate(); return; }
-                _lanesApplyDrivers(upd);
+                if (dstIdx === srcIdx && tg.track.driver === srcDriver) { _laneRecalc(live); return; }
+                _lanesApplyDrivers(upd, live);
             };
             const cancel = () => {
                 blk.removeEventListener('pointermove', move);
                 blk.removeEventListener('pointerup', up);
                 blk.removeEventListener('pointercancel', cancel);
-                calculate();
+                _laneRecalc(live);
             };
             blk.addEventListener('pointermove', move);
             blk.addEventListener('pointerup', up);

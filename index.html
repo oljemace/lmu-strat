@@ -1210,7 +1210,21 @@
             Reset
         </button>
     </div>
-    <div id="timelineDriverRecap" style="margin-left:auto;"></div>
+    </div>
+
+    <!-- ── Stock de pneus live (glisser vers la timeline par pilote) ── -->
+    <div id="liveTyreStockStrip" class="tyre-stock-strip">
+        <span class="tyre-stock-title">🛞 Stock de pneus <small>glisser une gomme sur la ligne Pneus G ou D (arrêts futurs)</small></span>
+        <div class="tyre-stock-icon" data-compound="soft" style="--tc:#dddddd;" title="Soft — glisser sur la ligne Pneus G ou D">S</div>
+        <div class="tyre-stock-icon" data-compound="medium" style="--tc:#ffcc00;" title="Medium — glisser sur la ligne Pneus G ou D">M</div>
+        <div class="tyre-stock-icon" data-compound="hard" style="--tc:#ff6060;" title="Hard — glisser sur la ligne Pneus G ou D">H</div>
+        <div class="tyre-stock-icon" data-compound="wet" style="--tc:#3399ff;" title="Wet — glisser sur la ligne Pneus G ou D">W</div>
+        <div class="tyre-stock-item" title="Pneus neufs restants / stock live (ou stock de départ). Une gomme posée consomme 2 pneus.">
+            <span class="tyre-stock-remaining" id="liveTyreStockRemaining">-</span>
+            <span class="tyre-stock-sep">/</span>
+            <span class="tyre-stock-sep" id="liveTyreStockTotal">-</span>
+            <span class="tyre-stock-sep">pneus</span>
+        </div>
     </div>
 
     <div class="timeline-container">
@@ -1868,8 +1882,8 @@
 <script src="js/strategy-state.js?v=20261013d"></script>
 <script src="js/manual-stints.js?v=20261020a"></script>
 <script src="js/calculate.js?v=20261020f"></script>
-<script src="js/timeline.js?v=20261020f"></script>
-<script src="js/timeline-lanes.js?v=20261020d"></script>
+<script src="js/timeline.js?v=20261021a"></script>
+<script src="js/timeline-lanes.js?v=20261021b"></script>
 <script src="js/tyres-start.js?v=20261020b"></script>
 <script src="js/plans.js?v=20261020c"></script>
 <script src="js/drivers.js?v=20261013d"></script>

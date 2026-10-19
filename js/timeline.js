@@ -187,11 +187,6 @@ function buildTimeline(stints, lapTime, multiplier, realStart, gameStart, totalR
 				realAxis.appendChild(lbl);
         }
 
-        /* Barres stints */
-		
-        const stintRow = document.createElement('div');
-        stintRow.style.cssText = 'position:relative;width:100%;height:50px;background:rgba(0,0,0,0.25);border-radius:8px;overflow:visible;';
-
         // ── En mode live, les stints générés commencent à nowSec.
         //    cum doit donc partir de (nowSec - realStart) pour que
         //    les barres soient positionnées correctement sur la timeline.
@@ -215,101 +210,6 @@ function buildTimeline(stints, lapTime, multiplier, realStart, gameStart, totalR
             return parts.map(p => p[0].toUpperCase()).join('');
         }
 
-        if (_isLiveTL) {   // ancienne timeline mono-ligne : live uniquement (planification = vue par pilote)
-stints.forEach((stint, idx) => {
-    // Même logique : pit APRÈS ce stint (pas avant)
-    const pitAfter = (idx < stints.length - 1) ? getPitDuration(idx) : 0;
-
-    const dR = (window._liveMode && stint._past && stint._durReelle !== undefined)
-        ? stint._durReelle
-        : stint.tours * lapTime + pitAfter;
-
-    const sp  = cum / totalRealSec * 100;
-    const wp  = dR  / totalRealSec * 100;    
-    
-			const st     = pitState[idx] || defaultState();
-			const hasStop = st.stop;
-			const dIdx   = st.driver ?? -1;
-			const dColor = dIdx >= 0 ? getDriverColor(dIdx) : COLORS[idx % COLORS.length][0];
-			const c      = dIdx >= 0
-				? [dColor, dColor + 'bb',
-				   parseInt(dColor.slice(1,3),16)*0.299
-				   + parseInt(dColor.slice(3,5),16)*0.587
-				   + parseInt(dColor.slice(5,7),16)*0.114 > 128 ? '#000' : '#fff']
-					: COLORS[idx % COLORS.length];
-
-            const bar = document.createElement('div');
-            bar.style.cssText = `position:absolute;left:${sp}%;width:calc(${wp}% - 3px);top:5px;height:40px;background:linear-gradient(135deg,${c[0]},${c[1]});border-radius:5px;display:flex;align-items:center;justify-content:center;color:${c[2]};font-weight:bold;font-size:0.8em;overflow:hidden;white-space:nowrap;border:1px solid rgba(255,255,255,0.25);cursor:pointer;transition:transform 0.2s,box-shadow 0.2s;z-index:1;`;
-
-
-
-            const dName    = dIdx >= 0 ? getDriverName(dIdx) : '';
-            const initials = dName ? getInitials(dName) : null;
-
-            let label = '';
-            if (wp > 1.5) {
-                if (initials) {
-                    label = initials;
-                } else {
-                    label = `S${idx + 1}`;
-                }
-            }
-            bar.textContent = label;			
-            
-            const pitD = getPitDuration(idx);
-            bar.title = `Stint ${idx+1} — ${stint.tours.toFixed(1)} tours${pitD > 0 ? ` | Pit: +${pitD}s` : ''}`;
-            bar.onmouseenter = () => { bar.style.transform = 'scaleY(1.2)'; bar.style.boxShadow = `0 4px 16px ${c[0]}88`; };
-            bar.onmouseleave = () => { bar.style.transform = 'scaleY(1)';   bar.style.boxShadow = 'none'; };
-            stintRow.appendChild(bar);
-			
-            // ── Opacité passé/futur ──
-            const stintAbsStart = realStart + cum;
-            const stintAbsEnd   = stintAbsStart + dR;
-
-            if (window._liveMode) {
-                // Utiliser _liveNowSecTimeline déjà normalisé ci-dessus
-                const liveNow = _liveNowSecTimeline || nowSec;
-                if (stintAbsEnd <= liveNow) {
-                    // Stint entièrement passé : bloc grisé uniforme
-                    bar.style.background = 'rgba(120,120,120,0.25)';
-                    bar.style.border     = '1px solid rgba(255,255,255,0.08)';
-                    bar.style.color      = 'rgba(255,255,255,0.3)';
-                    bar.textContent      = '';   // pas de label sur le passé
-                } else if (stintAbsStart < liveNow) {
-                    // Stint partiellement passé : partie gauche grisée, partie droite colorée
-                    const doneFraction = (liveNow - stintAbsStart) / dR;
-                    bar.style.background = `linear-gradient(to right,
-                        rgba(120,120,120,0.25) 0%,
-                        rgba(120,120,120,0.25) ${doneFraction * 100}%,
-                        ${c[0]}               ${doneFraction * 100}%,
-                        ${c[1]}               100%)`;
-                }
-                // Stints futurs → inchangés
-            } else {
-			
-			// Mode normal : opacité 50% pour stints terminés
-                if (nowSec >= stintAbsEnd) {
-                    bar.style.opacity = '0.5';
-                } else if (nowSec > stintAbsStart && nowSec < stintAbsEnd) {
-                    const doneFraction = (nowSec - stintAbsStart) / dR;
-                    bar.style.background = `linear-gradient(to right,
-                        ${c[0]}80 0%,
-                        ${c[0]}80 ${doneFraction * 100}%,
-                        ${c[0]}   ${doneFraction * 100}%,
-                        ${c[1]}   100%)`;
-                }
-            }
-            /* Ligne pit stop */
-            if (idx < stints.length - 1) {
-                const pitColor = pitD > 0 ? '#ff6600' : '#ff4444';
-                const pit = document.createElement('div');
-                pit.style.cssText = `position:absolute;left:${sp + wp}%;top:0;width:3px;height:100%;background:${pitColor};border-radius:2px;z-index:2;cursor:pointer;`;
-                pit.title = `Pit Stop après Stint ${idx+1}${pitD > 0 ? ` (+${pitD}s)` : ''}`;
-                stintRow.appendChild(pit);
-            }
-            cum += dR;
-        });
-        }  // fin _isLiveTL (barres de la timeline d'origine : live uniquement)
 
         /* Axe ingame */
         const gameAxis = document.createElement('div');
@@ -327,10 +227,9 @@ stints.forEach((stint, idx) => {
 
 
 
-        if (!_isLiveTL) { realAxis.style.cssText += `margin-left:${LANE_LABEL_W}px;width:calc(100% - ${LANE_LABEL_W}px);`; rTag.style.left = `-${LANE_LABEL_W}px`; gameAxis.style.cssText += `margin-left:${LANE_LABEL_W}px;width:calc(100% - ${LANE_LABEL_W}px);`; gTag.style.left = `-${LANE_LABEL_W}px`; }
+        { realAxis.style.cssText += `margin-left:${LANE_LABEL_W}px;width:calc(100% - ${LANE_LABEL_W}px);`; rTag.style.left = `-${LANE_LABEL_W}px`; gameAxis.style.cssText += `margin-left:${LANE_LABEL_W}px;width:calc(100% - ${LANE_LABEL_W}px);`; gTag.style.left = `-${LANE_LABEL_W}px`; }
         wrapper.appendChild(realAxis);
-        if (_isLiveTL) wrapper.appendChild(stintRow);
-        else renderDriverLanes(wrapper, stints, lapTime, realStart, totalRealSec);
+        renderDriverLanes(wrapper, stints, lapTime, realStart, totalRealSec, _isLiveTL);
 		
         /* ── Label "Prochain pilote" sous les barres ── */
         const nextDriverLabel = document.createElement('div');
@@ -416,7 +315,7 @@ stints.forEach((stint, idx) => {
 		
 		}
 
-        if (!_isLiveTL) nextDriverLabel.style.cssText += `margin-left:${LANE_LABEL_W}px;width:calc(100% - ${LANE_LABEL_W}px);`;
+        nextDriverLabel.style.cssText += `margin-left:${LANE_LABEL_W}px;width:calc(100% - ${LANE_LABEL_W}px);`;
         wrapper.appendChild(nextDriverLabel);
 		  // Réappliquer le zoom après reconstruction
         requestAnimationFrame(() => applyTimelineZoom(_isLiveTL));
@@ -435,7 +334,6 @@ stints.forEach((stint, idx) => {
                 background:#ffffff;border-radius:2px;
                 z-index:10;box-shadow:0 0 8px rgba(255,255,255,0.8);
                 pointer-events:none;`;
-            if (_isLiveTL) stintRow.appendChild(nowLine);
 
                         /* Badge flottant AU-DESSUS de l'axe réel */
 
@@ -555,161 +453,6 @@ stints.forEach((stint, idx) => {
             realAxis.appendChild(outAfter);
         }
 
-            /* ── Barres horizontales durée de vie pneus G / D ── */
-            if (_isLiveTL) {   // planification : barres de vie dans la vue par pilote
-            const tyreLifeRow = document.createElement('div');
-            tyreLifeRow.style.cssText =
-                'position:relative;width:100%;height:28px;display:flex;' +
-                'flex-direction:column;gap:25px;padding:2px 0;';
-
-            ['left', 'right'].forEach(side => {
-                const sideLabel = side === 'left' ? '🔵 G' : '🟠 D';
-
-                const lineWrap = document.createElement('div');
-                lineWrap.style.cssText =
-                    'position:relative;width:100%;height:10px;display:flex;align-items:center;';
-
-                const lbl = document.createElement('span');
-                lbl.style.cssText =
-                    'position:absolute;left:0;top:50%;transform:translateY(-50%);' +
-                    'font-size:0.62em;color:#aaa;font-weight:bold;z-index:2;' +
-                    'background:rgba(0,0,0,0.4);padding:1px 4px;border-radius:3px;' +
-                    'white-space:nowrap;pointer-events:none;';
-                lbl.textContent = sideLabel;
-                lineWrap.appendChild(lbl);
-
-                const bgTrack = document.createElement('div');
-                bgTrack.style.cssText =
-                    'position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);' +
-                    'height:5px;background:rgba(255,255,255,0.06);border-radius:3px;';
-                lineWrap.appendChild(bgTrack);
-
-                const toursParStintTL = (() => {
-                    const evRefuel = parseFloat(
-                        document.getElementById('evRefuelPerStint')?.value) || 100;
-                    const evPerLap = parseFloat(
-                        document.getElementById(_isLiveTL ? 'evPerLapReal' : 'evPerLap')?.value) || 8;
-                    return evRefuel / evPerLap;
-                })();
-
-                const COMPOUND_COLORS = {
-                    soft: '#dddddd', medium: '#ffcc00', hard: '#ff6060', wet: '#3399ff',
-                };
-
-                function addTyreSegment(compound, lifeAnchorSec, stintIdx, isCurrentLiveTyre = false) {
-                    if (compound === 'none') return;
-
-                    const wearPerLap =
-                        (window._liveModeActive && isCurrentLiveTyre)
-                            ? getSideWear(side, compound, 0)
-                            : getSideWearTheoretical(side, compound);
-
-                    const maxLaps =
-                        wearPerLap > 0
-                            ? getTyreMaxLaps(wearPerLap)
-                            : 0;
-
-                    const lifeDurSec = maxLaps * lapTime;
-
-                    if (lifeDurSec <= 0 || lifeAnchorSec >= totalRealSec) return;
-
-                    const color = COMPOUND_COLORS[compound] || '#aaa';
-
-                    const startPct =
-                        (lifeAnchorSec / totalRealSec) * 100;
-
-                    const widthPct = Math.min(
-                        (lifeDurSec / totalRealSec) * 100,
-                        100 - startPct
-                    );
-
-                    const overrun = maxLaps < toursParStintTL;
-
-                    const seg = document.createElement('div');
-
-                    seg.style.cssText =
-                        `position:absolute;left:${startPct}%;width:${widthPct}%;` +
-                        `top:50%;transform:translateY(-50%);height:5px;` +
-                        `background:${color};border-radius:3px;` +
-                        `opacity:${overrun ? '0.55' : '0.85'};transition:opacity 0.2s;` +
-                        (overrun ? 'animation:tyre-blink 0.9s infinite;' : '');
-
-                    const liveLabel =
-                        (window._liveModeActive && isCurrentLiveTyre)
-                            ? ' · restant LIVE'
-                            : '';
-
-                    seg.title =
-                        `${compound.charAt(0).toUpperCase() + compound.slice(1)} ` +
-                        `${side === 'left' ? 'Gauche' : 'Droit'} — ` +
-                        `${maxLaps.toFixed(1)} tours · ` +
-                        `${(maxLaps / toursParStintTL).toFixed(1)} stints` +
-                        liveLabel;
-
-                    lineWrap.appendChild(seg);
-                }
-
-                // ── SEGMENT PNEUS DE DÉPART ──
-                // Ancrés au début de la course (cumSec = 0 en mode normal,
-                // ou nowSec en mode live pour le stint courant)
-                const startCompoundTL = side === 'left'
-                    ? (window._startTyres?.left  || 'none')
-                    : (window._startTyres?.right || 'none');
-
-                const _liveNowSecTL = (() => {
-                    if (!window._liveMode) return 0;
-                    let n = window._liveNowSec || 0;
-                    if (realStart + totalRealSec > 86400 && n < realStart && n < 43200) n += 86400;
-                    return Math.max(0, n - realStart);
-                })();
-
-                const startAnchorSec = window._liveMode ? _liveNowSecTL : 0;
-
-                let currentCompoundTL = startCompoundTL;
-
-                if (window._liveModeActive && window._liveTyreState) {
-                    currentCompoundTL = side === 'left'
-                        ? (window._liveTyreState.compoundLeft || 'none')
-                        : (window._liveTyreState.compoundRight || 'none');
-                }
-
-                addTyreSegment(
-                    currentCompoundTL,
-                    startAnchorSec,
-                    0,
-                    window._liveModeActive
-                );
-                
-                // ── SEGMENTS PNEUS CHANGÉS EN COURSE (pitState) ──
-                // Les pneus du pit du stint i roulent à partir du stint i+1 (ancre = cumSec + dR)
-                let cumSec = window._liveMode ? _liveNowSecTL : 0;
-
-                stints.forEach((stint, idx) => {
-                    const pitAfter = (idx < stints.length - 1) ? getPitDuration(idx) : 0;
-                    const dR = (window._liveMode && stint._past && stint._durReelle !== undefined)
-                        ? stint._durReelle
-                        : stint.tours * lapTime + pitAfter;
-
-                    const st       = pitState[idx] || defaultState();
-                    const compound = side === 'left'
-                        ? (st.tyreLeft  || 'none')
-                        : (st.tyreRight || 'none');
-
-                    // Ancrage : toujours cumSec + dR (après le pit stop de fin de stint)
-                      // idx===0 n'est plus une exception : les pneus de départ sont au PASS 0
-                    if (compound !== 'none' && st.stop) {
-                        const lifeAnchorSec = cumSec + dR;
-                        addTyreSegment(compound, lifeAnchorSec, idx);
-                    }
-
-                    cumSec += dR;
-                });
-
-                tyreLifeRow.appendChild(lineWrap);
-            });
-
-            wrapper.appendChild(tyreLifeRow);
-            }  // fin _isLiveTL (anciennes barres de vie pneus : live uniquement)
             // ← gameAxis est ajouté juste après dans le code existant
 
         wrapper.appendChild(gameAxis);
