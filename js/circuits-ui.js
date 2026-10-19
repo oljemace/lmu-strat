@@ -62,8 +62,3 @@ function updateCircTyreWearUI(corner, compound, rawVal) {
 }
 
 /* Enregistrer le circuit courant */
-/* Import télémétrie LMU : lit le fichier de résultats XML choisi via
-   le bouton "Parcourir" et en extrait tout ce qui peut remplir
-   l'éditeur de circuit : usure pneus par gomme, temps au tour,
-   consommation d'énergie virtuelle (VE) par tour, voiture utilisée
-   et circuit, à partir des balises <RaceResults>/<Driver>/<Lap>. */

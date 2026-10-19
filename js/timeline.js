@@ -113,11 +113,47 @@ function initColumnResizers(isLive) {
 
 /* ── Timeline ── */
 
+/* Récapitulatif informel des temps de roulage par pilote (planification uniquement).
+   Temps au volant = tours du stint × temps au tour ; les arrêts aux stands ne comptent pas. */
+function renderDriverDrivingRecap(stints, lapTime) {
+    const box = document.getElementById('timelineDriverRecap');
+    if (!box) return;
+    const perDriver = new Map();   // index pilote (-1 = non assigné) -> {sec, laps, stints}
+    stints.forEach((stint, idx) => {
+        const d = (pitState[idx] || defaultState()).driver ?? -1;
+        const e = perDriver.get(d) || { sec: 0, laps: 0, stints: 0 };
+        e.sec += stint.tours * lapTime;
+        e.laps += stint.tours;
+        e.stints += 1;
+        perDriver.set(d, e);
+    });
+    const total = [...perDriver.values()].reduce((a, e) => a + e.sec, 0);
+    if (!(total > 0)) { box.innerHTML = ''; return; }
+    const fmt = s => `${Math.floor(s / 3600)}h${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}`;
+    const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    const keys = [...perDriver.keys()].sort((a, b) => (a === -1) - (b === -1) || a - b);
+    const rows = keys.map(d => {
+        const e = perDriver.get(d);
+        const color = d >= 0 ? getDriverColor(d) : '#666';
+        const name = d >= 0 ? getDriverName(d) : 'Non assigné';
+        return `<tr><td style="padding:1px 6px 1px 0;white-space:nowrap;"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${color};margin-right:5px;"></span>${esc(name)}</td>`
+            + `<td style="padding:1px 6px;text-align:right;color:#fff;font-weight:bold;">${fmt(e.sec)}</td>`
+            + `<td style="padding:1px 6px;text-align:right;">${Math.round(e.sec / total * 100)}%</td>`
+            + `<td style="padding:1px 0 1px 6px;text-align:right;white-space:nowrap;">${e.stints} stint${e.stints > 1 ? 's' : ''} · ${e.laps.toFixed(1)} t</td></tr>`;
+    }).join('');
+    box.innerHTML = `<div style="font-size:0.78em;color:#aaa;background:rgba(0,0,0,0.25);border-radius:8px;padding:6px 10px;">`
+        + `<div style="color:#88ccff;font-weight:bold;margin-bottom:3px;">⏱️ Temps de roulage par pilote</div>`
+        + `<table style="border-collapse:collapse;">${rows}</table></div>`;
+}
+
+
 function buildTimeline(stints, lapTime, multiplier, realStart, gameStart, totalRealSec) {
 
 		// Capturé ici (synchrone, donc window._liveMode encore fiable) pour les
 		// callbacks différés plus bas (voir _tid()).
 		const _isLiveTL = window._liveMode;
+
+		if (!_isLiveTL) renderDriverDrivingRecap(stints, lapTime);
 
 		const track  = document.getElementById(_tid('timelineTrack'));
 		const labels = document.getElementById(_tid('timelineLabels'));

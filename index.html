@@ -794,7 +794,8 @@
     <h2>📅 Timeline de Stratégie</h2>
 
     <!-- ── Contrôle zoom timeline ── -->
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:8px;">
+    <div style="display:flex;align-items:center;gap:10px;">
         <span style="color:#aaa;font-size:0.85em;">🔍 Zoom timeline :</span>
         <button onclick="adjustTimelineZoom(-0.5)" style="width:28px;height:28px;border:none;border-radius:6px;
                 background:rgba(0,255,136,0.2);color:#00ff88;font-size:1.1em;
@@ -808,6 +809,8 @@
                 background:rgba(255,255,255,0.1);color:#aaa;font-size:0.8em;cursor:pointer;">
             Reset
         </button>
+    </div>
+    <div id="timelineDriverRecap" style="margin-left:auto;"></div>
     </div>
 
     <div class="timeline-container">
@@ -1175,7 +1178,8 @@
     <h2>📅 Timeline Live</h2>
 
     <!-- ── Contrôle zoom timeline ── -->
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:8px;">
+    <div style="display:flex;align-items:center;gap:10px;">
         <span style="color:#aaa;font-size:0.85em;">🔍 Zoom timeline :</span>
         <button onclick="adjustTimelineZoom(-0.5, true)" style="width:28px;height:28px;border:none;border-radius:6px;
                 background:rgba(0,255,136,0.2);color:#00ff88;font-size:1.1em;
@@ -1189,6 +1193,8 @@
                 background:rgba(255,255,255,0.1);color:#aaa;font-size:0.8em;cursor:pointer;">
             Reset
         </button>
+    </div>
+    <div id="timelineDriverRecap" style="margin-left:auto;"></div>
     </div>
 
     <div class="timeline-container">
@@ -1763,68 +1769,6 @@
         </div>
         <div id="circuitSaveInfo" style="color:#88ccff;font-size:0.85em;margin-top:10px;"></div>
 
-        <!-- ══════════ IMPORT TÉLÉMÉTRIE LMU (fichier résultats XML) ══════════ -->
-        <div style="margin-top:26px;background:rgba(51,153,255,0.06);border:1px solid rgba(51,153,255,0.25);border-radius:10px;padding:14px 16px;">
-            <h3 style="color:#3399ff;margin:0 0 8px 0;">📡 Import télémétrie Le Mans Ultimate</h3>
-            <div class="note" style="margin-bottom:10px;">
-                Une page publiée ne peut pas lire vos fichiers de jeu automatiquement (sandbox du navigateur).
-                Ouvrez un ou plusieurs fichiers de résultats XML générés par LMU après une session
-                (dossier <code>Documents\Le Mans Ultimate\UserData\Log\Results\…xml</code>, un fichier par
-                séance, ex. <code>04P1.xml</code>). Une séance multijoueur contient souvent plusieurs
-                pilotes sur des voitures différentes, avec des pneus différents : l'outil construit un
-                tableau — une ligne par voiture (temps au tour, VE/t, usure S/M/H/W), une colonne par
-                pilote — et vous choisissez la cellule (pilote + voiture) à importer dans l'éditeur
-                ci-dessus, pour le circuit (<code>TrackVenue</code>) détecté dans le fichier.
-            </div>
-            <input type="file" id="lmuTelemetryFile" accept=".xml" multiple style="display:none;" onchange="onLmuFilesSelected(this.files)">
-            <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;align-items:center;">
-                <button class="btn-calculate" style="margin-top:0;background:linear-gradient(135deg,#3399ff,#1a66cc);" onclick="document.getElementById('lmuTelemetryFile').click()">📂 Parcourir… (fichier(s) .xml)</button>
-                <span id="lmuTelemetryFileName" style="color:#88ccff;font-size:0.85em;font-style:italic;"></span>
-            </div>
-            <div id="lmuTelemetryInfo" style="color:#88ccff;font-size:0.85em;margin-top:8px;"></div>
-            <div id="lmuImportTableWrap" style="margin-top:12px;overflow-x:auto;"></div>
-        </div>
-
-        <!-- ══════════ IMPORT TÉLÉMÉTRIE MOTEC (.ld, via DAMPlugin) ══════════ -->
-        <div style="margin-top:16px;background:rgba(0,255,136,0.06);border:1px solid rgba(0,255,136,0.25);border-radius:10px;padding:14px 16px;">
-            <h3 style="color:#00ff88;margin:0 0 8px 0;">📟 Import télémétrie MoTeC (.ld, DAMPlugin)</h3>
-            <div class="note" style="margin-bottom:10px;">
-                Alternative au fichier de résultats XML : importez directement le fichier <code>.ld</code>
-                enregistré par le plugin <b>DAMPlugin</b> (format MoTeC), lu tour par tour pour calculer
-                l'<b>usure pneus par tour</b> (canaux <code>Tyre Wear FL/FR/RL/RR</code>) et la
-                <b>consommation par tour</b> (canal <code>Fuel Level</code>), même pour les voitures GT3/LMP2
-                dont le fichier de résultats XML ne contient pas ces attributs. Le premier et le dernier tour
-                du fichier (entrée/sortie des stands) sont exclus de la moyenne.
-            </div>
-            <input type="file" id="lmuLdFile" accept=".ld" multiple style="display:none;" onchange="onLmuLdFilesSelected(this.files)">
-            <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;align-items:center;">
-                <button class="btn-calculate" style="margin-top:0;background:linear-gradient(135deg,#00ff88,#00aa55);" onclick="document.getElementById('lmuLdFile').click()">📂 Parcourir… (fichier(s) .ld MoTeC)</button>
-                <span id="lmuLdFileName" style="color:#88ffcc;font-size:0.85em;font-style:italic;"></span>
-            </div>
-            <div id="lmuLdInfo" style="color:#88ffcc;font-size:0.85em;margin-top:8px;"></div>
-            <div id="lmuLdTableWrap" style="margin-top:12px;overflow-x:auto;"></div>
-        </div>
-
-        <!-- ══════════ IMPORT TÉLÉMÉTRIE JSON (shared memory LMU, temps réel) ══════════ -->
-        <div style="margin-top:16px;background:rgba(255,170,0,0.06);border:1px solid rgba(255,170,0,0.25);border-radius:10px;padding:14px 16px;">
-            <h3 style="color:#ffaa00;margin:0 0 8px 0;">🧠 Import télémétrie JSON (shared memory LMU, temps réel)</h3>
-            <div class="note" style="margin-bottom:10px;">
-                Méthode la plus directe : exécutez le script <code>lmu_telemetry_logger.py</code> (fourni) sur
-                le PC qui fait tourner LMU — il lit la shared memory du jeu en direct (plugin
-                <code>rF2SharedMemoryMapPlugin</code>) et écrit un fichier JSON mis à jour à chaque tour
-                complété (usure 4 pneus, carburant consommé, temps au tour, gommes). Importez simplement ce
-                JSON ici, pour n'importe quelle voiture (GT3, LMP2, Hypercar…), sans dépendre du fichier de
-                résultats XML ni d'un enregistrement MoTeC.
-            </div>
-            <input type="file" id="lmuJsonFile" accept=".json" multiple style="display:none;" onchange="onLmuJsonFilesSelected(this.files)">
-            <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;align-items:center;">
-                <button class="btn-calculate" style="margin-top:0;background:linear-gradient(135deg,#ffaa00,#cc7a00);" onclick="document.getElementById('lmuJsonFile').click()">📂 Parcourir… (fichier(s) .json)</button>
-                <span id="lmuJsonFileName" style="color:#ffd699;font-size:0.85em;font-style:italic;"></span>
-            </div>
-            <div id="lmuJsonInfo" style="color:#ffd699;font-size:0.85em;margin-top:8px;"></div>
-            <div id="lmuJsonTableWrap" style="margin-top:12px;overflow-x:auto;"></div>
-        </div>
-
         <!-- ══════════════════════════════════════════════
              MATRICE DE COMPARAISON CIRCUITS × VOITURES
         ══════════════════════════════════════════════ -->
@@ -1908,7 +1852,7 @@
 <script src="js/strategy-state.js?v=20261013d"></script>
 <script src="js/manual-stints.js?v=20261020a"></script>
 <script src="js/calculate.js?v=20261020c"></script>
-<script src="js/timeline.js?v=20261020a"></script>
+<script src="js/timeline.js?v=20261020b"></script>
 <script src="js/tyres-start.js?v=20261020a"></script>
 <script src="js/drivers.js?v=20261013d"></script>
 <script src="js/live-mode.js?v=20261019a"></script>
@@ -1919,7 +1863,6 @@
 <script src="js/tyres-wear.js?v=20261020a"></script>
 <script src="js/ui-tabs.js?v=20261013d"></script>
 <script src="js/circuits-ui.js?v=20261013d"></script>
-<script src="js/telemetry-import.js?v=20261013d"></script>
 <script src="js/circuits-db.js?v=20261015b"></script>
 <script src="js/live-telemetry.js?v=20261020a"></script>
 
