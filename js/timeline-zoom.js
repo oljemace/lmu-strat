@@ -17,20 +17,10 @@ function applyTimelineZoom(isLive) {
         wrapper.style.minWidth = `${zoom * 600}px`;
     }
 
-    // Zoom sur le tableau des stints correspondant
-    const tbody        = document.getElementById(_tid('strategyTableBody', isLive));
-    const table        = tbody?.closest('.strategy-table');
-    const tableWrapper = tbody?.closest('.strategy-table-wrapper');
-    if (table && tableWrapper) {
-        if (zoom <= 1) {
-            table.style.width    = 'max-content';
-            table.style.minWidth = '1100px';
-        } else {
-            const baseWidth = Math.max(1100, tableWrapper.offsetWidth);
-            table.style.width    = `${zoom * baseWidth}px`;
-            table.style.minWidth = `${zoom * baseWidth}px`;
-        }
-    }
+    // Le zoom ne concerne que la timeline : la table des stints garde sa largeur normale.
+    const tbody = document.getElementById(_tid('strategyTableBody', isLive));
+    const table = tbody?.closest('.strategy-table');
+    if (table) { table.style.width = 'max-content'; table.style.minWidth = '1100px'; }
 }
 
 function adjustTimelineZoom(delta, isLive) {

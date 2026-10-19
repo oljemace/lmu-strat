@@ -248,6 +248,7 @@ function renderDriverLanes(wrapper, stints, lapTime, realStart, totalRealSec, li
     const fmtH = s => `${Math.floor(s / 3600)}h${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}`;
     const fmtM = s => `${Math.round(s / 60)}m`;
     const NT = 8;
+    const tyreEnds = [];   // fins de vie des gommes (aimantation lors du redimensionnement d'un stint)
     const evLap  = parseFloat(document.getElementById(live ? 'evPerLapReal' : 'evPerLap')?.value) || 0;
     const evTank = Math.min(100, parseFloat(document.getElementById('evRefuelPerStint')?.value) || 100);
 
@@ -310,9 +311,18 @@ function renderDriverLanes(wrapper, stints, lapTime, realStart, totalRealSec, li
             const fg = (parseInt(color.slice(1, 3), 16) * 0.299 + parseInt(color.slice(3, 5), 16) * 0.587 + parseInt(color.slice(5, 7), 16) * 0.114) > 128 ? '#000' : '#fff';
             blk.style.cssText = `position:absolute;top:4px;bottom:4px;left:${s.start / totalRealSec * 100}%;width:calc(${s.drive / totalRealSec * 100}% - 2px);`
                 + `background:linear-gradient(135deg,${color},${color}bb);color:${fg};border:1px solid rgba(255,255,255,0.25);border-radius:5px;`
-                + `display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:0.78em;overflow:hidden;white-space:nowrap;cursor:grab;touch-action:none;z-index:1;`;
-            blk.textContent = s.drive / totalRealSec > 0.02 ? fmtM(s.drive) : '';
-            blk.title = `Stint ${s.idx + 1} — ${stints[s.idx].tours.toFixed(1)} tours (${fmtM(s.drive)}) · ${formatClock(realStart + s.start)}`;
+                + `display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.15;font-weight:bold;font-size:0.78em;overflow:hidden;white-space:nowrap;cursor:grab;touch-action:none;z-index:1;`;
+            // Refuel : recharge de l'arrêt qui précède le stint (1er stint : VE au départ)
+            const pvPs = s.idx > 0 ? pitState[s.idx - 1] : null;
+            const rfVal = s.idx === 0 ? stints[0].evDebut : (pvPs && pvPs.stop && pvPs.refuel ? (pvPs.refuelPct || 0) : 0);
+            if (s.drive / totalRealSec > 0.02) {
+                const d1 = document.createElement('span'); d1.className = 'stint-dur'; d1.textContent = fmtM(s.drive);
+                const d2 = document.createElement('span'); d2.style.cssText = 'font-size:0.82em;font-weight:600;opacity:0.85;'; d2.textContent = `⛽${+rfVal.toFixed(1)}%`;
+                blk.appendChild(d1); blk.appendChild(d2);
+            }
+            blk.dataset.refuel = rfVal;
+            blk.title = `Stint ${s.idx + 1} — ${stints[s.idx].tours.toFixed(1)} tours (${fmtM(s.drive)}) · ${formatClock(realStart + s.start)}`
+                + `\n⛽ ${s.idx === 0 ? 'VE au départ' : 'Refuel à l\'arrêt précédent'} : ${+rfVal.toFixed(1)} %`;
             if (!_laneReadOnly() && !(live && s.idx === 0)) attachDrag(blk, s, track);   // live : stint en cours figé
             if (canResize(s.idx)) attachResize(blk, s, track);
             track.appendChild(blk);
@@ -354,9 +364,12 @@ function renderDriverLanes(wrapper, stints, lapTime, realStart, totalRealSec, li
                 + `color:#000;font-weight:bold;font-size:0.7em;border-radius:4px;display:flex;align-items:center;padding:0 6px;overflow:hidden;white-space:nowrap;`
                 + `cursor:grab;touch-action:none;z-index:2;${worn ? 'outline:2px solid #ff3333;' : ''}`
                 + (maxLaps > 0 && maxLaps < slot.tours ? 'animation:tyre-blink 0.9s infinite;' : '');
-            seg.textContent = maxLaps > 0 ? `${ui.letter} · ${maxLaps.toFixed(1)}t` : `${ui.letter} · ?`;
+            const toursStint = evLap > 0 ? evTank / evLap : 0;   // tours d'un stint plein
+            const nStints = (maxLaps > 0 && toursStint > 0) ? maxLaps / toursStint : 0;
+            seg.textContent = maxLaps > 0 ? `${ui.letter} · ${maxLaps.toFixed(1)}t${nStints > 0 ? ` · ${nStints.toFixed(1)} st` : ''}` : `${ui.letter} · ?`;
+            if (maxLaps > 0 && lifeEnd < totalRealSec) tyreEnds.push({ slot: f.slot, t: lifeEnd });
             seg.title = `${ui.name} ${side === 'left' ? 'Gauche' : 'Droit'} — `
-                + (maxLaps > 0 ? `${maxLaps.toFixed(1)} tours (${(maxLaps * lapTime / 60).toFixed(0)} min), posé à ${formatClock(realStart + slot.start)}`
+                + (maxLaps > 0 ? `${maxLaps.toFixed(1)} tours${nStints > 0 ? ` = ${nStints.toFixed(1)} stints` : ''} (${(maxLaps * lapTime / 60).toFixed(0)} min), posé à ${formatClock(realStart + slot.start)}`
                                : 'durée inconnue (renseigner l\'usure %/tour de cette gomme)')
                 + (worn ? ' — USÉE avant le prochain changement' : '')
                 + ((live && f.slot === 0) ? ' (gomme montée)' : '\nGlisser : déplacer · hors des lignes ou double-clic : retirer');
@@ -378,7 +391,7 @@ function renderDriverLanes(wrapper, stints, lapTime, realStart, totalRealSec, li
        Étirer le bloc règle donc le refuel de l'arrêt qui le précède (stint 1 en planification : la VE de départ).
        Le dernier stint absorbe le temps restant : il n'est pas étirable. En live le stint en cours est figé. */
     function canResize(idx) {
-        return !live && evLap > 0 && idx < stints.length - 1 && !_laneReadOnly();   // planification uniquement
+        return evLap > 0 && idx < stints.length - 1 && !(live && idx === 0) && !_laneReadOnly();   // live : stint en cours figé
     }
     function resizeLimits(idx) {
         // durée de roulage min / max (secondes) du stint idx
@@ -421,18 +434,33 @@ function renderDriverLanes(wrapper, stints, lapTime, realStart, totalRealSec, li
             h.setPointerCapture(ev.pointerId);
             const x0 = ev.clientX, trackW = track.getBoundingClientRect().width || 1, lim = resizeLimits(slot.idx);
             let drive = slot.drive;
-            const lbl = blk.firstChild;
+            const lbl = blk.querySelector('.stint-dur');
+            // Aimantation : la fin du stint se cale sur la fin de vie d'une gomme posée au plus tard sur ce stint
+            const cand = tyreEnds.filter(te => te.slot <= slot.idx).map(te => te.t - slot.start)
+                .filter(d => d >= lim.min && d <= lim.max);
+            const snapSec = 12 / trackW * totalRealSec;   // ~12 px
+            const guide = Object.values(tyreRows).map(tr => {
+                const g = document.createElement('div');
+                g.style.cssText = 'display:none;position:absolute;top:-2px;bottom:-2px;width:2px;background:#00ff88;box-shadow:0 0 6px #00ff88;pointer-events:none;z-index:6;';
+                tr.appendChild(g); return g;
+            });
             const move = e => {
                 drive = Math.min(Math.max(slot.drive + (e.clientX - x0) / trackW * totalRealSec, lim.min), lim.max);
+                let snapped = null;
+                cand.forEach(d => { if (Math.abs(d - drive) < snapSec && (snapped === null || Math.abs(d - drive) < Math.abs(snapped - drive))) snapped = d; });
+                if (snapped !== null) drive = snapped;
                 blk.style.width = `calc(${drive / totalRealSec * 100}% - 2px)`;
                 blk.style.zIndex = 20;
-                if (lbl && lbl.nodeType === 3) lbl.nodeValue = fmtM(drive);
-                else blk.insertBefore(document.createTextNode(fmtM(drive)), h);
+                blk.style.outline = snapped !== null ? '2px solid #00ff88' : '';
+                guide.forEach(g => { g.style.display = snapped !== null ? 'block' : 'none'; g.style.left = `${(slot.start + drive) / totalRealSec * 100}%`; });
+                if (lbl) lbl.textContent = fmtM(drive);
             };
             const done = e => {
                 h.removeEventListener('pointermove', move);
                 h.removeEventListener('pointerup', done);
                 h.removeEventListener('pointercancel', done);
+                guide.forEach(g => g.remove());
+                blk.style.outline = '';
                 if (e.type === 'pointercancel' || Math.abs(drive - slot.drive) < 1 || !applyResize(slot.idx, drive)) { _laneRecalc(live); return; }
                 _laneRecalc(live);
                 _lanesCommit(live);
