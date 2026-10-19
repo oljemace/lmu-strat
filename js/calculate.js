@@ -493,7 +493,10 @@ function calculate(overrides) {
     // ses pieds détruit le popup natif avant qu'il ait pu cliquer une option.
     // On saute juste ce cycle : le "change" du select redéclenchera lui-même
     // le recalcul une fois le choix fait.
-    if (_focusedEl && _focusedEl.tagName === 'SELECT' && tbody.contains(_focusedEl)) {
+    // Uniquement pour le poll : le "change" d'un select garde le focus (le select reste
+    // actif après le choix), donc son propre recalcul ne doit PAS être sauté, sinon ni la
+    // table ni la timeline ne reflètent le choix.
+    if (ov._fromPoll && _focusedEl && _focusedEl.tagName === 'SELECT' && tbody.contains(_focusedEl)) {
         return;
     }
 
