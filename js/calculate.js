@@ -723,6 +723,8 @@ stints.forEach((stint, idx) => {
                                 style="color:#ffcc00;background:#1a1400;">🟡 Med</option>
                             <option value="hard"  ${st.tyreLeft==='hard'  ?'selected':''}
                                 style="color:#dddddd;background:#111;">⚪ Hard</option>
+                            <option value="wet"   ${st.tyreLeft==='wet'   ?'selected':''}
+                                style="color:#3399ff;background:#00101a;">🔵 Wet</option>
                         </select>
                     ` : '<span style="color:#333;font-size:0.9em;">—</span>'}
                 </div>
@@ -741,6 +743,8 @@ stints.forEach((stint, idx) => {
                                 style="color:#ffcc00;background:#1a1400;">🟡 Med</option>
                             <option value="hard"  ${st.tyreRight==='hard'  ?'selected':''}
                                 style="color:#dddddd;background:#111;">⚪ Hard</option>
+                            <option value="wet"   ${st.tyreRight==='wet'   ?'selected':''}
+                                style="color:#3399ff;background:#00101a;">🔵 Wet</option>
                         </select>
                     ` : '<span style="color:#333;font-size:0.9em;">—</span>'}
                 </div>

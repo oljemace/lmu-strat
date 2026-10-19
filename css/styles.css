@@ -565,6 +565,7 @@
 .tyre-life-bar.compound-soft   { background: linear-gradient(to bottom, #ff6060cc, #ff202044); }
 .tyre-life-bar.compound-medium { background: linear-gradient(to bottom, #ffcc00cc, #ffaa0044); }
 .tyre-life-bar.compound-hard   { background: linear-gradient(to bottom, #ddddddcc, #aaaaaa44); }
+.tyre-life-bar.compound-wet    { background: linear-gradient(to bottom, #3399ffcc, #1166cc44); }
 
 /* Marqueur de fin de vie (trait horizontal blanc en bas de la barre) */
 .tyre-life-bar::after {
@@ -658,6 +659,11 @@
     border-color: #dddddd;
     color: #dddddd;
     background: rgba(220,220,220,0.08);
+}
+.tyre-compound-select.has-tyre-wet    {
+    border-color: #3399ff;
+    color: #3399ff;
+    background: rgba(51,153,255,0.12);
 }
 .tyre-compound-select.has-tyre-none   {
     border-color: rgba(255,255,255,0.1);

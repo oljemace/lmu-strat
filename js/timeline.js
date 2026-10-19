@@ -551,7 +551,7 @@ stints.forEach((stint, idx) => {
                 })();
 
                 const COMPOUND_COLORS = {
-                    soft: '#ff6060', medium: '#ffcc00', hard: '#dddddd',
+                    soft: '#ff6060', medium: '#ffcc00', hard: '#dddddd', wet: '#3399ff',
                 };
 
                 function addTyreSegment(compound, lifeAnchorSec, stintIdx, isCurrentLiveTyre = false) {

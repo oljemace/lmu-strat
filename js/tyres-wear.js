@@ -403,7 +403,7 @@ function applyTyreWearData(data) {
 /* Met à jour la classe couleur d'un select gomme */
 function applyTyreSelectClass(sel) {
     sel.classList.remove(
-        'has-tyre-none','has-tyre-soft','has-tyre-medium','has-tyre-hard'
+        'has-tyre-none','has-tyre-soft','has-tyre-medium','has-tyre-hard','has-tyre-wet'
     );
     sel.classList.add(`has-tyre-${sel.value || 'none'}`);
 }

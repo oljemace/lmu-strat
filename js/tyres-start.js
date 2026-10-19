@@ -29,14 +29,17 @@ function _applyStartTyreSelectStyle(elId, compound) {
     sel.style.borderColor = compound === 'soft'   ? '#ff6060'
                           : compound === 'medium' ? '#ffcc00'
                           : compound === 'hard'   ? '#dddddd'
+                          : compound === 'wet'    ? '#3399ff'
                           : 'rgba(255,255,255,0.15)';
     sel.style.color       = compound === 'soft'   ? '#ff6060'
                           : compound === 'medium' ? '#ffcc00'
                           : compound === 'hard'   ? '#dddddd'
+                          : compound === 'wet'    ? '#3399ff'
                           : '#aaa';
     sel.style.background  = compound === 'soft'   ? 'rgba(255,60,60,0.1)'
                           : compound === 'medium' ? 'rgba(255,200,0,0.1)'
                           : compound === 'hard'   ? 'rgba(220,220,220,0.08)'
+                          : compound === 'wet'    ? 'rgba(51,153,255,0.12)'
                           : 'rgba(255,255,255,0.07)';
 }
 
@@ -61,7 +64,7 @@ function _updateStartTyreLifeInfo() {
         const maxLaps  = wear > 0 ? getTyreMaxLaps(wear) : 0;
         const stints   = maxLaps > 0 ? maxLaps / toursParStint : 0;
         const label    = side === 'left' ? '🔵 G' : '🟠 D';
-        const color    = compound === 'soft' ? '#ff6060' : compound === 'medium' ? '#ffcc00' : '#dddddd';
+        const color    = compound === 'soft' ? '#ff6060' : compound === 'medium' ? '#ffcc00' : compound === 'wet' ? '#3399ff' : '#dddddd';
         const compLbl  = compound.charAt(0).toUpperCase() + compound.slice(1);
 
         if (maxLaps > 0) {
