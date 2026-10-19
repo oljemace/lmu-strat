@@ -1035,6 +1035,7 @@ stints.forEach((stint, idx) => {
     stints.forEach((_, idx) => {
         if (idx < stints.length - 1) totalPitSec += getPitDuration(idx);
     });
+    if (!_isLiveCalc && typeof plansSetPitTotal === 'function') plansSetPitTotal(totalPitSec);
     const pitHeaderEl = document.getElementById(_tid('pitPlusHeader'));
     if (pitHeaderEl) {
         const pitMin = Math.floor(totalPitSec / 60);

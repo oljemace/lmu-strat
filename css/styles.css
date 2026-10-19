@@ -1119,3 +1119,5 @@ tr[data-manual="true"] {
 body.live-mode .plan-bar { display:none; }
 .plan-input { padding:7px 10px; border-radius:8px; border:1px solid #c00; background:#1a1a22; color:#fff; font-size:0.95em; min-width:200px; }
 .plan-confirm { color:#ffaa00; font-size:0.9em; }
+.plan-tab { display:inline-flex; flex-direction:column; align-items:flex-start; line-height:1.25; }
+.plan-pit { font-size:0.78em; font-weight:normal; color:#ffaa00; }

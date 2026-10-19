@@ -11,7 +11,7 @@
    gardés en mémoire dans _plans et synchronisés via Firebase
    (data.plans + data.activePlan).
 ══════════════════════════════════════════════════════════════════ */
-window._plans = [{ id: 'A', name: 'Plan A', pitState: {}, startTyres: { left: 'none', right: 'none' }, manualCount: 0 }];
+window._plans = [{ id: 'A', name: 'Plan A', pitState: {}, startTyres: { left: 'none', right: 'none' }, manualCount: 0, pitTotal: null }];
 window._activePlanId = 'A';
 window._dirtyPlans = false;
 
@@ -130,7 +130,8 @@ function plansApplyRemote(data) {
         .map(p => ({
             id: p.id, name: p.name || ('Plan ' + p.id),
             pitState: p.pitState || {}, startTyres: p.startTyres || { left: 'none', right: 'none' },
-            manualCount: p.manualCount || 0
+            manualCount: p.manualCount || 0,
+            pitTotal: (typeof p.pitTotal === 'number') ? p.pitTotal : null
         }));
     if (!list.length) return;
     const newActive = list.some(p => p.id === data.activePlan) ? data.activePlan : list[0].id;
@@ -155,9 +156,24 @@ function plansCollect() {
     plansSnapshot();
     const out = {};
     window._plans.forEach((p, i) => {
-        out[p.id] = { name: p.name, order: i, pitState: _plansClone(p.pitState), startTyres: _plansClone(p.startTyres), manualCount: p.manualCount || 0 };
+        out[p.id] = { name: p.name, order: i, pitState: _plansClone(p.pitState), startTyres: _plansClone(p.startTyres), manualCount: p.manualCount || 0, pitTotal: p.pitTotal };
     });
     return { plans: out, activePlan: window._activePlanId };
+}
+
+function _plansFmtPit(sec) {
+    if (typeof sec !== 'number') return '—';
+    const m = Math.floor(sec / 60), r = Math.round(sec % 60);
+    return `${m > 0 ? m + 'min ' : ''}${r}s`;
+}
+
+/* Appelé par calculate() : durée totale des arrêts au stand du plan actif */
+function plansSetPitTotal(sec) {
+    const p = _planActive();
+    if (!p) return;
+    p.pitTotal = Math.round(sec);
+    const el = document.querySelector(`#planBar [data-pit-for="${p.id}"]`);
+    if (el) el.textContent = '⏱ Pit Σ ' + _plansFmtPit(p.pitTotal);
 }
 
 function _plansEsc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
@@ -179,7 +195,7 @@ function plansRender() {
     } else {
         window._plans.forEach(p => {
             const on = p.id === act;
-            html += `<button type="button" class="plan-tab${on ? ' active' : ''}" data-plan="${_plansEsc(p.id)}">${on ? '★ ' : ''}${_plansEsc(p.name)}</button>`;
+            html += `<button type="button" class="plan-tab${on ? ' active' : ''}" data-plan="${_plansEsc(p.id)}">${on ? '★ ' : ''}${_plansEsc(p.name)}<span class="plan-pit" data-pit-for="${_plansEsc(p.id)}">⏱ Pit Σ ${_plansFmtPit(p.pitTotal)}</span></button>`;
         });
         html += `<button type="button" class="plan-act" data-act="rename" title="Renommer le plan actif">✎ Modifier</button>`;
         html += `<button type="button" class="plan-act plan-add" data-act="add" title="Nouveau plan vierge (nouvelle timeline et table des stints)">+ Plan</button>`;
