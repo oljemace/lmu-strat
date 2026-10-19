@@ -248,6 +248,8 @@ function renderDriverLanes(wrapper, stints, lapTime, realStart, totalRealSec, li
     const fmtH = s => `${Math.floor(s / 3600)}h${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}`;
     const fmtM = s => `${Math.round(s / 60)}m`;
     const NT = 8;
+    const evLap  = parseFloat(document.getElementById(live ? 'evPerLapReal' : 'evPerLap')?.value) || 0;
+    const evTank = Math.min(100, parseFloat(document.getElementById('evRefuelPerStint')?.value) || 100);
 
     // Ligne « maintenant » (même normalisation que l'axe réel de buildTimeline)
     const _d = new Date();
@@ -312,6 +314,7 @@ function renderDriverLanes(wrapper, stints, lapTime, realStart, totalRealSec, li
             blk.textContent = s.drive / totalRealSec > 0.02 ? fmtM(s.drive) : '';
             blk.title = `Stint ${s.idx + 1} — ${stints[s.idx].tours.toFixed(1)} tours (${fmtM(s.drive)}) · ${formatClock(realStart + s.start)}`;
             if (!_laneReadOnly() && !(live && s.idx === 0)) attachDrag(blk, s, track);   // live : stint en cours figé
+            if (canResize(s.idx)) attachResize(blk, s, track);
             track.appendChild(blk);
         });
         tracks.push({ driver: d, el: track });
@@ -368,6 +371,77 @@ function renderDriverLanes(wrapper, stints, lapTime, realStart, totalRealSec, li
 
     _laneCtxs[live ? 'live' : 'plan'] = { rows: tyreRows, slots, total: totalRealSec };
     _updateTyreStock(fitL, fitR, live);
+
+    /* ── Durée d'un stint : étirer le bord droit du bloc ──
+       Même logique de calcul qu'avant : la durée d'un stint est bornée par l'énergie (VE) au moment
+       où il démarre = VE restante à l'arrivée au stand + refuel de l'arrêt précédent (max 100 %).
+       Étirer le bloc règle donc le refuel de l'arrêt qui le précède (stint 1 en planification : la VE de départ).
+       Le dernier stint absorbe le temps restant : il n'est pas étirable. En live le stint en cours est figé. */
+    function canResize(idx) {
+        return !live && evLap > 0 && idx < stints.length - 1 && !_laneReadOnly();   // planification uniquement
+    }
+    function resizeLimits(idx) {
+        // durée de roulage min / max (secondes) du stint idx
+        let minS = 0;
+        if (idx > 0) { const pv = stints[idx - 1]; minS = Math.max(0, pv.evDebut - pv.tours * evLap) + 0.1; }
+        const minT = Math.max(1, minS / evLap), maxT = evTank / evLap;
+        return { min: Math.min(minT, maxT) * lapTime, max: maxT * lapTime };
+    }
+    function applyResize(idx, newDrive) {
+        const lim = resizeLimits(idx);
+        const T = Math.min(Math.max(newDrive, lim.min), lim.max) / lapTime;
+        const newS = Math.min(evTank, Math.round(T * evLap * 10) / 10);   // VE au départ de ce stint
+        if (idx === 0) {                                                   // 1er stint : VE de départ
+            const el = document.getElementById('evRemaining');
+            if (!el || +el.value === newS) return false;
+            el.value = newS;
+            try { _dirtyFields.add('evRemaining'); } catch (e) { /* ignore */ }
+        } else {
+            const pv = stints[idx - 1];
+            const evFin = Math.max(0, pv.evDebut - pv.tours * evLap);
+            const r = Math.min(100 - evFin, Math.max(0.1, Math.round((newS - evFin) * 10) / 10));
+            if (!pitState[idx - 1]) pitState[idx - 1] = defaultState();
+            const ps = pitState[idx - 1];
+            if (ps.stop && ps.refuel && ps.refuelPct === r) return false;
+            ps.stop = true; ps.refuel = true; ps.refuelPct = r; ps._userSet = true;
+            const tr = _laneRow(idx - 1, live);
+            const cb = tr && tr.querySelector('.stop-check'); if (cb) cb.checked = true;
+            const inp = tr && tr.querySelector('.refuel-pct-input'); if (inp) inp.value = r;
+        }
+        return true;
+    }
+    function attachResize(blk, slot, track) {
+        const h = document.createElement('div');
+        h.style.cssText = 'position:absolute;right:0;top:0;bottom:0;width:8px;cursor:ew-resize;background:rgba(0,0,0,0.3);border-radius:0 5px 5px 0;touch-action:none;';
+        h.title = 'Étirer pour régler la durée du stint (refuel de l\'arrêt précédent, max ' + evTank + ' % de VE)';
+        blk.appendChild(h);
+        h.addEventListener('pointerdown', ev => {
+            if (ev.button !== 0) return;
+            ev.preventDefault(); ev.stopPropagation();
+            h.setPointerCapture(ev.pointerId);
+            const x0 = ev.clientX, trackW = track.getBoundingClientRect().width || 1, lim = resizeLimits(slot.idx);
+            let drive = slot.drive;
+            const lbl = blk.firstChild;
+            const move = e => {
+                drive = Math.min(Math.max(slot.drive + (e.clientX - x0) / trackW * totalRealSec, lim.min), lim.max);
+                blk.style.width = `calc(${drive / totalRealSec * 100}% - 2px)`;
+                blk.style.zIndex = 20;
+                if (lbl && lbl.nodeType === 3) lbl.nodeValue = fmtM(drive);
+                else blk.insertBefore(document.createTextNode(fmtM(drive)), h);
+            };
+            const done = e => {
+                h.removeEventListener('pointermove', move);
+                h.removeEventListener('pointerup', done);
+                h.removeEventListener('pointercancel', done);
+                if (e.type === 'pointercancel' || Math.abs(drive - slot.drive) < 1 || !applyResize(slot.idx, drive)) { _laneRecalc(live); return; }
+                _laneRecalc(live);
+                _lanesCommit(live);
+            };
+            h.addEventListener('pointermove', move);
+            h.addEventListener('pointerup', done);
+            h.addEventListener('pointercancel', done);
+        });
+    }
 
     function attachDrag(blk, slot, homeTrack) {
         blk.addEventListener('pointerdown', ev => {
