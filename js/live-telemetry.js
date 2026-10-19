@@ -356,6 +356,8 @@ async function _liveStatsPollOnce() {
             left:  wearRes.left.value,
             right: wearRes.right.value,
         };
+        // Source de la valeur ('live' | 'mémoire partagée' | 'base circuit' | null)
+        window._liveMeasuredWearSource = { left: wearRes.left.source, right: wearRes.right.source };
 
         // Horloge ingame ACTUELLE, lue en direct (secondes depuis minuit, heure du
         // jeu) — ancre l'axe "Ingame" de la timeline live sur la vraie horloge du
@@ -449,20 +451,7 @@ async function _liveStatsPollOnce() {
         _setRateStatus(deltaREl, wearRes.right, 3);
 
         // ── Stock de pneus restant ──
-        // Baseline prise sur le champ de planification s'il est rempli (nombre de
-        // pneus neufs prévus pour la course) ; sans ça, pas de donnée de référence
-        // disponible et le champ live reste à remplir manuellement, comme demandé.
-        const tyreBudgetInput = document.getElementById('liveTyreBudget');
-        if (notEditing(tyreBudgetInput)) {
-            if (window._liveStats.baselineTyreBudget === null) {
-                const planningBudget = parseFloat(document.getElementById('tyreBudget')?.value);
-                window._liveStats.baselineTyreBudget = isNaN(planningBudget) ? null : planningBudget;
-            }
-            if (window._liveStats.baselineTyreBudget != null) {
-                const changesNonWet = data.tireChangeEventsNonWet || 0;
-                tyreBudgetInput.value = Math.max(0, window._liveStats.baselineTyreBudget - 2 * changesNonWet);
-            }
-        }
+        // Champ #liveTyreBudget : saisie 100 % manuelle (aucun calcul automatique), partagé via Firebase.
 
         if (typeof _updateLiveTyreWearLabels === 'function') _updateLiveTyreWearLabels();
 

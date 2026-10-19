@@ -120,32 +120,19 @@ if (window._liveModeActive && window._liveTyreState && stintIdx === 0 && !_hasNe
                     return 999;
                 }
 
-                // Usure théorique de référence pour ce côté/composé
-                const corners  = (side === 'left') ? ['FL', 'RL'] : ['FR', 'RR'];
-                const wears    = corners
-                    .map(c => {
-                        const el = document.getElementById(`tyre_${c}_${compound}`);
-                        return el ? (parseFloat(el.value) || 0) : 0;
-                    })
-                    .filter(v => v > 0);
-                const wearRef  = wears.length > 0
-                    ? wears.reduce((a, b) => a + b, 0) / wears.length
-                    : 0;
-
-                if (wearRef <= 0) {
-                    // Pas de données théoriques → calcul direct depuis la marge
-                    // On suppose 1%/tour par défaut pour donner une estimation
-                    const toursRestants = margeRestante / 1;
-                    return toursRestants > 0 ? (TYRE_WEAR_MARGIN / toursRestants) : 999;
-                }
-
-                // Tours restants réels = marge restante / usure par tour théorique
-                const toursRestants = margeRestante / wearRef;
-
-                // Wear fictif tel que getTyreMaxLaps(wearFictif) = toursRestants
-                // getTyreMaxLaps(w) = TYRE_WEAR_MARGIN / w
-                // → w = TYRE_WEAR_MARGIN / toursRestants
-                return TYRE_WEAR_MARGIN / toursRestants;
+                // Usure par tour de référence (même règle que la table des stints) :
+                //   1. usure mesurée en live (moyenne 3t / 5t / 10t choisie, min. 3 tours) ;
+                //   2. usure théorique saisie en planification, puis base circuits ;
+                //   3. sinon 0 = inconnue → la timeline affiche le message « roulez 3 tours minimum ».
+                const src  = window._liveMeasuredWearSource?.[side];
+                const meas = window._liveMeasuredWearPerLap?.[side];
+                const wearRef = (meas > 0 && (src === 'live' || src === 'mémoire partagée'))
+                    ? meas
+                    : getSideWearTheoretical(side, compound);
+                if (!(wearRef > 0)) return 0;
+                // Tours restants réels = marge restante / usure par tour ; wear fictif tel que
+                // getTyreMaxLaps(wear) = tours restants
+                return TYRE_WEAR_MARGIN / (margeRestante / wearRef);
             }
         }
     }

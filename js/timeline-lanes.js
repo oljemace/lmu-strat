@@ -366,11 +366,13 @@ function renderDriverLanes(wrapper, stints, lapTime, realStart, totalRealSec, li
                 + (maxLaps > 0 && maxLaps < slot.tours ? 'animation:tyre-blink 0.9s infinite;' : '');
             const toursStint = evLap > 0 ? evTank / evLap : 0;   // tours d'un stint plein
             const nStints = (maxLaps > 0 && toursStint > 0) ? maxLaps / toursStint : 0;
-            seg.textContent = maxLaps > 0 ? `${ui.letter} · ${maxLaps.toFixed(1)}t${nStints > 0 ? ` · ${nStints.toFixed(1)} st` : ''}` : `${ui.letter} · ?`;
+            const unknownMounted = live && f.slot === 0 && !(maxLaps > 0);
+            seg.textContent = maxLaps > 0 ? `${ui.letter} · ${maxLaps.toFixed(1)}t${nStints > 0 ? ` · ${nStints.toFixed(1)} st` : ''}`
+                : (unknownMounted ? `${ui.letter} · roulez 3 tours minimum pour afficher la durée de vie` : `${ui.letter} · ?`);
             if (maxLaps > 0 && lifeEnd < totalRealSec) tyreEnds.push({ slot: f.slot, t: lifeEnd });
             seg.title = `${ui.name} ${side === 'left' ? 'Gauche' : 'Droit'} — `
                 + (maxLaps > 0 ? `${maxLaps.toFixed(1)} tours${nStints > 0 ? ` = ${nStints.toFixed(1)} stints` : ''} (${(maxLaps * lapTime / 60).toFixed(0)} min), posé à ${formatClock(realStart + slot.start)}`
-                               : 'durée inconnue (renseigner l\'usure %/tour de cette gomme)')
+                               : (unknownMounted ? 'durée de vie inconnue : effectuer au minimum 3 tours (ou renseigner l\'usure %/tour / la base circuits)' : 'durée inconnue (renseigner l\'usure %/tour de cette gomme)'))
                 + (worn ? ' — USÉE avant le prochain changement' : '')
                 + ((live && f.slot === 0) ? ' (gomme montée)' : '\nGlisser : déplacer · hors des lignes ou double-clic : retirer');
             if (!(live && f.slot === 0) && !_laneReadOnly()) {   // live : gommes montées non modifiables
