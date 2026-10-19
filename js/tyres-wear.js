@@ -120,15 +120,9 @@ if (window._liveModeActive && window._liveTyreState && stintIdx === 0 && !_hasNe
                     return 999;
                 }
 
-                // Usure par tour de référence (même règle que la table des stints) :
-                //   1. usure mesurée en live (moyenne 3t / 5t / 10t choisie, min. 3 tours) ;
-                //   2. usure théorique saisie en planification, puis base circuits ;
-                //   3. sinon 0 = inconnue → la timeline affiche le message « roulez 3 tours minimum ».
-                const src  = window._liveMeasuredWearSource?.[side];
-                const meas = window._liveMeasuredWearPerLap?.[side];
-                const wearRef = (meas > 0 && (src === 'live' || src === 'mémoire partagée'))
-                    ? meas
-                    : getSideWearTheoretical(side, compound);
+                // Usure par tour de référence : mémoire mesurée du composé, sinon usure théorique
+                // (planification puis base circuits) — voir getLiveWearRate. 0 = inconnue.
+                const wearRef = getLiveWearRate(side, compound);
                 if (!(wearRef > 0)) return 0;
                 // Tours restants réels = marge restante / usure par tour ; wear fictif tel que
                 // getTyreMaxLaps(wear) = tours restants
@@ -148,6 +142,22 @@ if (window._liveModeActive && window._liveTyreState && stintIdx === 0 && !_hasNe
 
     if (wears.length === 0) return 0;
     return wears.reduce((a, b) => a + b, 0) / wears.length;
+}
+
+/* Live : usure par tour (%) à utiliser pour un composé donné sur un côté.
+   1. moyenne mesurée en live pour ce composé (mémoire de session, ≥ 3 tours, fenêtre 3/5/10) ;
+   2. à défaut, mesure courante si c'est la gomme actuellement montée (mémoire partagée) ;
+   3. à défaut, usure théorique de planification, puis base circuits ;
+   4. sinon 0 = inconnue (« roulez 3 tours minimum »). */
+function getLiveWearRate(side, compound) {
+    if (!compound || compound === 'none') return 0;
+    const mem = typeof _mwAvg === 'function' ? _mwAvg(side, compound) : null;
+    if (mem != null && mem > 0) return mem;
+    const mounted = side === 'left' ? window._liveTyreState?.compoundLeft : window._liveTyreState?.compoundRight;
+    const meas = window._liveMeasuredWearPerLap?.[side];
+    const src  = window._liveMeasuredWearSource?.[side];
+    if (compound === mounted && meas > 0 && (src === 'live' || src === 'mémoire partagée')) return meas;
+    return getSideWearTheoretical(side, compound) || 0;
 }
 
 /* Tours max pour un côté donné */
@@ -491,10 +501,7 @@ function buildTyreLifeBars(isLive) {
                 // Live : usure mesurée (≥ 3 tours) sinon base circuits, appliquée à la
                 // vie restante réelle des pneus (100% si inconnue). Sans aucune donnée
                 // d'usure : pas de barre, un message d'information à la place.
-                const measuredStart = window._liveMeasuredWearPerLap?.[side];
-                const rateStart = (measuredStart != null && measuredStart > 0)
-                    ? measuredStart
-                    : getSideWearTheoretical(side, startCompound);
+                const rateStart = getLiveWearRate(side, startCompound);
                 if (rateStart > 0) {
                     const pctStart = side === 'left' ? window._liveTyreState?.wearLeft
                                                      : window._liveTyreState?.wearRight;
@@ -601,10 +608,7 @@ function buildTyreLifeBars(isLive) {
 
             // En live : usure mesurée (≥ 3 tours) si dispo, sinon valeur de la base
             // circuits (champs tyre_*), sinon message d'information.
-            const liveMeasured = isLive ? window._liveMeasuredWearPerLap?.[side] : null;
-            const wearPerLap   = (liveMeasured != null && liveMeasured > 0)
-                ? liveMeasured
-                : getSideWearTheoretical(side, compound);
+            const wearPerLap   = isLive ? getLiveWearRate(side, compound) : getSideWearTheoretical(side, compound);
             const maxLaps      = wearPerLap > 0 ? getTyreMaxLaps(wearPerLap) : 0;
             const lifeInStints = maxLaps > 0 ? maxLaps / toursParStint : 0;
 

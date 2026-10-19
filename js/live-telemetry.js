@@ -264,6 +264,107 @@ function _resolveLiveRate(measured, sharedMem, circuitDb) {
 
 const _LIVE_NO_DATA_MSG = 'roulez quelques tours pour lancer les calculs';
 
+/* ────────────────────────────────────────────────────────────
+   🧠 MÉMOIRE D'USURE MESURÉE (par session, côté et composé)
+   { left: { hard: { l12: 1.72, l13: 1.69, … } }, right: {…} }
+   Un tour valide (usure/tour plausible) est enregistré sous le composé monté
+   au moment de sa réception. Synchronisée via Firebase (session) : tous les
+   utilisateurs de la session partagent les mêmes valeurs ; elle sert à calculer
+   la vraie durée de vie des gommes des stints futurs.
+   ──────────────────────────────────────────────────────────── */
+window._measuredWear = window._measuredWear || {};
+const _MW_KEEP_LAPS = 30;   // tours conservés par côté et composé
+
+function _mwLaps(side, compound) {
+    const box = window._measuredWear?.[side]?.[compound];
+    if (!box) return [];
+    return Object.keys(box).map(k => ({n: parseInt(k.slice(1)), v: box[k]}))
+        .filter(e => isFinite(e.n) && typeof e.v === 'number').sort((a, b) => a.n - b.n);
+}
+
+/* Moyenne mémorisée (fenêtre 3 / 5 / 10 tours) ; null si moins de 3 tours mesurés. */
+function _mwAvg(side, compound) {
+    const win = Math.max(parseInt(document.getElementById('liveWearAvgWindow')?.value) || 5, 3);
+    const laps = _mwLaps(side, compound).slice(-win);
+    if (laps.length < 3) return null;
+    return laps.reduce((a, e) => a + e.v, 0) / laps.length;
+}
+
+/* Enregistre les tours valides du relais en cours sous le composé monté. */
+function _mwIngest(laps) {
+    if (!Array.isArray(laps) || laps.length === 0) return;
+    let changed = false;
+    [['left', 'Left', 'wearLeftDelta'], ['right', 'Right', 'wearRightDelta']].forEach(([side, S, key]) => {
+        const compound = document.getElementById(`liveTyreCompound${S}`)?.value;
+        if (!compound || compound === 'none') return;
+        // Relais en cours : après le dernier tour à delta négatif (= nouvelles gommes montées)
+        let start = 0;
+        for (let i = laps.length - 1; i >= 0; i--) {
+            if (laps[i] && typeof laps[i][key] === 'number' && laps[i][key] < 0) { start = i + 1; break; }
+        }
+        const sideBox = (window._measuredWear[side] = window._measuredWear[side] || {});
+        const box = (sideBox[compound] = sideBox[compound] || {});
+        for (let i = start; i < laps.length; i++) {
+            const l = laps[i];
+            const v = _validRate(l && l[key], _LIVE_WEAR_VALID);
+            if (v == null || l.num == null) continue;
+            const k = 'l' + l.num;
+            if (box[k] === undefined) { box[k] = Math.round(v * 1000) / 1000; changed = true; }
+        }
+        const ks = Object.keys(box);
+        if (ks.length > _MW_KEEP_LAPS) {
+            ks.sort((a, b) => parseInt(a.slice(1)) - parseInt(b.slice(1)))
+              .slice(0, ks.length - _MW_KEEP_LAPS).forEach(k => delete box[k]);
+        }
+    });
+    if (changed) {
+        _mwRenderRecap();
+        // Seule la page qui reçoit directement la télémétrie écrit dans Firebase
+        if (!(typeof liveRemoteReadOnly === 'function' && liveRemoteReadOnly())) {
+            try { _dirtyFields.add('_measuredWear'); pushToFirebase(false); } catch (e) { /* hors session */ }
+        }
+    }
+}
+
+/* Reprise depuis Firebase : propre à la session (réinitialisée si on change de session). */
+function _mwRestore(remote) {
+    const sid = (typeof _sessionId !== 'undefined') ? _sessionId : null;
+    if (window._mwSid !== sid) { window._measuredWear = {}; window._mwSid = sid; }
+    if (remote && typeof remote === 'object') {
+        ['left', 'right'].forEach(side => {
+            Object.keys(remote[side] || {}).forEach(c => {
+                const sideBox = (window._measuredWear[side] = window._measuredWear[side] || {});
+                const box = (sideBox[c] = sideBox[c] || {});
+                const src = remote[side][c] || {};
+                Object.keys(src).forEach(k => { if (box[k] === undefined && typeof src[k] === 'number') box[k] = src[k]; });
+            });
+        });
+    }
+    _mwRenderRecap();
+}
+
+/* Petit récap à droite du bloc « Pneus actuels » */
+function _mwRenderRecap() {
+    const el = document.getElementById('liveMeasuredWearRecap');
+    if (!el) return;
+    const names = {soft: '⚪ Soft', medium: '🟡 Med', hard: '🔴 Hard', wet: '🔵 Wet'};
+    const rows = [];
+    ['soft', 'medium', 'hard', 'wet'].forEach(c => {
+        const l = _mwAvg('left', c), r = _mwAvg('right', c);
+        const nl = _mwLaps('left', c).length, nr = _mwLaps('right', c).length;
+        if (l == null && r == null) {
+            if (nl || nr) rows.push(`<div style="color:#888;">${names[c]} · ${Math.max(nl, nr)}/3 tours…</div>`);
+            return;
+        }
+        rows.push(`<div><b>${names[c]}</b> · <span style="color:#88ccff;">G ${l != null ? l.toFixed(3) : '—'}</span>`
+            + ` · <span style="color:#ffaa66;">D ${r != null ? r.toFixed(3) : '—'}</span>`
+            + ` <span style="color:#888;">%/t (${Math.max(nl, nr)} t)</span></div>`);
+    });
+    el.innerHTML = rows.length ? rows.join('')
+        : '<div style="color:#888;font-style:italic;">roulez 3 tours minimum</div>';
+}
+
+
 /* Affiche la valeur retenue (avec sa source si ce n'est pas la mesure live) ou
    le message d'attente quand aucune source n'est disponible. */
 function _setRateStatus(elOrId, res, decimals) {
@@ -350,6 +451,9 @@ async function _liveStatsPollOnce() {
                 dbWear);
         });
         const avgVePerLap = evRes.value;
+
+        // Mémorise l'usure mesurée par côté / composé (partagée dans la session)
+        _mwIngest(allLaps);
 
         // Exposé pour _updateLiveTyreWearLabels() (tyres-wear.js)
         window._liveMeasuredWearPerLap = {

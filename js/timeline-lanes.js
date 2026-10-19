@@ -350,7 +350,11 @@ function renderDriverLanes(wrapper, stints, lapTime, realStart, totalRealSec, li
         fits.forEach((f, k) => {
             const slot = slots[f.slot];
             const ui = TYRE_UI[f.compound] || { color: '#aaa', letter: '?', name: f.compound };
-            const wear = (live && window._liveModeActive && f.slot === 0) ? getSideWear(side, f.compound, 0) : getSideWearTheoretical(side, f.compound);
+            // Live : gomme montée = usure mesurée + vie restante ; gommes futures = usure mesurée de ce composé
+            // (mémoire de session), sinon théorique, sinon base circuits, sinon inconnue
+            const wear = (live && window._liveModeActive)
+                ? (f.slot === 0 ? getSideWear(side, f.compound, 0) : getLiveWearRate(side, f.compound))
+                : getSideWearTheoretical(side, f.compound);
             const maxLaps = wear > 0 ? getTyreMaxLaps(wear) : 0;
             const nextStart = k + 1 < fits.length ? slots[fits[k + 1].slot].start : totalRealSec;
             const lifeEnd = maxLaps > 0 ? lapsToTime(slot.lapsBefore + maxLaps) : nextStart;
@@ -366,7 +370,7 @@ function renderDriverLanes(wrapper, stints, lapTime, realStart, totalRealSec, li
                 + (maxLaps > 0 && maxLaps < slot.tours ? 'animation:tyre-blink 0.9s infinite;' : '');
             const toursStint = evLap > 0 ? evTank / evLap : 0;   // tours d'un stint plein
             const nStints = (maxLaps > 0 && toursStint > 0) ? maxLaps / toursStint : 0;
-            const unknownMounted = live && f.slot === 0 && !(maxLaps > 0);
+            const unknownMounted = live && !(maxLaps > 0);
             seg.textContent = maxLaps > 0 ? `${ui.letter} · ${maxLaps.toFixed(1)}t${nStints > 0 ? ` · ${nStints.toFixed(1)} st` : ''}`
                 : (unknownMounted ? `${ui.letter} · roulez 3 tours minimum pour afficher la durée de vie` : `${ui.letter} · ?`);
             if (maxLaps > 0 && lifeEnd < totalRealSec) tyreEnds.push({ slot: f.slot, t: lifeEnd });

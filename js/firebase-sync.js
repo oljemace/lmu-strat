@@ -529,6 +529,7 @@ function _doFirebasePush() {
 
         // ── Données usure pneus ──
         form.tyreWear = collectTyreWearData();
+        form._measuredWear = window._measuredWear || {};   // usure mesurée live (par côté / composé)
 
 		return form;
 	    }
@@ -645,6 +646,7 @@ function _doFirebasePush() {
                 _updateStartTyreLifeInfo();
             }
             // Restauration pneus live
+            if (typeof _mwRestore === 'function') _mwRestore(data._measuredWear);
             if (data._liveTyreState) {
                 window._liveTyreState = data._liveTyreState;
             }
