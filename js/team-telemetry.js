@@ -74,7 +74,7 @@ function stopTeamTelemetryWatch() {
 }
 
 function _teamTelemetryCompoundColor(compound) {
-    return { soft: '#ff4466', medium: '#ffcc00', hard: '#eeeeee', wet: '#3399ff' }[compound] || '#888';
+    return { soft: '#eeeeee', medium: '#ffcc00', hard: '#ff4466', wet: '#3399ff' }[compound] || '#888';
 }
 
 function _teamTelemetryEscapeHtml(s) {

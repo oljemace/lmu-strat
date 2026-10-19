@@ -22,7 +22,7 @@ function renderCircuitTyreGrid() {
 }
 
 function updateCircTyreWearUI(corner, compound, rawVal) {
-    const TYRE_COLORS = { soft: '#ff6060', medium: '#ffcc00', hard: '#dddddd', wet: '#3399ff' };
+    const TYRE_COLORS = { soft: '#dddddd', medium: '#ffcc00', hard: '#ff6060', wet: '#3399ff' };
     const wearPerLap  = parseFloat(rawVal) || 0;
     const maxLaps     = wearPerLap > 0 ? (60 / wearPerLap) : 0;
 

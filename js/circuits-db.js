@@ -412,9 +412,9 @@ function renderCircuitMatrix() {
 
     // ── Helpers ──
     const COMPOUND_COLORS = {
-        soft:   { color: '#ff6060', bg: 'rgba(255,60,60,0.12)',   label: '🔴 S' },
+        soft:   { color: '#dddddd', bg: 'rgba(220,220,220,0.08)', label: '⚪ S' },
         medium: { color: '#ffcc00', bg: 'rgba(255,200,0,0.12)',   label: '🟡 M' },
-        hard:   { color: '#dddddd', bg: 'rgba(220,220,220,0.08)', label: '⚪ H' },
+        hard:   { color: '#ff6060', bg: 'rgba(255,60,60,0.12)',   label: '🔴 H' },
     };
 
     // Calcul durée de vie pour un couple circuit+voiture+gomme

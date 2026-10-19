@@ -562,9 +562,9 @@
 /* Pneus D : barre sur le bord DROIT de la cellule */
 .tyre-life-bar.side-right { right: 0; left: auto; }
 
-.tyre-life-bar.compound-soft   { background: linear-gradient(to bottom, #ff6060cc, #ff202044); }
+.tyre-life-bar.compound-soft   { background: linear-gradient(to bottom, #ddddddcc, #aaaaaa44); }
 .tyre-life-bar.compound-medium { background: linear-gradient(to bottom, #ffcc00cc, #ffaa0044); }
-.tyre-life-bar.compound-hard   { background: linear-gradient(to bottom, #ddddddcc, #aaaaaa44); }
+.tyre-life-bar.compound-hard   { background: linear-gradient(to bottom, #ff6060cc, #ff202044); }
 .tyre-life-bar.compound-wet    { background: linear-gradient(to bottom, #3399ffcc, #1166cc44); }
 
 /* Marqueur de fin de vie (trait horizontal blanc en bas de la barre) */
@@ -646,9 +646,9 @@
 }
 
 .tyre-compound-select.has-tyre-soft   {
-    border-color: #ff6060;
-    color: #ff6060;
-    background: rgba(255,60,60,0.1);
+    border-color: #dddddd;
+    color: #dddddd;
+    background: rgba(220,220,220,0.08);
 }
 .tyre-compound-select.has-tyre-medium {
     border-color: #ffcc00;
@@ -656,9 +656,9 @@
     background: rgba(255,200,0,0.1);
 }
 .tyre-compound-select.has-tyre-hard   {
-    border-color: #dddddd;
-    color: #dddddd;
-    background: rgba(220,220,220,0.08);
+    border-color: #ff6060;
+    color: #ff6060;
+    background: rgba(255,60,60,0.1);
 }
 .tyre-compound-select.has-tyre-wet    {
     border-color: #3399ff;
@@ -909,9 +909,9 @@ tr[data-manual="true"] {
     flex-shrink: 0;
 }
 
-.tyre-compound-badge.soft   { background: rgba(255,60,60,0.25);  color: #ff6060; border: 1px solid #ff606055; }
+.tyre-compound-badge.soft   { background: rgba(220,220,220,0.15);color: #dddddd; border: 1px solid #dddddd55; }
 .tyre-compound-badge.medium { background: rgba(255,200,0,0.2);   color: #ffcc00; border: 1px solid #ffcc0055; }
-.tyre-compound-badge.hard   { background: rgba(220,220,220,0.15);color: #dddddd; border: 1px solid #dddddd55; }
+.tyre-compound-badge.hard   { background: rgba(255,60,60,0.25);  color: #ff6060; border: 1px solid #ff606055; }
 .tyre-compound-badge.wet    { background: rgba(51,153,255,0.2);  color: #3399ff; border: 1px solid #3399ff55; }
 
 .tyre-wear-input {
@@ -932,9 +932,9 @@ tr[data-manual="true"] {
     background: rgba(0,255,136,0.07);
 }
 
-.tyre-wear-input.soft:focus   { border-color: #ff6060; }
+.tyre-wear-input.soft:focus   { border-color: #dddddd; }
 .tyre-wear-input.medium:focus { border-color: #ffcc00; }
-.tyre-wear-input.hard:focus   { border-color: #dddddd; }
+.tyre-wear-input.hard:focus   { border-color: #ff6060; }
 
 .tyre-wear-bar-wrap {
     width: 100%;
@@ -1090,3 +1090,32 @@ tr[data-manual="true"] {
 }
 .live-trace-toggle.active .swatch { opacity: 1; }
 
+
+/* ── Stock de pneus (planification) ── */
+.tyre-stock-strip { display:flex; align-items:center; gap:18px; flex-wrap:wrap; margin:6px 0 10px; padding:8px 12px; background:rgba(0,0,0,0.25); border-radius:10px; }
+.tyre-stock-title { color:#ccc; font-size:0.85em; font-weight:bold; }
+.tyre-stock-title small { color:#888; font-weight:normal; margin-left:6px; }
+.tyre-stock-item { display:flex; align-items:center; gap:6px; }
+.tyre-stock-icon { width:40px; height:40px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center;
+    font-weight:bold; font-size:0.95em; color:var(--tc); cursor:grab; touch-action:none; user-select:none;
+    background:radial-gradient(circle, #1b1b1b 0 36%, var(--tc) 37% 66%, #0d0d0d 67% 100%);
+    box-shadow:0 2px 6px rgba(0,0,0,0.5); }
+.tyre-stock-icon:active { cursor:grabbing; }
+.tyre-stock-remaining { font-size:1.25em; font-weight:bold; color:#fff; min-width:1.4em; text-align:right; }
+.tyre-stock-sep { color:#666; }
+.tyre-stock-total { width:48px; padding:3px 4px; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.15); border-radius:5px; color:#aaa; font-size:0.85em; text-align:center; }
+.tyre-stock-strip input.tyre-stock-total { width:56px; flex:none; box-sizing:border-box; }
+
+/* ── Plans multiples (A, B…) ── */
+.plan-bar { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:6px 0 10px; }
+.plan-tab { padding:8px 16px; border-radius:10px; border:1px solid rgba(255,255,255,0.15);
+    background:rgba(255,255,255,0.05); color:#ccc; font-size:0.95em; font-weight:bold; cursor:pointer; }
+.plan-tab:hover { background:rgba(255,255,255,0.12); }
+.plan-tab.active { background:rgba(180,0,0,0.25); border-color:#c00; color:#fff; }
+.plan-act { padding:6px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.2);
+    background:transparent; color:#ddd; font-size:0.85em; cursor:pointer; }
+.plan-act:hover { background:rgba(255,255,255,0.1); }
+.plan-del:hover { background:rgba(255,60,60,0.25); }
+body.live-mode .plan-bar { display:none; }
+.plan-input { padding:7px 10px; border-radius:8px; border:1px solid #c00; background:#1a1a22; color:#fff; font-size:0.95em; min-width:200px; }
+.plan-confirm { color:#ffaa00; font-size:0.9em; }

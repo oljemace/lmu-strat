@@ -607,9 +607,9 @@ function setLiveStandingsMode(mode) {
 function _liveCompoundBadge(compound) {
     if (!compound) return '<span style="color:#555;">—</span>';
     const colors = {
-        soft:   {bg: 'rgba(255,60,60,0.25)',  fg: '#ff6060', letter: 'S'},
+        soft:   {bg: 'rgba(220,220,220,0.15)',fg: '#dddddd', letter: 'S'},
         medium: {bg: 'rgba(255,200,0,0.2)',   fg: '#ffcc00', letter: 'M'},
-        hard:   {bg: 'rgba(220,220,220,0.15)',fg: '#dddddd', letter: 'H'},
+        hard:   {bg: 'rgba(255,60,60,0.25)',  fg: '#ff6060', letter: 'H'},
         wet:    {bg: 'rgba(51,153,255,0.2)',  fg: '#3399ff', letter: 'W'},
     };
     const c = colors[compound] || {bg: 'rgba(255,255,255,0.1)', fg: '#aaa', letter: '?'};

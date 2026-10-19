@@ -5,7 +5,7 @@
     
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calculateur de Stratégie - Endurance LMU</title>
-    <link rel="stylesheet" href="css/styles.css?v=20261020b">
+    <link rel="stylesheet" href="css/styles.css?v=20261020h">
 
 </head>
 <body>
@@ -813,6 +813,22 @@
     <div id="timelineDriverRecap" style="margin-left:auto;"></div>
     </div>
 
+    <!-- ── Stock de pneus (glisser vers la timeline par pilote) ── -->
+    <div id="planBar" class="plan-bar"></div>
+    <div id="tyreStockStrip" class="tyre-stock-strip">
+        <span class="tyre-stock-title">🛞 Stock de pneus <small>glisser une gomme sur la ligne Pneus G ou D</small></span>
+        <div class="tyre-stock-icon" data-compound="soft" style="--tc:#dddddd;" title="Soft — glisser sur la ligne Pneus G ou D">S</div>
+        <div class="tyre-stock-icon" data-compound="medium" style="--tc:#ffcc00;" title="Medium — glisser sur la ligne Pneus G ou D">M</div>
+        <div class="tyre-stock-icon" data-compound="hard" style="--tc:#ff6060;" title="Hard — glisser sur la ligne Pneus G ou D">H</div>
+        <div class="tyre-stock-icon" data-compound="wet" style="--tc:#3399ff;" title="Wet — glisser sur la ligne Pneus G ou D">W</div>
+        <div class="tyre-stock-item" title="Pneus neufs restants / stock de départ (Données de départ). Une gomme posée consomme 2 pneus.">
+            <span class="tyre-stock-remaining" id="tyreStockRemaining">-</span>
+            <span class="tyre-stock-sep">/</span>
+            <span class="tyre-stock-sep" id="tyreStockTotal">-</span>
+            <span class="tyre-stock-sep">pneus</span>
+        </div>
+    </div>
+
     <div class="timeline-container">
         <div class="timeline-track" id="timelineTrack"></div>
         <div class="timeline-labels" id="timelineLabels"></div>
@@ -845,9 +861,9 @@
                                background:rgba(255,255,255,0.07);color:#fff;
                                font-size:0.85em;cursor:pointer;">
                         <option value="none">—</option>
-                        <option value="soft"   style="color:#ff6060;background:#1a0000;">🔴 Soft</option>
+                        <option value="soft"   style="color:#dddddd;background:#111;">⚪ Soft</option>
                         <option value="medium" style="color:#ffcc00;background:#1a1400;">🟡 Med</option>
-                        <option value="hard"   style="color:#dddddd;background:#111;">⚪ Hard</option>
+                        <option value="hard"   style="color:#ff6060;background:#1a0000;">🔴 Hard</option>
                         <option value="wet"    style="color:#3399ff;background:#00101a;">🔵 Wet</option>
                     </select>
                 </div>
@@ -861,9 +877,9 @@
                                background:rgba(255,255,255,0.07);color:#fff;
                                font-size:0.85em;cursor:pointer;">
                         <option value="none">—</option>
-                        <option value="soft"   style="color:#ff6060;background:#1a0000;">🔴 Soft</option>
+                        <option value="soft"   style="color:#dddddd;background:#111;">⚪ Soft</option>
                         <option value="medium" style="color:#ffcc00;background:#1a1400;">🟡 Med</option>
-                        <option value="hard"   style="color:#dddddd;background:#111;">⚪ Hard</option>
+                        <option value="hard"   style="color:#ff6060;background:#1a0000;">🔴 Hard</option>
                         <option value="wet"    style="color:#3399ff;background:#00101a;">🔵 Wet</option>
                     </select>
                 </div>
@@ -1081,9 +1097,9 @@
                             style="padding:3px 6px;border-radius:6px;border:1px solid rgba(136,204,255,0.5);
                                 background:rgba(255,255,255,0.08);color:#fff;font-size:0.85em;">
                             <option value="none">—</option>
-                            <option value="soft" style="color:#ff6060;">🔴 Soft</option>
+                            <option value="soft" style="color:#dddddd;">⚪ Soft</option>
                             <option value="medium" style="color:#ffcc00;">🟡 Med</option>
-                            <option value="hard" style="color:#dddddd;">⚪ Hard</option>
+                            <option value="hard" style="color:#ff6060;">🔴 Hard</option>
                             <option value="wet" style="color:#3399ff;">🔵 Wet</option>
                         </select>
                         <span style="font-size:0.78em;color:#888;">vie%</span>
@@ -1103,9 +1119,9 @@
                             style="padding:3px 6px;border-radius:6px;border:1px solid rgba(255,170,102,0.5);
                                 background:rgba(255,255,255,0.08);color:#fff;font-size:0.85em;">
                             <option value="none">—</option>
-                            <option value="soft" style="color:#ff6060;">🔴 Soft</option>
+                            <option value="soft" style="color:#dddddd;">⚪ Soft</option>
                             <option value="medium" style="color:#ffcc00;">🟡 Med</option>
-                            <option value="hard" style="color:#dddddd;">⚪ Hard</option>
+                            <option value="hard" style="color:#ff6060;">🔴 Hard</option>
                             <option value="wet" style="color:#3399ff;">🔵 Wet</option>
                         </select>
                         <span style="font-size:0.78em;color:#888;">vie%</span>
@@ -1851,20 +1867,22 @@
 <script src="js/access-gate.js?v=20261015e"></script>
 <script src="js/strategy-state.js?v=20261013d"></script>
 <script src="js/manual-stints.js?v=20261020a"></script>
-<script src="js/calculate.js?v=20261020d"></script>
-<script src="js/timeline.js?v=20261020b"></script>
-<script src="js/tyres-start.js?v=20261020a"></script>
+<script src="js/calculate.js?v=20261020e"></script>
+<script src="js/timeline.js?v=20261020f"></script>
+<script src="js/timeline-lanes.js?v=20261020d"></script>
+<script src="js/tyres-start.js?v=20261020b"></script>
+<script src="js/plans.js?v=20261020b"></script>
 <script src="js/drivers.js?v=20261013d"></script>
 <script src="js/live-mode.js?v=20261019a"></script>
-<script src="js/firebase-sync.js?v=20261017a"></script>
-<script src="js/team-telemetry.js?v=20261019a"></script>
+<script src="js/firebase-sync.js?v=20261020c"></script>
+<script src="js/team-telemetry.js?v=20261020a"></script>
 <script src="js/remote-live.js?v=20261019b"></script>
 <script src="js/timeline-zoom.js?v=20261013d"></script>
-<script src="js/tyres-wear.js?v=20261020a"></script>
+<script src="js/tyres-wear.js?v=20261020b"></script>
 <script src="js/ui-tabs.js?v=20261013d"></script>
-<script src="js/circuits-ui.js?v=20261013d"></script>
-<script src="js/circuits-db.js?v=20261015b"></script>
-<script src="js/live-telemetry.js?v=20261020a"></script>
+<script src="js/circuits-ui.js?v=20261020a"></script>
+<script src="js/circuits-db.js?v=20261020a"></script>
+<script src="js/live-telemetry.js?v=20261020b"></script>
 
 
 

@@ -215,6 +215,7 @@ function buildTimeline(stints, lapTime, multiplier, realStart, gameStart, totalR
             return parts.map(p => p[0].toUpperCase()).join('');
         }
 
+        if (_isLiveTL) {   // ancienne timeline mono-ligne : live uniquement (planification = vue par pilote)
 stints.forEach((stint, idx) => {
     // Même logique : pit APRÈS ce stint (pas avant)
     const pitAfter = (idx < stints.length - 1) ? getPitDuration(idx) : 0;
@@ -308,6 +309,7 @@ stints.forEach((stint, idx) => {
             }
             cum += dR;
         });
+        }  // fin _isLiveTL (barres de la timeline d'origine : live uniquement)
 
         /* Axe ingame */
         const gameAxis = document.createElement('div');
@@ -325,8 +327,10 @@ stints.forEach((stint, idx) => {
 
 
 
+        if (!_isLiveTL) { realAxis.style.cssText += `margin-left:${LANE_LABEL_W}px;width:calc(100% - ${LANE_LABEL_W}px);`; rTag.style.left = `-${LANE_LABEL_W}px`; gameAxis.style.cssText += `margin-left:${LANE_LABEL_W}px;width:calc(100% - ${LANE_LABEL_W}px);`; gTag.style.left = `-${LANE_LABEL_W}px`; }
         wrapper.appendChild(realAxis);
-        wrapper.appendChild(stintRow);
+        if (_isLiveTL) wrapper.appendChild(stintRow);
+        else renderDriverLanes(wrapper, stints, lapTime, realStart, totalRealSec);
 		
         /* ── Label "Prochain pilote" sous les barres ── */
         const nextDriverLabel = document.createElement('div');
@@ -412,6 +416,7 @@ stints.forEach((stint, idx) => {
 		
 		}
 
+        if (!_isLiveTL) nextDriverLabel.style.cssText += `margin-left:${LANE_LABEL_W}px;width:calc(100% - ${LANE_LABEL_W}px);`;
         wrapper.appendChild(nextDriverLabel);
 		  // Réappliquer le zoom après reconstruction
         requestAnimationFrame(() => applyTimelineZoom(_isLiveTL));
@@ -430,7 +435,7 @@ stints.forEach((stint, idx) => {
                 background:#ffffff;border-radius:2px;
                 z-index:10;box-shadow:0 0 8px rgba(255,255,255,0.8);
                 pointer-events:none;`;
-            stintRow.appendChild(nowLine);
+            if (_isLiveTL) stintRow.appendChild(nowLine);
 
                         /* Badge flottant AU-DESSUS de l'axe réel */
 
@@ -551,6 +556,7 @@ stints.forEach((stint, idx) => {
         }
 
             /* ── Barres horizontales durée de vie pneus G / D ── */
+            if (_isLiveTL) {   // planification : barres de vie dans la vue par pilote
             const tyreLifeRow = document.createElement('div');
             tyreLifeRow.style.cssText =
                 'position:relative;width:100%;height:28px;display:flex;' +
@@ -587,7 +593,7 @@ stints.forEach((stint, idx) => {
                 })();
 
                 const COMPOUND_COLORS = {
-                    soft: '#ff6060', medium: '#ffcc00', hard: '#dddddd', wet: '#3399ff',
+                    soft: '#dddddd', medium: '#ffcc00', hard: '#ff6060', wet: '#3399ff',
                 };
 
                 function addTyreSegment(compound, lifeAnchorSec, stintIdx, isCurrentLiveTyre = false) {
@@ -703,6 +709,7 @@ stints.forEach((stint, idx) => {
             });
 
             wrapper.appendChild(tyreLifeRow);
+            }  // fin _isLiveTL (anciennes barres de vie pneus : live uniquement)
             // ← gameAxis est ajouté juste après dans le code existant
 
         wrapper.appendChild(gameAxis);
@@ -715,6 +722,7 @@ stints.forEach((stint, idx) => {
     /* ── Reset ── */
     function reset() {
         pitState = {};
+        if (typeof plansReset === 'function') plansReset();
         document.getElementById('realStartHours').value   = '18';
         document.getElementById('realStartMinutes').value = '30';
         document.getElementById('gameStartHours').value   = '18';

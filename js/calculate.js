@@ -721,11 +721,11 @@ stints.forEach((stint, idx) => {
                             title="Gomme côté gauche (+${TYRE_PENALTY}s si changement)">
                             <option value="none"  ${(st.tyreLeft||'none')==='none'   ?'selected':''}>—</option>
                             <option value="soft"  ${st.tyreLeft==='soft'  ?'selected':''}
-                                style="color:#ff6060;background:#1a0000;">🔴 Soft</option>
+                                style="color:#dddddd;background:#111;">⚪ Soft</option>
                             <option value="medium"${st.tyreLeft==='medium'?'selected':''}
                                 style="color:#ffcc00;background:#1a1400;">🟡 Med</option>
                             <option value="hard"  ${st.tyreLeft==='hard'  ?'selected':''}
-                                style="color:#dddddd;background:#111;">⚪ Hard</option>
+                                style="color:#ff6060;background:#1a0000;">🔴 Hard</option>
                             <option value="wet"   ${st.tyreLeft==='wet'   ?'selected':''}
                                 style="color:#3399ff;background:#00101a;">🔵 Wet</option>
                         </select>
@@ -741,11 +741,11 @@ stints.forEach((stint, idx) => {
                             title="Gomme côté droit (+${TYRE_PENALTY}s si changement)">
                             <option value="none"  ${(st.tyreRight||'none')==='none'   ?'selected':''}>—</option>
                             <option value="soft"  ${st.tyreRight==='soft'  ?'selected':''}
-                                style="color:#ff6060;background:#1a0000;">🔴 Soft</option>
+                                style="color:#dddddd;background:#111;">⚪ Soft</option>
                             <option value="medium"${st.tyreRight==='medium'?'selected':''}
                                 style="color:#ffcc00;background:#1a1400;">🟡 Med</option>
                             <option value="hard"  ${st.tyreRight==='hard'  ?'selected':''}
-                                style="color:#dddddd;background:#111;">⚪ Hard</option>
+                                style="color:#ff6060;background:#1a0000;">🔴 Hard</option>
                             <option value="wet"   ${st.tyreRight==='wet'   ?'selected':''}
                                 style="color:#3399ff;background:#00101a;">🔵 Wet</option>
                         </select>

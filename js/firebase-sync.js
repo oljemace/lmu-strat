@@ -427,6 +427,7 @@ function _doFirebasePush() {
     });
     if (_dirtyPitState)  partial.pitState = full.pitState;
     if (_dirtyTyreWear)  partial.tyreWear = full.tyreWear;
+    if (window._dirtyPlans) { partial.plans = full.plans; partial.activePlan = full.activePlan; }
     if (_dirtyDrivers) {
         partial.drivers     = full.drivers;
         partial.driverCount = full.driverCount;
@@ -439,6 +440,7 @@ function _doFirebasePush() {
     const pitStateSnapshot  = _dirtyPitState;
     const tyreWearSnapshot  = _dirtyTyreWear;
     const driversSnapshot   = _dirtyDrivers;
+    const plansSnapshotFlag = !!window._dirtyPlans;
 
     _lastLocalPushTime = Date.now();
     setSyncStatus('🔄 Envoi…', '#ffaa00');
@@ -456,6 +458,7 @@ function _doFirebasePush() {
             if (pitStateSnapshot) _dirtyPitState = false;
             if (tyreWearSnapshot) _dirtyTyreWear = false;
             if (driversSnapshot)  _dirtyDrivers  = false;
+            if (plansSnapshotFlag) window._dirtyPlans = false;
         })
         .catch(() => setSyncStatus('🔴 Erreur sync', '#ff4444'));
 }            
@@ -471,7 +474,7 @@ function _doFirebasePush() {
             'evCurrent','evPerLapReal',
             'livelapMinutes','livelapSeconds','livelapMillis',
             'liveLapsCompleted',
-            'tyreBudget'            
+            'tyreBudget'
         ];
 
 		const form = {};
@@ -502,6 +505,7 @@ function _doFirebasePush() {
         form._liveEvAtAnchor = window._liveEvAtAnchor || 0;
         form._liveNowSec     = window._liveNowSec     || 0;
         form._startTyres     = window._startTyres || { left: 'none', right: 'none' };
+        if (typeof plansCollect === 'function') Object.assign(form, plansCollect());
 
         // ── État pneus live ──
         if (window._liveTyreState) {
@@ -546,7 +550,7 @@ function _doFirebasePush() {
                     'evCurrent','evPerLapReal',
                     'livelapMinutes','livelapSeconds','livelapMillis',
                     'liveLapsCompleted',
-                    'tyreBudget'                    
+                    'tyreBudget'
                 ];
 
             ids.forEach(id => {
@@ -595,6 +599,9 @@ function _doFirebasePush() {
                 if (colorEl && d.color !== undefined)      colorEl.value = d.color;
             });
         }
+
+            // Plans multiples : liste + plan actif (avant la fusion de pitState)
+            if (typeof plansApplyRemote === 'function') plansApplyRemote(data);
 
             // pitState — ne pas écraser les stints dont un champ est en cours d'édition locale
             if (data.pitState) {
