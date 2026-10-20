@@ -324,6 +324,20 @@ function deleteSession() {
    l'ancienne session restaient en mémoire, « faisaient foi » à l'arrivée dans la nouvelle
    (voir plansApplyRemote) puis étaient renvoyés vers elle à la première modification. */
 let _joinToken = 0;   // ignore les retours tardifs d'une session déjà quittée
+/* Faux tant que les données de la session n'ont pas été reçues. Pendant ce temps le
+   formulaire contient encore des valeurs par défaut (ou celles de la session
+   précédente) : tout envoi les écrirait dans la session et effacerait le travail de
+   l'équipe (tableau des stints remis à zéro à l'arrivée d'un autre utilisateur). */
+let _sessionReady = false;
+function _discardPendingPushes() {
+    clearTimeout(_syncTimeout);
+    _dirtyFields.clear(); _dirtyPitState = false; _dirtyTyreWear = false; _dirtyDrivers = false;
+    window._dirtyPlans = false;
+    if (window._plansDirty) window._plansDirty.clear();
+    if (window._plansDeleted) window._plansDeleted.clear();
+    window._dirtyRefPlan = false;
+    _pendingPushAfterLock = false;
+}
 function _resetLocalSessionState() {
     clearTimeout(_syncTimeout);
     _dirtyFields.clear(); _dirtyPitState = false; _dirtyTyreWear = false; _dirtyDrivers = false;
@@ -350,6 +364,7 @@ function _resetLocalSessionState() {
 			if (typeof presenceSwitchTo === 'function') presenceSwitchTo(null);
 			const joinToken = ++_joinToken;
 			_resetLocalSessionState();
+			_sessionReady = false;
 			_sessionId = id;
 			setSyncStatus('🟡 Connexion…', '#ffaa00');
 
@@ -367,6 +382,7 @@ function _resetLocalSessionState() {
 				_unsubscribe = window._firebaseOnValue(dataRef, snap2 => {
 						if (joinToken !== _joinToken || _sessionId !== id) return;
 					const remote = snap2.val();
+					if (!remote && !_sessionReady) { _discardPendingPushes(); _sessionReady = true; }
 					if (!remote) {
 						// La session était là et vient de disparaître : un admin l'a supprimée.
 						// On cesse d'écrire dedans, sinon un envoi tardif la recréerait sans nom.
@@ -385,6 +401,8 @@ function _resetLocalSessionState() {
 						return;
 					}
 					_hadRemoteData = true;
+					// Première réception : les modifications en attente viennent d'un formulaire pas encore à jour, on les abandonne.
+					if (!_sessionReady) { _discardPendingPushes(); _sessionReady = true; }
 					if (_isSyncing) return;
 					if (Date.now() - _lastLocalPushTime < 2000) return;
 					_isSyncing = true;
@@ -413,7 +431,7 @@ function _resetLocalSessionState() {
 		}
 
             function pushToFirebase(includePitState = false) {
-                if (!_sessionId || !window._firebaseDb || window._applyingRemote || !canWriteTeamData()) return;
+                if (!_sessionId || !_sessionReady || !window._firebaseDb || window._applyingRemote || !canWriteTeamData()) return;
 
                 // Le verrou _isSyncing ne bloque plus que l'ENVOI réseau (anti-écho) :
                 // la saisie / le commit dans pitState se font normalement pendant ce temps.
@@ -438,7 +456,7 @@ function _resetLocalSessionState() {
             }
 
 function _doFirebasePush() {
-    if (!_sessionId || !window._firebaseDb || window._applyingRemote || !canWriteTeamData()) return;
+    if (!_sessionId || !_sessionReady || !window._firebaseDb || window._applyingRemote || !canWriteTeamData()) return;
 
     if (_isSyncing) {
         // Un push est arrivé pendant le verrou anti-écho : on le rejoue
