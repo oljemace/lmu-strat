@@ -147,11 +147,25 @@ function renderDriverDrivingRecap(stints, lapTime) {
 }
 
 
+/* Préférence personnelle (planification) : afficher le badge « maintenant » */
+function _nowBadgeEnabled() {
+    try { return localStorage.getItem('lmuShowNowBadge') !== '0'; } catch (e) { return true; }
+}
+function toggleNowBadge(on) {
+    try { localStorage.setItem('lmuShowNowBadge', on ? '1' : '0'); } catch (e) {}
+    if (typeof calculate === 'function') calculate();
+}
+(function () {
+    const cb = document.getElementById('showNowBadge');
+    if (cb) cb.checked = _nowBadgeEnabled();
+})();
+
 function buildTimeline(stints, lapTime, multiplier, realStart, gameStart, totalRealSec) {
 
 		// Capturé ici (synchrone, donc window._liveMode encore fiable) pour les
 		// callbacks différés plus bas (voir _tid()).
 		const _isLiveTL = window._liveMode;
+		const _showNow  = _isLiveTL || _nowBadgeEnabled();
 
 		if (!_isLiveTL) renderDriverDrivingRecap(stints, lapTime);
 
@@ -410,7 +424,7 @@ function buildTimeline(stints, lapTime, multiplier, realStart, gameStart, totalR
                 <div style="font-weight:normal;font-size:0.95em;">${line2}</div>
                 ${line3 ? `<div style="color:#0066cc;">${line3}</div>` : ''}
             `;
-            realAxis.appendChild(nowBadge);
+            if (_showNow) realAxis.appendChild(nowBadge);
 
         } else if (posRatio < 0) {
             /* Badge à GAUCHE de l'axe réel */
@@ -430,7 +444,7 @@ function buildTimeline(stints, lapTime, multiplier, realStart, gameStart, totalR
                 pointer-events:none;`;
             const minutesBefore = Math.round((realStart - nowSec) / 60);
             outBefore.textContent = `⏳ Course dans ${minutesBefore} min`;
-            realAxis.appendChild(outBefore);
+            if (_showNow) realAxis.appendChild(outBefore);
 
         } else {
             /* Badge à DROITE de l'axe réel */
@@ -450,7 +464,7 @@ function buildTimeline(stints, lapTime, multiplier, realStart, gameStart, totalR
                 pointer-events:none;`;
             const minutesAfter = Math.round((nowSec - raceEndSec) / 60);
             outAfter.textContent = `🏁 Course terminée il y a ${minutesAfter} min`;
-            realAxis.appendChild(outAfter);
+            if (_showNow) realAxis.appendChild(outAfter);
         }
 
             // ← gameAxis est ajouté juste après dans le code existant

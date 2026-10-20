@@ -319,12 +319,35 @@ function deleteSession() {
         });
 }
 
+/* Vide tout l'état local propre à la session quittée : plans, pitState, pneus de départ,
+   stints manuels, usure mesurée et envois en attente. Sans cela, les plans / pitState de
+   l'ancienne session restaient en mémoire, « faisaient foi » à l'arrivée dans la nouvelle
+   (voir plansApplyRemote) puis étaient renvoyés vers elle à la première modification. */
+let _joinToken = 0;   // ignore les retours tardifs d'une session déjà quittée
+function _resetLocalSessionState() {
+    clearTimeout(_syncTimeout);
+    _dirtyFields.clear(); _dirtyPitState = false; _dirtyTyreWear = false; _dirtyDrivers = false;
+    window._dirtyPlans = false;
+    _pendingPushAfterLock = false;
+    _isSyncing = false;
+    _lastLocalPushTime = 0;
+    Object.keys(pitState).forEach(k => delete pitState[k]);
+    if (typeof plansReset === 'function') plansReset();
+    window._startTyres = { left: 'none', right: 'none' };
+    window._manualStintCount = 0;
+    window._manualStintCountLive = 0;
+    window._measuredWear = {};
+    window._liveTyreState = null;
+}
+
 /* ── Rejoindre une session (écoute temps réel) ── */
 		let _unsubscribe = null;
 
 		function joinSession(id) {
 			if (_unsubscribe) { _unsubscribe(); _unsubscribe = null; }
-
+			if (typeof stopTeamTelemetryWatch === 'function') stopTeamTelemetryWatch();
+			const joinToken = ++_joinToken;
+			_resetLocalSessionState();
 			_sessionId = id;
 			setSyncStatus('🟡 Connexion…', '#ffaa00');
 
@@ -332,6 +355,7 @@ function deleteSession() {
 			// à l'équipe) : si la lecture réussit, l'utilisateur y a droit.
 			const sessionRef = window._firebaseRef(window._firebaseDb, teamPath(`sessions/${id}`));
 			window._firebaseOnValue(sessionRef, snap => {
+					if (joinToken !== _joinToken) return;
 				const sessionData = snap.val();
 				if (!sessionData) { setSyncStatus('🔴 Session introuvable', '#ff4444'); return; }
 
@@ -339,6 +363,7 @@ function deleteSession() {
 				const dataRef = window._firebaseRef(window._firebaseDb, teamPath(`sessions/${id}/data`));
 				let _hadRemoteData = false;
 				_unsubscribe = window._firebaseOnValue(dataRef, snap2 => {
+						if (joinToken !== _joinToken || _sessionId !== id) return;
 					const remote = snap2.val();
 					if (!remote) {
 						// La session était là et vient de disparaître : un admin l'a supprimée.

@@ -809,6 +809,10 @@
                 background:rgba(255,255,255,0.1);color:#aaa;font-size:0.8em;cursor:pointer;">
             Reset
         </button>
+        <label style="display:flex;align-items:center;gap:5px;color:#aaa;font-size:0.8em;cursor:pointer;margin-left:8px;" title="Affiche ou masque le badge horaire / temps restant sur la timeline (préférence personnelle)">
+            <input type="checkbox" id="showNowBadge" checked onchange="toggleNowBadge(this.checked)" style="accent-color:#00ff88;cursor:pointer;">
+            🕐 Repère « maintenant »
+        </label>
     </div>
     <div id="timelineDriverRecap" style="margin-left:auto;"></div>
     </div>
@@ -1890,13 +1894,13 @@
 <script src="js/strategy-state.js?v=20261013d"></script>
 <script src="js/manual-stints.js?v=20261020a"></script>
 <script src="js/calculate.js?v=20261020f"></script>
-<script src="js/timeline.js?v=20261021a"></script>
+<script src="js/timeline.js?v=20261021b"></script>
 <script src="js/timeline-lanes.js?v=20261021h"></script>
 <script src="js/tyres-start.js?v=20261020b"></script>
 <script src="js/plans.js?v=20261020c"></script>
 <script src="js/drivers.js?v=20261013d"></script>
 <script src="js/live-mode.js?v=20261019a"></script>
-<script src="js/firebase-sync.js?v=20261021a"></script>
+<script src="js/firebase-sync.js?v=20261021b"></script>
 <script src="js/team-telemetry.js?v=20261020a"></script>
 <script src="js/remote-live.js?v=20261019b"></script>
 <script src="js/timeline-zoom.js?v=20261021a"></script>
