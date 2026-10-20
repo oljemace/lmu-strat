@@ -122,6 +122,10 @@ function plansReset() {
 /* Données distantes : liste des plans + plan actif de l'équipe.
    Appelé avant la fusion de data.pitState dans applyFormData(). */
 function plansApplyRemote(data) {
+    // Première réception après l'arrivée dans une session : l'état local est vierge
+    // (voir _resetLocalSessionState), il ne doit PAS « faire foi » sur le plan actif.
+    const freshJoin = !!window._plansFreshJoin;
+    window._plansFreshJoin = false;
     if (!data || !data.plans) { plansRender(); return; }
     const local = _planActive();
     const list = Object.keys(data.plans)
@@ -135,9 +139,12 @@ function plansApplyRemote(data) {
         }));
     if (!list.length) return;
     const newActive = list.some(p => p.id === data.activePlan) ? data.activePlan : list[0].id;
-    if (newActive === window._activePlanId && local) {
+    if (newActive === window._activePlanId && local && !freshJoin) {
         // même plan actif : l'état courant fait foi (il est déjà à jour / en cours d'édition)
+        // sauf le nom et le total des arrêts, qui viennent de l'équipe
         const i = list.findIndex(p => p.id === newActive);
+        if (window._planUi !== 'rename') local.name = list[i].name;
+        if (list[i].pitTotal !== null) local.pitTotal = list[i].pitTotal;
         list[i] = local;
     } else {
         // l'équipe a changé de plan : on remplace entièrement l'état courant

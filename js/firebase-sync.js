@@ -338,6 +338,7 @@ function _resetLocalSessionState() {
     window._manualStintCountLive = 0;
     window._measuredWear = {};
     window._liveTyreState = null;
+    window._plansFreshJoin = true;
 }
 
 /* ── Rejoindre une session (écoute temps réel) ── */
