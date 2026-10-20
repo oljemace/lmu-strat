@@ -456,7 +456,14 @@ function _doFirebasePush() {
     });
     if (_dirtyPitState)  partial.pitState = full.pitState;
     if (_dirtyTyreWear)  partial.tyreWear = full.tyreWear;
-    if (window._dirtyPlans) { partial.plans = full.plans; partial.activePlan = full.activePlan; }
+    // Plans : chaque utilisateur affiche son propre plan. On n'envoie que le plan
+    // modifié (plans/{id}) et, s'il s'agit de la référence, sa copie à la racine.
+    let plansPP = null;
+    if (typeof plansPartial === 'function') {
+        plansPP = plansPartial({ pit: _dirtyPitState, tyres: _dirtyFields.has('_startTyres') });
+        delete partial.pitState; delete partial._startTyres;
+        Object.assign(partial, plansPP.updates);
+    }
     if (_dirtyDrivers) {
         partial.drivers     = full.drivers;
         partial.driverCount = full.driverCount;
@@ -469,7 +476,6 @@ function _doFirebasePush() {
     const pitStateSnapshot  = _dirtyPitState;
     const tyreWearSnapshot  = _dirtyTyreWear;
     const driversSnapshot   = _dirtyDrivers;
-    const plansSnapshotFlag = !!window._dirtyPlans;
 
     _lastLocalPushTime = Date.now();
     setSyncStatus('🔄 Envoi…', '#ffaa00');
@@ -487,7 +493,7 @@ function _doFirebasePush() {
             if (pitStateSnapshot) _dirtyPitState = false;
             if (tyreWearSnapshot) _dirtyTyreWear = false;
             if (driversSnapshot)  _dirtyDrivers  = false;
-            if (plansSnapshotFlag) window._dirtyPlans = false;
+            if (plansPP) plansPushed(plansPP);
         })
         .catch(() => setSyncStatus('🔴 Erreur sync', '#ff4444'));
 }            
@@ -634,7 +640,10 @@ function _doFirebasePush() {
             if (typeof plansApplyRemote === 'function') plansApplyRemote(data);
 
             // pitState — ne pas écraser les stints dont un champ est en cours d'édition locale
-            if (data.pitState) {
+            // Plan affiché par cet utilisateur : racine pour la référence, plans/{id} sinon
+            const _rv = (typeof plansRemoteViewState === 'function')
+                ? plansRemoteViewState(data) : { pitState: data.pitState, startTyres: data._startTyres };
+            if (_rv.pitState) {
                 // Collecter les indices de stints actuellement édités
                 const editingIndices = new Set();
                 document.querySelectorAll('[data-local-editing="true"]').forEach(el => {
@@ -642,9 +651,9 @@ function _doFirebasePush() {
                     if (tr) editingIndices.add(parseInt(tr.dataset.stintIdx));
                 });
 
-                Object.keys(data.pitState).forEach(k => {
+                Object.keys(_rv.pitState).forEach(k => {
                     if (!editingIndices.has(parseInt(k))) {
-                        pitState[k] = data.pitState[k];
+                        pitState[k] = _rv.pitState[k];
                     }
                     // Si l'indice est en cours d'édition, on garde le pitState local
                 });
@@ -660,16 +669,16 @@ function _doFirebasePush() {
             }
 
             // Restauration pneus de départ
-            if (data._startTyres) {
-                window._startTyres = data._startTyres;
+            if (_rv.startTyres) {
+                window._startTyres = _rv.startTyres;
                 const stlEl = document.getElementById('startTyreLeft');
                 const strEl = document.getElementById('startTyreRight');
                 if (stlEl) {
-                    stlEl.value = data._startTyres.left || 'none';
+                    stlEl.value = _rv.startTyres.left || 'none';
                     _applyStartTyreSelectStyle('startTyreLeft', stlEl.value);
                 }
                 if (strEl) {
-                    strEl.value = data._startTyres.right || 'none';
+                    strEl.value = _rv.startTyres.right || 'none';
                     _applyStartTyreSelectStyle('startTyreRight', strEl.value);
                 }
                 _updateStartTyreLifeInfo();

@@ -6,19 +6,41 @@
    Les paramètres de course (durée, temps au tour, conso, pilotes, stock de
    pneus…) restent communs à tous les plans.
 
-   Le plan ACTIF vit dans pitState / _startTyres / _manualStintCount (comme
-   avant : tout le reste de l'appli est inchangé). Les autres plans sont
-   gardés en mémoire dans _plans et synchronisés via Firebase
-   (data.plans + data.activePlan).
+   Le plan AFFICHÉ (window._activePlanId) est PERSONNEL : chaque utilisateur
+   regarde et modifie le plan de son choix, sans faire changer celui des autres.
+   Il vit dans pitState / _startTyres / _manualStintCount (comme avant : tout le
+   reste de l'appli est inchangé).
+   Le plan de RÉFÉRENCE de l'équipe (window._refPlanId, Firebase : activePlan)
+   est partagé : c'est celui du mode Live, que tout le monde suit alors.
+
+   Firebase : plans/{id} = un enregistrement par plan, écrit seul (jamais tous
+   les plans d'un coup, pour ne pas écraser le travail des autres sur un autre
+   plan). pitState et _startTyres à la racine de la session recopient le plan
+   de référence (lecture par le Live et les anciennes versions).
 ══════════════════════════════════════════════════════════════════ */
 window._plans = [{ id: 'A', name: 'Plan A', pitState: {}, startTyres: { left: 'none', right: 'none' }, manualCount: 0, pitTotal: null }];
-window._activePlanId = 'A';
-window._dirtyPlans = false;
+window._activePlanId = 'A';      // plan affiché par CET utilisateur
+window._refPlanId = 'A';         // plan de référence de l'équipe (Live)
+window._dirtyPlans = false;      // (compat)
+window._plansDirty = new Set();  // plans à envoyer en entier
+window._plansDeleted = new Set(); // plans supprimés à retirer de Firebase
+window._dirtyRefPlan = false;    // plan de référence à renvoyer
 
 function _plansClone(o) { return JSON.parse(JSON.stringify(o || {})); }
 function _planActive() { return window._plans.find(p => p.id === window._activePlanId) || window._plans[0]; }
 
-/* Recopie l'état courant dans l'entrée du plan actif */
+/* Mémorise le plan affiché, par session, dans ce navigateur */
+function _plansViewKey() {
+    return (typeof _sessionId !== 'undefined' && _sessionId) ? `lmuViewPlan.${window._teamId || ''}.${_sessionId}` : null;
+}
+function _plansStoreView(id) {
+    try { const k = _plansViewKey(); if (k) localStorage.setItem(k, id); } catch (e) { /* stockage indisponible */ }
+}
+function _plansStoredView() {
+    try { const k = _plansViewKey(); return k ? localStorage.getItem(k) : null; } catch (e) { return null; }
+}
+
+/* Recopie l'état courant dans l'entrée du plan affiché */
 function plansSnapshot() {
     const p = _planActive();
     if (!p) return;
@@ -48,23 +70,30 @@ function _plansRecalc() {
     try { calculate(); } finally { window._applyingRemote = prev; }
 }
 
-function _plansPush() {
-    window._dirtyPlans = true;
-    _dirtyPitState = true;
-    _dirtyFields.add('_startTyres');
-    pushToFirebase(true);
-}
+function _plansPush() { pushToFirebase(true); }
 
+/* Changer de plan : ne concerne QUE cet utilisateur (rien n'est envoyé aux autres,
+   sauf les modifications en attente sur le plan que l'on quitte). */
 function plansSwitch(id) {
     if (id === window._activePlanId || window._liveMode) return;
     const target = window._plans.find(p => p.id === id);
     if (!target) return;
     plansSnapshot();
+    const old = _planActive();
+    const hadEdits = (typeof _dirtyPitState !== 'undefined' && _dirtyPitState)
+                  || (typeof _dirtyFields !== 'undefined' && _dirtyFields.has('_startTyres'));
+    if (hadEdits && old) {
+        // modifications pas encore envoyées : elles appartiennent au plan quitté
+        window._plansDirty.add(old.id);
+        _dirtyPitState = false;
+        _dirtyFields.delete('_startTyres');
+    }
     window._activePlanId = id;
     _plansLoadIntoState(target);
     _plansRecalc();
     plansRender();
-    _plansPush();
+    _plansStoreView(id);
+    if (hadEdits) _plansPush();
 }
 
 function _plansNextId() {
@@ -82,7 +111,9 @@ function plansAdd(duplicate) {
         ? { id, name: `${src.name} (copie)`, pitState: _plansClone(src.pitState), startTyres: _plansClone(src.startTyres), manualCount: src.manualCount }
         : { id, name: 'Plan ' + id, pitState: {}, startTyres: { left: 'none', right: 'none' }, manualCount: 0 };
     window._plans.push(plan);
+    window._plansDirty.add(id);
     plansSwitch(id);
+    _plansPush();
 }
 
 window._planUi = null;   // null | 'rename' | 'delete' (saisie dans la barre : prompt()/confirm() ne marchent pas dans l'appli de bureau)
@@ -94,7 +125,7 @@ function plansRename(name) {
     p.name = String(name).trim().slice(0, 40) || p.name;
     plansRender();
     plansSnapshot();
-    window._dirtyPlans = true;
+    window._plansDirty.add(p.id);
     pushToFirebase(false);
 }
 
@@ -104,30 +135,62 @@ function plansDelete(confirmed) {
     window._planUi = null;
     const p = _planActive();
     window._plans = window._plans.filter(x => x.id !== p.id);
-    const next = window._plans[0];
+    window._plansDirty.delete(p.id);
+    window._plansDeleted.add(p.id);
+    if (p.id === window._refPlanId) {            // le plan de référence disparaît : le premier le remplace
+        window._refPlanId = window._plans[0].id;
+        window._dirtyRefPlan = true;
+    }
+    const next = window._plans.find(x => x.id === window._refPlanId) || window._plans[0];
     window._activePlanId = next.id;
     _plansLoadIntoState(next);
     _plansRecalc();
     plansRender();
+    _plansStoreView(next.id);
     _plansPush();
+}
+
+/* Le plan affiché devient le plan de référence de l'équipe (celui du Live) */
+function plansSetReference() {
+    if (window._liveMode || window._activePlanId === window._refPlanId) return;
+    plansSnapshot();
+    window._refPlanId = window._activePlanId;
+    window._dirtyRefPlan = true;
+    window._plansDirty.add(window._refPlanId);
+    plansRender();
+    _plansPush();
+}
+
+/* Au lancement du Live : le plan affiché devient la référence que tout le monde suit */
+function plansPinReference() {
+    if (window._activePlanId === window._refPlanId) return;
+    window._refPlanId = window._activePlanId;
+    window._dirtyRefPlan = true;
+    plansRender();
 }
 
 /* Remise à zéro (bouton Reset) : un seul plan vierge */
 function plansReset() {
     window._plans = [{ id: 'A', name: 'Plan A', pitState: {}, startTyres: { left: 'none', right: 'none' }, manualCount: 0 }];
     window._activePlanId = 'A';
+    window._refPlanId = 'A';
+    window._plansDirty = new Set();
+    window._plansDeleted = new Set();
+    window._dirtyRefPlan = false;
     plansRender();
 }
 
-/* Données distantes : liste des plans + plan actif de l'équipe.
-   Appelé avant la fusion de data.pitState dans applyFormData(). */
+/* Données distantes : liste des plans + plan de référence de l'équipe.
+   Le plan affiché reste celui de l'utilisateur ; il change seulement à l'arrivée
+   dans la session (dernier plan vu, sinon la référence), en Live (tout le monde suit
+   la référence) ou si un autre l'a supprimé.
+   Appelé avant la fusion de pitState dans applyFormData(). */
 function plansApplyRemote(data) {
     // Première réception après l'arrivée dans une session : l'état local est vierge
-    // (voir _resetLocalSessionState), il ne doit PAS « faire foi » sur le plan actif.
+    // (voir _resetLocalSessionState), il ne doit PAS « faire foi » sur le plan affiché.
     const freshJoin = !!window._plansFreshJoin;
     window._plansFreshJoin = false;
     if (!data || !data.plans) { plansRender(); return; }
-    const local = _planActive();
     const list = Object.keys(data.plans)
         .map(id => Object.assign({ id }, data.plans[id]))
         .sort((a, b) => (a.order || 0) - (b.order || 0))
@@ -138,34 +201,88 @@ function plansApplyRemote(data) {
             pitTotal: (typeof p.pitTotal === 'number') ? p.pitTotal : null
         }));
     if (!list.length) return;
-    const newActive = list.some(p => p.id === data.activePlan) ? data.activePlan : list[0].id;
-    if (newActive === window._activePlanId && local && !freshJoin) {
-        // même plan actif : l'état courant fait foi (il est déjà à jour / en cours d'édition)
+
+    const ref = list.some(p => p.id === data.activePlan) ? data.activePlan : list[0].id;
+    // Le plan de référence est recopié à la racine : c'est la version la plus à jour (anciennes sessions)
+    const refRec = list.find(p => p.id === ref);
+    if (data.pitState) refRec.pitState = data.pitState;
+    if (data._startTyres) refRec.startTyres = data._startTyres;
+    window._refPlanId = ref;
+
+    const prevViewed = window._activePlanId;
+    let viewed = prevViewed;
+    if (freshJoin) {
+        const stored = _plansStoredView();
+        viewed = list.some(p => p.id === stored) ? stored : ref;
+    }
+    if (data._liveModeActive || !list.some(p => p.id === viewed)) viewed = ref;
+    const changed = freshJoin || viewed !== prevViewed;
+
+    const i = list.findIndex(p => p.id === viewed);
+    const local = _planActive();
+    if (!changed && local && local.id === viewed) {
+        // même plan affiché : l'état courant fait foi (il est déjà à jour / en cours d'édition)
         // sauf le nom et le total des arrêts, qui viennent de l'équipe
-        const i = list.findIndex(p => p.id === newActive);
         if (window._planUi !== 'rename') local.name = list[i].name;
         if (list[i].pitTotal !== null) local.pitTotal = list[i].pitTotal;
         list[i] = local;
-    } else {
-        // l'équipe a changé de plan : on remplace entièrement l'état courant
-        Object.keys(pitState).forEach(k => delete pitState[k]);
-        const act = list.find(p => p.id === newActive);
-        window._manualStintCount = act.manualCount || 0;
-        if (typeof _updateManualStintUI === 'function') _updateManualStintUI('planning');
     }
     window._plans = list;
-    window._activePlanId = newActive;
+    window._activePlanId = viewed;
+    if (changed) _plansLoadIntoState(list[i]);
     plansRender();
 }
 
-/* Données à envoyer à Firebase */
+/* Version distante du plan AFFICHÉ (pour la fusion dans applyFormData) :
+   la racine de la session pour le plan de référence, plans/{id} sinon. */
+function plansRemoteViewState(data) {
+    const id = window._activePlanId;
+    if (!data.plans || id === window._refPlanId) return { pitState: data.pitState, startTyres: data._startTyres };
+    const r = data.plans[id];
+    return { pitState: r && r.pitState, startTyres: r && r.startTyres };
+}
+
+function _plansRecord(p, i) {
+    return { name: p.name, order: i, pitState: _plansClone(p.pitState), startTyres: _plansClone(p.startTyres), manualCount: p.manualCount || 0, pitTotal: p.pitTotal };
+}
+
+/* Session complète (création d'une session) */
 function plansCollect() {
     plansSnapshot();
     const out = {};
+    window._plans.forEach((p, i) => { out[p.id] = _plansRecord(p, i); });
+    return { plans: out, activePlan: window._refPlanId };
+}
+
+/* Mise à jour PARTIELLE pour Firebase : uniquement le plan affiché s'il a changé,
+   les plans marqués (nouveau, renommé…), les suppressions et la référence. */
+function plansPartial(flags) {
+    plansSnapshot();
+    const ids = new Set(window._plansDirty);
+    if (flags && (flags.pit || flags.tyres)) ids.add(window._activePlanId);
+    const out = {};
     window._plans.forEach((p, i) => {
-        out[p.id] = { name: p.name, order: i, pitState: _plansClone(p.pitState), startTyres: _plansClone(p.startTyres), manualCount: p.manualCount || 0, pitTotal: p.pitTotal };
+        if (!ids.has(p.id)) return;
+        out[`plans/${p.id}`] = _plansRecord(p, i);
+        if (p.id === window._refPlanId) { out.pitState = _plansClone(p.pitState); out._startTyres = _plansClone(p.startTyres); }
     });
-    return { plans: out, activePlan: window._activePlanId };
+    const del = new Set(window._plansDeleted);
+    del.forEach(id => { out[`plans/${id}`] = null; });
+    const ref = !!window._dirtyRefPlan;
+    if (ref) {
+        out.activePlan = window._refPlanId;
+        const rp = window._plans.find(p => p.id === window._refPlanId);
+        if (rp) { out.pitState = _plansClone(rp.pitState); out._startTyres = _plansClone(rp.startTyres); }
+    }
+    return { updates: out, ids, del, ref };
+}
+
+/* Envoi réussi : on retire ce qui vient de partir */
+function plansPushed(pp) {
+    if (!pp) return;
+    pp.ids.forEach(id => window._plansDirty.delete(id));
+    pp.del.forEach(id => window._plansDeleted.delete(id));
+    if (pp.ref) window._dirtyRefPlan = false;
 }
 
 function _plansFmtPit(sec) {
@@ -201,10 +318,12 @@ function plansRender() {
              + `<button type="button" class="plan-act" data-act="cancel">Annuler</button>`;
     } else {
         window._plans.forEach(p => {
-            const on = p.id === act;
-            html += `<button type="button" class="plan-tab${on ? ' active' : ''}" data-plan="${_plansEsc(p.id)}">${on ? '★ ' : ''}${_plansEsc(p.name)}<span class="plan-pit" data-pit-for="${_plansEsc(p.id)}">⏱ Pit Σ ${_plansFmtPit(p.pitTotal)}</span></button>`;
+            const on = p.id === act, isRef = p.id === window._refPlanId;
+            html += `<button type="button" class="plan-tab${on ? ' active' : ''}" data-plan="${_plansEsc(p.id)}" title="${isRef ? 'Plan de référence de l\'équipe (utilisé en Live)' : 'Afficher ce plan (n\'affecte que vous)'}">${isRef ? '★ ' : ''}${_plansEsc(p.name)}<span class="plan-pit" data-pit-for="${_plansEsc(p.id)}">⏱ Pit Σ ${_plansFmtPit(p.pitTotal)}</span></button>`;
         });
-        html += `<button type="button" class="plan-act" data-act="rename" title="Renommer le plan actif">✎ Modifier</button>`;
+        if (act !== window._refPlanId)
+            html += `<button type="button" class="plan-act" data-act="ref" title="Définir ce plan comme plan de référence de l'équipe (celui du Live)">★ Référence</button>`;
+        html += `<button type="button" class="plan-act" data-act="rename" title="Renommer le plan affiché">✎ Modifier</button>`;
         html += `<button type="button" class="plan-act plan-add" data-act="add" title="Nouveau plan vierge (nouvelle timeline et table des stints)">+ Plan</button>`;
         html += `<button type="button" class="plan-act" data-act="dup" title="Dupliquer le plan actif">⧉ Dupliquer</button>`;
         if (window._plans.length > 1)
@@ -223,6 +342,7 @@ function plansRender() {
         if (tab) { plansSwitch(tab.dataset.plan); return; }
         const act = e.target.closest('.plan-act');
         if (!act) return;
+        if (act.dataset.act === 'ref')    plansSetReference();
         if (act.dataset.act === 'add')    plansAdd(false);
         if (act.dataset.act === 'dup')    plansAdd(true);
         if (act.dataset.act === 'rename') plansRename();

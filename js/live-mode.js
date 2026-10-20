@@ -174,6 +174,7 @@ function recalculateLive(silent) {
     window._liveMode = true;
     // Mode Live suivi à distance : lecture seule, rien n'est poussé dans la session partagée.
     if (!(typeof liveRemoteReadOnly === 'function' && liveRemoteReadOnly())) {
+        if (typeof plansPinReference === 'function') plansPinReference();   // le Live suit le plan affiché : il devient la référence
         _dirtyPitState = true;
         ['_liveModeActive','_liveEvAtAnchor','_liveNowSec','evCurrent','evPerLapReal',
          'livelapMinutes','livelapSeconds','livelapMillis','liveLapsCompleted']
