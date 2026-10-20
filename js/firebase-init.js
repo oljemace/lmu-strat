@@ -1,5 +1,5 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getDatabase, ref, onValue, set, update, get, remove }
+  import { getDatabase, ref, onValue, set, update, get, remove, onDisconnect }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
   import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword, sendPasswordResetEmail, connectAuthEmulator }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -41,6 +41,7 @@ const firebaseConfig = {
   window._firebaseOnValue = onValue;
   window._firebaseGet = get;
   window._firebaseRemove = remove;
+  window._firebaseOnDisconnect = onDisconnect;
 
   // ── Authentification (remplace l'ancien gate par mot de passe client) ──
   // L'autorisation réelle est appliquée par les règles de sécurité (voir

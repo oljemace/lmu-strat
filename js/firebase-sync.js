@@ -347,6 +347,7 @@ function _resetLocalSessionState() {
 		function joinSession(id) {
 			if (_unsubscribe) { _unsubscribe(); _unsubscribe = null; }
 			if (typeof stopTeamTelemetryWatch === 'function') stopTeamTelemetryWatch();
+			if (typeof presenceSwitchTo === 'function') presenceSwitchTo(null);
 			const joinToken = ++_joinToken;
 			_resetLocalSessionState();
 			_sessionId = id;
@@ -376,6 +377,7 @@ function _resetLocalSessionState() {
 							_dirtyFields.clear(); _dirtyPitState = false; _dirtyTyreWear = false; _dirtyDrivers = false;
 							_pendingPushAfterLock = false;
 							_sessionId = null;
+							if (typeof presenceSwitchTo === 'function') presenceSwitchTo(null);
 							const sel = document.getElementById('sessionSelect');
 							if (sel) sel.value = '';
 							setSyncStatus('⚠️ Session supprimée par un admin', '#ffaa00');
@@ -400,6 +402,7 @@ function _resetLocalSessionState() {
 				});
 
 				setSyncStatus('🟢 Connecté', '#00ff88');
+				if (typeof presenceSwitchTo === 'function') presenceSwitchTo(id);
 
 				if (typeof startTeamTelemetryWatch === 'function') startTeamTelemetryWatch(id);
 
