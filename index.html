@@ -5,7 +5,7 @@
     
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calculateur de Stratégie - Endurance LMU</title>
-    <link rel="stylesheet" href="css/styles.css?v=20261020i">
+    <link rel="stylesheet" href="css/styles.css?v=20261021a">
 
 </head>
 <body>
@@ -350,106 +350,6 @@
             </div>
 
             <hr class="section-divider">
-            <h2 style="color:#00ff88;margin-bottom:20px;">⏱️ Durée de Course & Temps au Tour</h2>
-
-            <!-- Durée de course -->
-            <div class="input-group">
-                <label>⏱️ Durée de course initiale</label>
-                <div class="time-row">
-                    <div class="time-control-group">
-                        <label>Heures</label>
-                        <div class="time-input-wrapper">
-                            <button class="btn-time-control" onclick="adjustTime('raceHours',-1)">−</button>
-                            <input type="number" id="raceHours" value="12" min="0" max="24" onchange="validateTime(this)">
-                            <button class="btn-time-control" onclick="adjustTime('raceHours',1)">+</button>
-                        </div>
-                    </div>
-                    <div class="time-control-group">
-                        <label>Minutes</label>
-                        <div class="time-input-wrapper">
-                            <button class="btn-time-control" onclick="adjustTime('raceMinutes',-1)">−</button>
-                            <input type="number" id="raceMinutes" value="0" min="0" max="59" onchange="validateTime(this)">
-                            <button class="btn-time-control" onclick="adjustTime('raceMinutes',1)">+</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Temps au tour -->
-            <div class="input-group">
-                <label>⏱️ Temps au tour théorique (M:SS.d)</label>
-                <div class="time-row">
-                    <div class="time-control-group">
-                        <label>Min</label>
-                        <div class="time-input-wrapper">
-                            <button class="btn-time-control" onclick="adjustTime('lapMinutes',-1)">−</button>
-                            <input type="number" id="lapMinutes" value="3" min="0" max="59" onchange="validateTime(this)">
-                            <button class="btn-time-control" onclick="adjustTime('lapMinutes',1)">+</button>
-                        </div>
-                    </div>
-                    <div class="time-control-group">
-                        <label>Sec</label>
-                        <div class="time-input-wrapper">
-                            <button class="btn-time-control" onclick="adjustTime('lapSeconds',-1)">−</button>
-                            <input type="number" id="lapSeconds" value="35" min="0" max="59" onchange="validateTime(this)">
-                            <button class="btn-time-control" onclick="adjustTime('lapSeconds',1)">+</button>
-                        </div>
-                    </div>
-                    <div class="time-control-group">
-                        <label>Dixi</label>
-                        <div class="time-input-wrapper">
-                            <button class="btn-time-control" onclick="adjustTime('lapMillis',-1)">−</button>
-                            <input type="number" id="lapMillis" value="0" min="0" max="9" onchange="validateTime(this)">
-                            <button class="btn-time-control" onclick="adjustTime('lapMillis',1)">+</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- EV -->
-            <div class="input-group">
-                <label for="evRemaining">⚡ EV de départ (%)</label>
-                <input type="number" id="evRemaining" value="100" min="0" max="100" step="1">
-            </div>
-
-            <div class="input-group">
-                <label for="evPerLap">🔋 Consommation EV par tour théorique (%)</label>
-                <input type="number" id="evPerLap" value="8.0" step="0.1">
-                <div class="note"><strong>Aide :</strong> Faites une moyenne sur vos tours précédents.</div>
-            </div>
-                <div class="input-group">
-                    <label for="tyreBudget">🏎️ Stock de pneus neufs</label>
-                    <input type="number" id="tyreBudget" value="10" min="0" max="100" step="1" onchange="window._liveModeActive ? recalculateLive() : calculate()">
-                    <div class="note"><strong>Note :</strong> Chaque case pneu cochée consomme 2 pneus neufs.</div>
-                </div>
-            <!-- Valeur fixe 100% — gérée par le tableau des stints -->
-            <input type="hidden" id="evRefuelPerStint" value="100">
-
-                <hr class="section-divider">
-<h2 style="color:#00ff88;margin-bottom:20px;">👤 Pilotes</h2>
-
-<div class="input-group">
-    <label for="driverCount">Nombre de pilotes</label>
-    <select id="driverCount" onchange="renderDriverInputs()" style="width:100%;padding:6px 7px;border:2px solid rgba(255,255,255,0.2);
-        border-radius:8px;background:rgba(255,255,255,0.1);color:#fff;font-size:1em;">
-        <option value="1">1 pilote</option>
-        <option value="2" selected="">2 pilotes</option>
-        <option value="3">3 pilotes</option>
-        <option value="4">4 pilotes</option>
-        <option value="5">5 pilotes</option>
-        <option value="6">6 pilotes</option>
-    </select>
-</div>
-
-<div id="driverInputsContainer"><div class="driver-input-row">
-            <input type="color" id="driverColor_0" class="driver-color-swatch" value="#00ff88" onchange="window._liveModeActive ? recalculateLive() : calculate()" title="Couleur du pilote 1">
-            <input type="text" id="driverName_0" class="driver-name-input" placeholder="Pilote 1" value="Pilote 1" oninput="onDriverNameInput()">
-        </div><div class="driver-input-row">
-            <input type="color" id="driverColor_1" class="driver-color-swatch" value="#00aaff" onchange="window._liveModeActive ? recalculateLive() : calculate()" title="Couleur du pilote 2">
-            <input type="text" id="driverName_1" class="driver-name-input" placeholder="Pilote 2" value="Pilote 2" oninput="onDriverNameInput()">
-        </div></div>
-
-            <hr class="section-divider">
             <h2 style="color:#00ff88;margin-bottom:20px;">🏎️ Usure des Pneus</h2>
 
             <div class="tyre-strategy-section">
@@ -753,7 +653,109 @@
 
     </div>
 
-        <!-- ════════════════ COLONNE DROITE : RÉSULTATS ════════════════ -->
+        <!-- ════════════════ COLONNE DROITE : RÉGLAGES + RÉSULTATS ════════════════ -->
+        <div class="right-column">
+        <div class="input-section race-setup">
+            <div class="race-setup-grid">
+            <h2 style="color:#00ff88;margin-bottom:20px;">⏱️ Durée de Course & Temps au Tour</h2>
+
+            <!-- Durée de course -->
+            <div class="input-group">
+                <label>⏱️ Durée de course initiale</label>
+                <div class="time-row">
+                    <div class="time-control-group">
+                        <label>Heures</label>
+                        <div class="time-input-wrapper">
+                            <button class="btn-time-control" onclick="adjustTime('raceHours',-1)">−</button>
+                            <input type="number" id="raceHours" value="12" min="0" max="24" onchange="validateTime(this)">
+                            <button class="btn-time-control" onclick="adjustTime('raceHours',1)">+</button>
+                        </div>
+                    </div>
+                    <div class="time-control-group">
+                        <label>Minutes</label>
+                        <div class="time-input-wrapper">
+                            <button class="btn-time-control" onclick="adjustTime('raceMinutes',-1)">−</button>
+                            <input type="number" id="raceMinutes" value="0" min="0" max="59" onchange="validateTime(this)">
+                            <button class="btn-time-control" onclick="adjustTime('raceMinutes',1)">+</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Temps au tour -->
+            <div class="input-group">
+                <label>⏱️ Temps au tour théorique (M:SS.d)</label>
+                <div class="time-row">
+                    <div class="time-control-group">
+                        <label>Min</label>
+                        <div class="time-input-wrapper">
+                            <button class="btn-time-control" onclick="adjustTime('lapMinutes',-1)">−</button>
+                            <input type="number" id="lapMinutes" value="3" min="0" max="59" onchange="validateTime(this)">
+                            <button class="btn-time-control" onclick="adjustTime('lapMinutes',1)">+</button>
+                        </div>
+                    </div>
+                    <div class="time-control-group">
+                        <label>Sec</label>
+                        <div class="time-input-wrapper">
+                            <button class="btn-time-control" onclick="adjustTime('lapSeconds',-1)">−</button>
+                            <input type="number" id="lapSeconds" value="35" min="0" max="59" onchange="validateTime(this)">
+                            <button class="btn-time-control" onclick="adjustTime('lapSeconds',1)">+</button>
+                        </div>
+                    </div>
+                    <div class="time-control-group">
+                        <label>Dixi</label>
+                        <div class="time-input-wrapper">
+                            <button class="btn-time-control" onclick="adjustTime('lapMillis',-1)">−</button>
+                            <input type="number" id="lapMillis" value="0" min="0" max="9" onchange="validateTime(this)">
+                            <button class="btn-time-control" onclick="adjustTime('lapMillis',1)">+</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- EV -->
+            <div class="input-group">
+                <label for="evRemaining">⚡ EV de départ (%)</label>
+                <input type="number" id="evRemaining" value="100" min="0" max="100" step="1">
+            </div>
+
+            <div class="input-group">
+                <label for="evPerLap">🔋 Consommation EV par tour théorique (%)</label>
+                <input type="number" id="evPerLap" value="8.0" step="0.1">
+                <div class="note"><strong>Aide :</strong> Faites une moyenne sur vos tours précédents.</div>
+            </div>
+                <div class="input-group">
+                    <label for="tyreBudget">🏎️ Stock de pneus neufs</label>
+                    <input type="number" id="tyreBudget" value="10" min="0" max="100" step="1" onchange="window._liveModeActive ? recalculateLive() : calculate()">
+                    <div class="note"><strong>Note :</strong> Chaque case pneu cochée consomme 2 pneus neufs.</div>
+                </div>
+            <!-- Valeur fixe 100% — gérée par le tableau des stints -->
+            <input type="hidden" id="evRefuelPerStint" value="100">
+
+<h2 style="color:#00ff88;margin-bottom:20px;">👤 Pilotes</h2>
+
+<div class="input-group">
+    <label for="driverCount">Nombre de pilotes</label>
+    <select id="driverCount" onchange="renderDriverInputs()" style="width:100%;padding:6px 7px;border:2px solid rgba(255,255,255,0.2);
+        border-radius:8px;background:rgba(255,255,255,0.1);color:#fff;font-size:1em;">
+        <option value="1">1 pilote</option>
+        <option value="2" selected="">2 pilotes</option>
+        <option value="3">3 pilotes</option>
+        <option value="4">4 pilotes</option>
+        <option value="5">5 pilotes</option>
+        <option value="6">6 pilotes</option>
+    </select>
+</div>
+
+<div id="driverInputsContainer"><div class="driver-input-row">
+            <input type="color" id="driverColor_0" class="driver-color-swatch" value="#00ff88" onchange="window._liveModeActive ? recalculateLive() : calculate()" title="Couleur du pilote 1">
+            <input type="text" id="driverName_0" class="driver-name-input" placeholder="Pilote 1" value="Pilote 1" oninput="onDriverNameInput()">
+        </div><div class="driver-input-row">
+            <input type="color" id="driverColor_1" class="driver-color-swatch" value="#00aaff" onchange="window._liveModeActive ? recalculateLive() : calculate()" title="Couleur du pilote 2">
+            <input type="text" id="driverName_1" class="driver-name-input" placeholder="Pilote 2" value="Pilote 2" oninput="onDriverNameInput()">
+        </div></div>
+            </div>
+        </div>
         <div class="result-section">
             <h2 style="color:#00ff88;margin-bottom:20px;">📈 Résultats</h2>
 
@@ -789,6 +791,7 @@
                 <div class="formula">Stints théorique = Tours théorique / Tours par Stint</div>
             </div>
         </div>
+        </div><!-- fin right-column -->
     </div>
 
 <div class="timeline-section" style>

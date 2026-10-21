@@ -180,6 +180,15 @@
             transform: scale(0.95);
         }
 
+        /* ── Colonne droite : réglages course/pilotes au-dessus des résultats ── */
+        .right-column { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+        .race-setup .race-setup-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); column-gap: 20px; align-items: start; }
+        .race-setup .race-setup-grid > h2, .race-setup .race-setup-grid > hr, .race-setup .race-setup-grid > #driverInputsContainer { grid-column: 1 / -1; }
+        .race-setup .race-setup-grid > h2 { margin: 0 0 14px 0 !important; }
+        .race-setup .race-setup-grid > h2:not(:first-child) { margin-top: 6px !important; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.12); }
+        .race-setup #driverInputsContainer { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px 20px; margin-bottom: 4px; }
+        .race-setup #driverInputsContainer .driver-input-row { margin: 0; }
+
         /* ── Résultats ── */
         .result-section {
             background: linear-gradient(135deg, rgba(0,255,136,0.1) 0%, rgba(0,255,136,0.2) 100%);
