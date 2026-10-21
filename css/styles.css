@@ -1154,6 +1154,11 @@ body.live-mode .plan-bar { display:none; }
 #teamVoicePanel .voice-actions button { flex: 1; padding: 8px; border-radius: 8px; border: 1px solid #00ff88; background: rgba(0,255,136,0.12); color: #00ff88; font-weight: 700; cursor: pointer; }
 #teamVoicePanel .voice-actions button.leave { border-color: #ff6b6b; background: rgba(255,107,107,0.12); color: #ff6b6b; }
 #teamVoicePanel .voice-actions button:disabled { opacity: 0.4; cursor: default; }
+#teamVoiceAdmin { padding: 6px 12px 10px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 0.8em; }
+#teamVoiceAdmin button { background: none; border: 0; color: #8e9ac0; cursor: pointer; padding: 0; }
+#teamVoiceAdmin textarea { width: 100%; box-sizing: border-box; margin: 6px 0; background: #0b1319; color: #ddd; border: 1px solid #334; border-radius: 6px; font-size: 0.95em; }
+#teamVoiceAdmin #teamVoiceIceSave { color: #00ff88; border: 1px solid #00ff88; border-radius: 6px; padding: 3px 10px; }
+#teamVoiceIceMsg { color: #9fd8ff; }
 #teamChatToggle { position: fixed; right: 18px; bottom: 18px; z-index: 900; width: 52px; height: 52px; border-radius: 50%; border: 1px solid rgba(0,255,136,0.5); background: #12202a; color: #fff; font-size: 1.5em; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,0.5); }
 #teamChatBadge { position: absolute; top: -6px; right: -6px; min-width: 24px; padding: 3px 6px; border-radius: 12px; background: #ff2d55; color: #fff; font-size: 0.55em; font-weight: 800; line-height: 1.3; box-shadow: 0 0 0 2px #101a22; }
 #teamChatBadge.tagged { background: #ffb300; color: #1a1200; }

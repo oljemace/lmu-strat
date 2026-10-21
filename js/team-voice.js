@@ -16,6 +16,8 @@ const VOICE_ICE_SERVERS = [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' }
 ];
+// Le relais TURN (identifiants) n'est PAS dans le code, qui est public : un admin le saisit
+// dans le panneau vocal et il est stocké dans teams/{équipe}/voiceIce (lisible par les membres).
 const VOICE_BEAT_MS  = 60 * 1000;
 const VOICE_STALE_MS = 3 * 60 * 1000;
 
@@ -28,6 +30,37 @@ let _vErr = '';
 
 // Connexion active (null si on n'est pas dans un salon)
 let _vc = null;              // { sid, nonce, stream, peers, stops, myRef, name, muted, seen, levels }
+
+/* ── Relais TURN : texte saisi par l'admin = adresse https d'une API d'identifiants
+      (ex. Metered : https://xxx.metered.live/api/v1/turn/credentials?apiKey=…)
+      ou liste JSON de serveurs [{"urls":"turn:…","username":"…","credential":"…"}] ── */
+function _vCleanIce(list) {
+    if (!Array.isArray(list)) return [];
+    const okUrl = u => typeof u === 'string' && /^(stun|turn|turns):/i.test(u);
+    return list.slice(0, 12).filter(s => s && (Array.isArray(s.urls) ? s.urls.length && s.urls.every(okUrl) : okUrl(s.urls)))
+        .map(s => {
+            const o = { urls: s.urls };
+            if (typeof s.username === 'string') o.username = s.username;
+            if (typeof s.credential === 'string') o.credential = s.credential;
+            return o;
+        });
+}
+async function _vLoadIce() {
+    let extra = [];
+    try {
+        const raw = (await window._firebaseGet(_vRef(`teams/${window._teamId}/voiceIce`))).val();
+        if (typeof raw === 'string' && raw.trim()) {
+            const txt = raw.trim();
+            if (/^https:\/\//i.test(txt)) {
+                const r = await fetch(txt);
+                if (r.ok) extra = _vCleanIce(await r.json());
+            } else {
+                extra = _vCleanIce(JSON.parse(txt));
+            }
+        }
+    } catch (e) { console.warn('Vocal : relais TURN non chargé', e && e.message); }
+    return { servers: VOICE_ICE_SERVERS.concat(extra), hasTurn: extra.some(s => [].concat(s.urls).some(u => /^turns?:/i.test(u))) };
+}
 
 function _vUid() { return window._firebaseAuth?.currentUser?.uid; }
 function _vRef(path) { return window._firebaseRef(window._firebaseDb, path); }
@@ -51,12 +84,48 @@ function _vEnsureUI() {
         '<div id="teamVoiceError" style="display:none"></div>' +
         '<div class="voice-actions"><button type="button" id="teamVoiceJoin"></button>' +
         '<button type="button" id="teamVoiceMute" style="display:none"></button></div>' +
+        '<div id="teamVoiceAdmin" style="display:none">' +
+        '<button type="button" id="teamVoiceAdminToggle">⚙️ Relais réseau (TURN)</button>' +
+        '<div id="teamVoiceAdminBox" style="display:none">' +
+        '<textarea id="teamVoiceIceInput" rows="3" maxlength="3000" ' +
+        'placeholder="Adresse https de l\'API d\'identifiants TURN, ou liste JSON de serveurs"></textarea>' +
+        '<div><button type="button" id="teamVoiceIceSave">Enregistrer</button>' +
+        '<span id="teamVoiceIceMsg"></span></div></div></div>' +
         '<div id="teamVoiceAudio" style="display:none"></div></div>';
     document.body.appendChild(wrap);
     document.getElementById('teamVoiceToggle').addEventListener('click', () => _vSetOpen(!_vOpen()));
     document.getElementById('teamVoiceClose').addEventListener('click', () => _vSetOpen(false));
     document.getElementById('teamVoiceJoin').addEventListener('click', () => { _vc ? voiceLeave() : voiceJoin(); });
     document.getElementById('teamVoiceMute').addEventListener('click', voiceToggleMute);
+    document.getElementById('teamVoiceAdminToggle').addEventListener('click', _vAdminOpen);
+    document.getElementById('teamVoiceIceSave').addEventListener('click', _vAdminSave);
+}
+
+async function _vAdminOpen() {
+    const box = document.getElementById('teamVoiceAdminBox');
+    const show = box.style.display === 'none';
+    box.style.display = show ? 'block' : 'none';
+    if (!show) return;
+    try {
+        const v = (await window._firebaseGet(_vRef(`teams/${window._teamId}/voiceIce`))).val();
+        document.getElementById('teamVoiceIceInput').value = typeof v === 'string' ? v : '';
+    } catch (e) { /* champ laissé vide */ }
+}
+
+async function _vAdminSave() {
+    const msg = document.getElementById('teamVoiceIceMsg');
+    const txt = document.getElementById('teamVoiceIceInput').value.trim();
+    try {
+        if (txt) {
+            if (!/^https:\/\//i.test(txt) && !_vCleanIce(JSON.parse(txt)).length) throw new Error('aucun serveur valide');
+            await window._firebaseSet(_vRef(`teams/${window._teamId}/voiceIce`), txt);
+        } else {
+            await window._firebaseRemove(_vRef(`teams/${window._teamId}/voiceIce`));
+        }
+        msg.textContent = ' ✔ Enregistré (pris en compte à la prochaine connexion au vocal)';
+    } catch (e) {
+        msg.textContent = ' ✖ Refusé : adresse https ou JSON valide attendu';
+    }
 }
 
 function _vOpen() { return document.getElementById('teamVoicePanel')?.style.display === 'flex'; }
@@ -94,6 +163,7 @@ function _vRender() {
     count.textContent = String(people.length);
     count.style.display = people.length ? 'inline-block' : 'none';
     toggle.classList.toggle('connected', !!_vc);
+    document.getElementById('teamVoiceAdmin').style.display = window._teamRole === 'admin' ? 'block' : 'none';
 
     const sid = _vc ? _vc.sid : _vViewSid;
     document.getElementById('teamVoiceTitle').textContent =
@@ -179,7 +249,7 @@ function _vSync() {
 }
 
 function _vMakePeer(uid, n) {
-    const pc = new RTCPeerConnection({ iceServers: VOICE_ICE_SERVERS });
+    const pc = new RTCPeerConnection({ iceServers: _vc.ice.servers });
     const peer = { pc, n, uid, queue: [], chain: Promise.resolve(), audio: null };
     _vc.stream.getTracks().forEach(t => pc.addTrack(t, _vc.stream));
     pc.onicecandidate = e => { if (e.candidate) _vSend(uid, 'ice', JSON.stringify(e.candidate)); };
@@ -193,7 +263,14 @@ function _vMakePeer(uid, n) {
         peer.audio.play().catch(() => {});
         _vWatchLevel(uid, e.streams[0]);
     };
-    const refresh = () => _vRender();
+    const refresh = () => {
+        if (_vc && (pc.connectionState === 'failed' || pc.iceConnectionState === 'failed')) {
+            _vSetError(_vc.ice.hasTurn
+                ? "Connexion impossible avec " + ((_vData[uid] && _vData[uid].name) || 'un participant') + " (réseau très restrictif)."
+                : "Connexion directe impossible : un admin doit configurer un relais TURN (⚙️ en bas du panneau).");
+        }
+        _vRender();
+    };
     pc.onconnectionstatechange = refresh;
     pc.oniceconnectionstatechange = refresh;
     _vc.peers[uid] = peer;
@@ -337,9 +414,11 @@ async function voiceJoin() {
     const name = (typeof _chatName === 'function')
         ? await _chatName(user)
         : ((user.email || '').split('@')[0] || 'Membre');
+    const ice = await _vLoadIce();
+    if (_vViewSid !== sid || _vc) { stream.getTracks().forEach(t => t.stop()); _vRender(); return; }
     const nonce = Math.random().toString(36).slice(2, 12);
     const myRef = _vRef(`teams/${team}/voice/${sid}/${user.uid}`);
-    _vc = { sid, team, nonce, stream, peers: {}, stops: [], myRef, name, muted: false, seen: new Set(), levels: {}, ac: null };
+    _vc = { sid, team, nonce, ice, stream, peers: {}, stops: [], myRef, name, muted: false, seen: new Set(), levels: {}, ac: null };
     _vWatchLevel(user.uid, stream);
 
     const beat = () => window._firebaseSet(myRef, { name, ts: Date.now(), n: nonce, mu: _vc ? _vc.muted : false }).catch(() => {});
