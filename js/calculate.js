@@ -18,7 +18,7 @@ function calculateFromButton() {
                 position: fixed;
                 top: 0; left: 0; right: 0;
                 height: 0%;
-                background: linear-gradient(135deg, #1e2646 0%, #16213e 100%);
+                background: linear-gradient(135deg, var(--bg-1) 0%, var(--bg-2) 100%);
                 z-index: 99998;
                 transition: height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
                 display: flex;
@@ -29,7 +29,7 @@ function calculateFromButton() {
 
             const curtainLabel = document.createElement('div');
             curtainLabel.style.cssText = `
-                color: #00ff88;
+                color: var(--accent);
                 font-size: 1.6em;
                 font-weight: bold;
                 opacity: 0;
@@ -657,7 +657,7 @@ stints.forEach((stint, idx) => {
             </td>
 
             <td style="text-align:center;">
-                <span style="font-weight:bold;color:#fff;font-size:0.95em;">
+                <span style="font-weight:bold;color:var(--text);font-size:0.95em;">
                     ${stint.tours.toFixed(2)}
                 </span>
                 ${evDebutStint !== null ? `
@@ -676,8 +676,8 @@ stints.forEach((stint, idx) => {
             <td>${formatClock(bR + dR)}</td>
             <td>
                 ${(window._liveMode && stint._current && _liveEvDisplay !== null)
-                    ? `<strong style="color:#00ff88;">${_liveEvDisplay.toFixed(1)}%</strong>
-                    <div style="font-size:0.7em;color:#aaa;">actuelle</div>`
+                    ? `<strong style="color:var(--accent);">${_liveEvDisplay.toFixed(1)}%</strong>
+                    <div style="font-size:0.7em;color:var(--text-3);">actuelle</div>`
                     : `${(stint.tours * evPerLap).toFixed(1)}%`
                 }
             </td>
@@ -721,7 +721,7 @@ stints.forEach((stint, idx) => {
                             title="Gomme côté gauche (+${TYRE_PENALTY}s si changement)">
                             <option value="none"  ${(st.tyreLeft||'none')==='none'   ?'selected':''}>—</option>
                             <option value="soft"  ${st.tyreLeft==='soft'  ?'selected':''}
-                                style="color:#dddddd;background:#111;">⚪ Soft</option>
+                                style="color:var(--text-2);background:var(--input-bg);">⚪ Soft</option>
                             <option value="medium"${st.tyreLeft==='medium'?'selected':''}
                                 style="color:#ffcc00;background:#1a1400;">🟡 Med</option>
                             <option value="hard"  ${st.tyreLeft==='hard'  ?'selected':''}
@@ -741,7 +741,7 @@ stints.forEach((stint, idx) => {
                             title="Gomme côté droit (+${TYRE_PENALTY}s si changement)">
                             <option value="none"  ${(st.tyreRight||'none')==='none'   ?'selected':''}>—</option>
                             <option value="soft"  ${st.tyreRight==='soft'  ?'selected':''}
-                                style="color:#dddddd;background:#111;">⚪ Soft</option>
+                                style="color:var(--text-2);background:var(--input-bg);">⚪ Soft</option>
                             <option value="medium"${st.tyreRight==='medium'?'selected':''}
                                 style="color:#ffcc00;background:#1a1400;">🟡 Med</option>
                             <option value="hard"  ${st.tyreRight==='hard'  ?'selected':''}
@@ -790,9 +790,9 @@ stints.forEach((stint, idx) => {
                 });
             } else if (stint._current) {
                 // Stint courant : surligné
-                tr.style.background  = 'rgba(0,255,136,0.07)';
-                tr.style.borderLeft  = '3px solid #00ff88';
-                tr.style.boxShadow   = 'inset 0 0 12px rgba(0,255,136,0.08)';
+                tr.style.background  = 'rgba(var(--accent-rgb),0.07)';
+                tr.style.borderLeft  = '3px solid var(--accent)';
+                tr.style.boxShadow   = 'inset 0 0 12px rgba(var(--accent-rgb),0.08)';
             }
         }
 
@@ -879,10 +879,10 @@ stints.forEach((stint, idx) => {
                 <div style="color:${badgeBorder};font-weight:bold;margin-bottom:4px;">
                     ${ecartLabel}
                 </div>
-                <div style="color:#aaa;font-size:0.9em;">
-                    Durée cible : <strong style="color:#fff">${formatDuration(totalRaceSec)}</strong>
+                <div style="color:var(--text-3);font-size:0.9em;">
+                    Durée cible : <strong style="color:var(--text)">${formatDuration(totalRaceSec)}</strong>
                     &nbsp;·&nbsp;
-                    Total calculé : <strong style="color:#fff">${formatDuration(totalReel)}</strong>
+                    Total calculé : <strong style="color:var(--text)">${formatDuration(totalReel)}</strong>
                     ${window._manualStintCount > 0
                         ? `&nbsp;·&nbsp;<span style="color:#00aaff;">
                             ✏️ ${window._manualStintCount} stint(s) manuel(s)
@@ -892,15 +892,15 @@ stints.forEach((stint, idx) => {
             </div>
             <div style="display:flex;gap:24px;flex-wrap:wrap;">
                 <div style="text-align:center;">
-                    <div style="color:#999;font-size:0.85em;text-transform:uppercase;letter-spacing:0.5px;">
+                    <div style="color:var(--text-3);font-size:0.85em;text-transform:uppercase;letter-spacing:0.5px;">
                         🏎 Roulage net
                     </div>
-                    <div style="color:#fff;font-weight:bold;font-size:1.15em;">
+                    <div style="color:var(--text);font-weight:bold;font-size:1.15em;">
                         ${String(roulageH).padStart(2,'0')}:${String(roulageMin).padStart(2,'0')}:${String(roulageSec).padStart(2,'0')}
                     </div>
                 </div>
                 <div style="text-align:center;">
-                    <div style="color:#999;font-size:0.85em;text-transform:uppercase;letter-spacing:0.5px;">
+                    <div style="color:var(--text-3);font-size:0.85em;text-transform:uppercase;letter-spacing:0.5px;">
                         🔧 Temps pits
                     </div>
                     <div style="color:#ffaa00;font-weight:bold;font-size:1.15em;">
@@ -908,10 +908,10 @@ stints.forEach((stint, idx) => {
                     </div>
                 </div>
                 <div style="text-align:center;">
-                    <div style="color:#999;font-size:0.85em;text-transform:uppercase;letter-spacing:0.5px;">
+                    <div style="color:var(--text-3);font-size:0.85em;text-transform:uppercase;letter-spacing:0.5px;">
                         ⛽ Pits prévus
                     </div>
-                    <div style="color:#fff;font-weight:bold;font-size:1.15em;">
+                    <div style="color:var(--text);font-weight:bold;font-size:1.15em;">
                         ${stints.length - 1}
                     </div>
                 </div>
@@ -996,23 +996,23 @@ stints.forEach((stint, idx) => {
                 <div style="color:${badgeBorderL};font-weight:bold;margin-bottom:4px;">
                     🔴 LIVE — ${ecartLabelL}
                 </div>
-                <div style="color:#aaa;font-size:0.9em;">
-                    Temps restant : <strong style="color:#fff">${formatDuration(tempsRestantCoh)}</strong>
+                <div style="color:var(--text-3);font-size:0.9em;">
+                    Temps restant : <strong style="color:var(--text)">${formatDuration(tempsRestantCoh)}</strong>
                     &nbsp;·&nbsp;
-                    Projeté futur : <strong style="color:#fff">${formatDuration(totalProjeteLive)}</strong>
+                    Projeté futur : <strong style="color:var(--text)">${formatDuration(totalProjeteLive)}</strong>
                 </div>
             </div>
             <div style="display:flex;gap:24px;flex-wrap:wrap;">
                 <div style="text-align:center;">
-                    <div style="color:#999;font-size:0.85em;text-transform:uppercase;letter-spacing:0.5px;">
+                    <div style="color:var(--text-3);font-size:0.85em;text-transform:uppercase;letter-spacing:0.5px;">
                         🏎 Roulage futur
                     </div>
-                    <div style="color:#fff;font-weight:bold;font-size:1.15em;">
+                    <div style="color:var(--text);font-weight:bold;font-size:1.15em;">
                         ${String(rolH).padStart(2,'0')}:${String(rolMin).padStart(2,'0')}:${String(rolSec).padStart(2,'0')}
                     </div>
                 </div>
                 <div style="text-align:center;">
-                    <div style="color:#999;font-size:0.85em;text-transform:uppercase;letter-spacing:0.5px;">
+                    <div style="color:var(--text-3);font-size:0.85em;text-transform:uppercase;letter-spacing:0.5px;">
                         🔧 Pits futurs
                     </div>
                     <div style="color:#ffaa00;font-weight:bold;font-size:1.15em;">
@@ -1020,10 +1020,10 @@ stints.forEach((stint, idx) => {
                     </div>
                 </div>
                 <div style="text-align:center;">
-                    <div style="color:#999;font-size:0.85em;text-transform:uppercase;letter-spacing:0.5px;">
+                    <div style="color:var(--text-3);font-size:0.85em;text-transform:uppercase;letter-spacing:0.5px;">
                         ⛽ Pits restants
                     </div>
-                    <div style="color:#fff;font-weight:bold;font-size:1.15em;">
+                    <div style="color:var(--text);font-weight:bold;font-size:1.15em;">
                         ${stints.filter(s => !s._past).length - 1}
                     </div>
                 </div>

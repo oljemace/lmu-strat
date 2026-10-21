@@ -29,10 +29,10 @@ function _h(tag, attrs, ...children) {
     return el;
 }
 
-const _BTN = 'padding:5px 12px;border-radius:7px;border:1px solid #555;background:transparent;color:#ccc;cursor:pointer;font-size:0.85em;';
-const _BTN_GREEN = 'padding:6px 14px;border-radius:7px;border:none;background:#00ff88;color:#000;font-weight:bold;cursor:pointer;font-size:0.9em;';
+const _BTN = 'padding:5px 12px;border-radius:7px;border:1px solid #555;background:transparent;color:var(--text-2);cursor:pointer;font-size:0.85em;';
+const _BTN_GREEN = 'padding:6px 14px;border-radius:7px;border:none;background:var(--accent);color:#000;font-weight:bold;cursor:pointer;font-size:0.9em;';
 const _BTN_RED = 'padding:5px 10px;border-radius:7px;border:1px solid #ff5566;background:transparent;color:#ff7788;cursor:pointer;font-size:0.85em;';
-const _FIELD = 'padding:5px 8px;border-radius:7px;border:1px solid #555;background:#111;color:#fff;font-size:0.9em;';
+const _FIELD = 'padding:5px 8px;border-radius:7px;border:1px solid #555;background:var(--input-bg);color:var(--text);font-size:0.9em;';
 
 function _isTeamAdmin() { return window._teamRole === 'admin'; }
 
@@ -52,8 +52,8 @@ function openTeamPanel() {
     });
     const card = _h('div', {
         id: 'teamPanelCard',
-        style: 'width:100%;max-width:760px;background:#16213e;border:1px solid rgba(0,255,136,0.35);border-radius:14px;'
-             + 'padding:22px;color:#fff;box-shadow:0 12px 45px rgba(0,0,0,0.5);',
+        style: 'width:100%;max-width:760px;background:var(--bg-2);border:1px solid rgba(var(--accent-rgb),0.35);border-radius:14px;'
+             + 'padding:22px;color:var(--text);box-shadow:0 12px 45px rgba(0,0,0,0.5);',
     });
     overlay.appendChild(card);
     document.body.appendChild(overlay);
@@ -89,7 +89,7 @@ function renderTeamPanel() {
 
     card.append(
         _h('div', { style: 'display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;' },
-            _h('h2', { style: 'margin:0;color:#00ff88;font-size:1.3em;' }, `👥 ${window._teamName}`),
+            _h('h2', { style: 'margin:0;color:var(--accent);font-size:1.3em;' }, `👥 ${window._teamName}`),
             _h('button', { style: _BTN, onclick: closeTeamPanel }, '✕ Fermer')),
     );
 
@@ -104,7 +104,7 @@ function renderTeamPanel() {
     members.forEach(([mUid, m]) => {
         const isSelf = mUid === uid;
         const isLastAdmin = m.role === 'admin' && onlyAdmin;
-        const row = _h('div', { style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:rgba(255,255,255,0.05);border-radius:8px;padding:8px 10px;' },
+        const row = _h('div', { style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:rgba(var(--fg-rgb),0.05);border-radius:8px;padding:8px 10px;' },
             _h('div', { style: 'flex:1;min-width:150px;' },
                 _h('div', { style: 'font-weight:600;' }, (m.name || '—') + (isSelf ? '  (vous)' : '')),
                 _h('div', { style: 'font-size:0.8em;color:#8e9ac0;' }, m.email || '')),
@@ -120,7 +120,7 @@ function renderTeamPanel() {
                 row.append(_h('button', { style: _BTN_RED, onclick: () => removeMember(mUid, m) }, 'Retirer'));
             }
         } else {
-            row.append(_h('span', { style: 'font-size:0.85em;color:#00ff88;' }, _teamRoleLabel(m.role)));
+            row.append(_h('span', { style: 'font-size:0.85em;color:var(--accent);' }, _teamRoleLabel(m.role)));
         }
         if (isSelf) {
             const leave = _h('button', { style: _BTN, onclick: () => leaveTeam() }, "Quitter l'équipe");
@@ -158,7 +158,7 @@ function renderTeamPanel() {
             input.addEventListener('focus', () => input.select());
             const copy = _h('button', { style: _BTN, onclick: () => copyInviteLink(link, copy) }, 'Copier');
             if (expired) copy.disabled = true;
-            il.append(_h('div', { style: 'background:rgba(255,255,255,0.05);border-radius:8px;padding:8px 10px;' },
+            il.append(_h('div', { style: 'background:rgba(var(--fg-rgb),0.05);border-radius:8px;padding:8px 10px;' },
                 _h('div', { style: 'font-size:0.8em;margin-bottom:5px;color:' + (expired ? '#ff7788' : '#8e9ac0') + ';' },
                     `${_teamRoleLabel(inv.role)} · ` + (expired ? 'expirée' : `expire le ${new Date(inv.expiresAt).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}`)),
                 _h('div', { style: 'display:flex;gap:6px;flex-wrap:wrap;align-items:center;' },

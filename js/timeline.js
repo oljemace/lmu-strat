@@ -137,11 +137,11 @@ function renderDriverDrivingRecap(stints, lapTime) {
         const color = d >= 0 ? getDriverColor(d) : '#666';
         const name = d >= 0 ? getDriverName(d) : 'Non assigné';
         return `<tr><td style="padding:1px 6px 1px 0;white-space:nowrap;"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${color};margin-right:5px;"></span>${esc(name)}</td>`
-            + `<td style="padding:1px 6px;text-align:right;color:#fff;font-weight:bold;">${fmt(e.sec)}</td>`
+            + `<td style="padding:1px 6px;text-align:right;color:var(--text);font-weight:bold;">${fmt(e.sec)}</td>`
             + `<td style="padding:1px 6px;text-align:right;">${Math.round(e.sec / total * 100)}%</td>`
             + `<td style="padding:1px 0 1px 6px;text-align:right;white-space:nowrap;">${e.stints} stint${e.stints > 1 ? 's' : ''} · ${e.laps.toFixed(1)} t</td></tr>`;
     }).join('');
-    box.innerHTML = `<div style="font-size:0.78em;color:#aaa;background:rgba(0,0,0,0.25);border-radius:8px;padding:6px 10px;">`
+    box.innerHTML = `<div style="font-size:0.78em;color:var(--text-3);background:rgba(0,0,0,0.25);border-radius:8px;padding:6px 10px;">`
         + `<div style="color:#88ccff;font-weight:bold;margin-bottom:3px;">⏱️ Temps de roulage par pilote</div>`
         + `<table style="border-collapse:collapse;">${rows}</table></div>`;
 }
@@ -191,12 +191,12 @@ function buildTimeline(stints, lapTime, multiplier, realStart, gameStart, totalR
 			const realAxis = document.createElement('div');
 			realAxis.style.cssText = 'position:relative;width:100%;height:48px;';
 			const rTag = document.createElement('span');
-			rTag.style.cssText = 'position:absolute;left:0;top:26px;font-size:0.75em;color:#aaa;font-weight:bold;z-index:2;background:rgba(0,0,0,0.4);padding:1px 4px;border-radius:3px;';
+			rTag.style.cssText = 'position:absolute;left:0;top:26px;font-size:0.75em;color:var(--text-3);font-weight:bold;z-index:2;background:rgba(0,0,0,0.4);padding:1px 4px;border-radius:3px;';
 			rTag.textContent = '🕐 Réel';
 			realAxis.appendChild(rTag);
 			for (let i = 0; i <= N; i++) {
 				const lbl = document.createElement('span');
-				lbl.style.cssText = `position:absolute;left:${i/N*100}%;top:26px;transform:translateX(-50%);font-size:0.75em;color:#ccc;white-space:nowrap;`;
+				lbl.style.cssText = `position:absolute;left:${i/N*100}%;top:26px;transform:translateX(-50%);font-size:0.75em;color:var(--text-2);white-space:nowrap;`;
 				lbl.textContent = formatClock(realStart + i / N * totalRealSec);
 				realAxis.appendChild(lbl);
         }
@@ -304,7 +304,7 @@ function buildTimeline(stints, lapTime, multiplier, realStart, gameStart, totalR
                             left:${Math.min(Math.max(posRatioN * 100, 0), 95)}%;
                             top:2px;
                             transform:translateX(-50%);
-                            background:#fff;
+                            background:var(--text);
                             color:#000;
                             font-size:0.65em;
                             font-weight:bold;
@@ -345,7 +345,7 @@ function buildTimeline(stints, lapTime, multiplier, realStart, gameStart, totalR
             nowLine.style.cssText = `
                 position:absolute;left:${posRatio * 100}%;
                 top:0;width:2px;height:100%;
-                background:#ffffff;border-radius:2px;
+                background:var(--text);border-radius:2px;
                 z-index:10;box-shadow:0 0 8px rgba(255,255,255,0.8);
                 pointer-events:none;`;
 
@@ -380,7 +380,7 @@ function buildTimeline(stints, lapTime, multiplier, realStart, gameStart, totalR
                 left:${posRatio * 100}%;
                 top:2px;
                 transform:translateX(-50%);
-                background:#fff;
+                background:var(--text);
                 color:#000;
                 font-size:0.68em;
                 font-weight:bold;

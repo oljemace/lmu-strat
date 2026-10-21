@@ -111,17 +111,17 @@ function renderTeamTelemetry() {
             const car = _teamTelemetryEscapeHtml(d.car || '—');
 
             return `
-                <div style="background:rgba(255,255,255,${stale ? 0.03 : 0.07});
-                            border:1px solid ${stale ? 'rgba(255,255,255,0.08)' : 'rgba(0,255,136,0.25)'};
+                <div style="background:rgba(var(--fg-rgb),${stale ? 0.03 : 0.07});
+                            border:1px solid ${stale ? 'rgba(var(--fg-rgb),0.08)' : 'rgba(var(--accent-rgb),0.25)'};
                             border-radius:10px;padding:12px 14px;min-width:210px;${stale ? 'opacity:0.55;' : ''}">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                        <strong style="color:#00ff88;">${name}</strong>
-                        ${driverId === atWheel ? '<span style="font-size:0.72em;color:#00ff88;border:1px solid rgba(0,255,136,0.4);border-radius:8px;padding:1px 6px;">🏁 au volant</span>' : (stale ? `<span style="font-size:0.72em;color:#888;">hors ligne${d.ts ? ' · ' + (age < 120000 ? Math.round(age / 1000) + ' s' : Math.round(age / 60000) + ' min') : ''}</span>` : '')}
+                        <strong style="color:var(--accent);">${name}</strong>
+                        ${driverId === atWheel ? '<span style="font-size:0.72em;color:var(--accent);border:1px solid rgba(var(--accent-rgb),0.4);border-radius:8px;padding:1px 6px;">🏁 au volant</span>' : (stale ? `<span style="font-size:0.72em;color:var(--text-4);">hors ligne${d.ts ? ' · ' + (age < 120000 ? Math.round(age / 1000) + ' s' : Math.round(age / 60000) + ' min') : ''}</span>` : '')}
                         <span title="Dernière donnée reçue il y a ${ageLabel}"
                               style="width:8px;height:8px;border-radius:50%;display:inline-block;
-                                     background:${stale ? '#ff4444' : '#00ff88'};"></span>
+                                     background:${stale ? '#ff4444' : 'var(--accent)'};"></span>
                     </div>
-                    <div style="font-size:0.82em;color:#aaa;margin-bottom:6px;">${car}</div>
+                    <div style="font-size:0.82em;color:var(--text-3);margin-bottom:6px;">${car}</div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;font-size:0.85em;">
                         <span>Tour</span><span style="text-align:right;">${d.lapNumberCurrent ?? '—'}</span>
                         <span>EV</span><span style="text-align:right;">${d.veCurrentPct != null ? d.veCurrentPct.toFixed(1) + '%' : '—'}</span>

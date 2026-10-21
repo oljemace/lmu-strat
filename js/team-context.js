@@ -86,11 +86,11 @@ function renderTeamBadge() {
     bar.textContent = '';
 
     const name = document.createElement('span');
-    name.style.cssText = 'color:#00ff88;font-weight:bold;';
+    name.style.cssText = 'color:var(--accent);font-weight:bold;';
     name.textContent = '👥 ';
     if (teams.length > 1) {
         const sel = document.createElement('select');
-        sel.style.cssText = 'padding:3px 6px;border-radius:6px;border:1px solid #00ff88;background:#111;color:#fff;';
+        sel.style.cssText = 'padding:3px 6px;border-radius:6px;border:1px solid var(--accent);background:var(--input-bg);color:var(--text);';
         teams.forEach(t => {
             const o = document.createElement('option');
             o.value = t.id; o.textContent = t.name;
@@ -108,7 +108,7 @@ function renderTeamBadge() {
     role.style.cssText = 'margin-left:8px;padding:2px 8px;border-radius:10px;font-size:0.8em;'
         + (window._teamRole === 'viewer'
             ? 'background:rgba(255,170,0,0.2);color:#ffaa00;'
-            : 'background:rgba(0,255,136,0.15);color:#00ff88;');
+            : 'background:rgba(var(--accent-rgb),0.15);color:var(--accent);');
     role.textContent = (window._teamRole === 'viewer' ? '👁 ' : '') + _teamRoleLabel(window._teamRole);
     bar.appendChild(role);
 
@@ -129,18 +129,18 @@ function showNoTeamScreen(user) {
         el = document.createElement('div');
         el.id = 'noTeamScreen';
         el.style.cssText = 'position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;'
-            + 'background:linear-gradient(135deg,#1e2646,#16213e);font-family:"Segoe UI",sans-serif;padding:16px;';
+            + 'background:linear-gradient(135deg,var(--bg-1),var(--bg-2));font-family:"Segoe UI",sans-serif;padding:16px;';
         const card = document.createElement('div');
-        card.style.cssText = 'max-width:460px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);'
-            + 'border-radius:14px;padding:28px;color:#fff;text-align:center;';
+        card.style.cssText = 'max-width:460px;background:rgba(var(--fg-rgb),0.06);border:1px solid rgba(var(--fg-rgb),0.15);'
+            + 'border-radius:14px;padding:28px;color:var(--text);text-align:center;';
         const h = document.createElement('h2');
         h.style.cssText = 'margin:0 0 10px;color:#ffaa00;';
         h.textContent = 'Aucune équipe';
         const p = document.createElement('p');
-        p.style.cssText = 'color:#ccc;line-height:1.5;';
+        p.style.cssText = 'color:var(--text-2);line-height:1.5;';
         p.id = 'noTeamText';
         const b = document.createElement('button');
-        b.style.cssText = 'margin-top:14px;padding:8px 18px;border-radius:8px;border:1px solid #555;background:transparent;color:#ccc;cursor:pointer;';
+        b.style.cssText = 'margin-top:14px;padding:8px 18px;border-radius:8px;border:1px solid #555;background:transparent;color:var(--text-2);cursor:pointer;';
         b.textContent = 'Déconnexion';
         b.addEventListener('click', () => signOutUser());
         card.append(h, p, b);

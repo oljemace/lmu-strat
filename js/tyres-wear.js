@@ -40,7 +40,7 @@ function updateTyreWearUI(corner, compound, rawVal) {
 
     if (bar) {
         bar.style.width      = wearPerLap > 0 ? `${Math.max(8, ratio * 100)}%` : '0%';
-        bar.style.background = wearPerLap <= 0 ? 'rgba(255,255,255,0.1)' : TYRE_COLORS[compound];
+        bar.style.background = wearPerLap <= 0 ? 'rgba(var(--fg-rgb),0.1)' : TYRE_COLORS[compound];
     }
 
     if (lbl) {
@@ -202,7 +202,7 @@ function updateTyreBudgetSummary() {
 
     if (results.length === 0) {
         summary.innerHTML = `
-            <div style="color:#aaa;font-size:0.85em;font-style:italic;">
+            <div style="color:var(--text-3);font-size:0.85em;font-style:italic;">
                 ℹ️ Renseignez les usures/tour ci-dessus pour voir les recommandations.
             </div>`;
         return;
@@ -211,7 +211,7 @@ function updateTyreBudgetSummary() {
     results.sort((a, b) => b.stints - a.stints);
 
     let html = `
-        <div style="width:100%;margin-bottom:10px;color:#00ff88;
+        <div style="width:100%;margin-bottom:10px;color:var(--accent);
             font-weight:bold;font-size:0.9em;">
             📊 Durée de vie par gomme — usure séparée G / D
             <span style="color:#555;font-size:0.78em;font-weight:normal;">
@@ -231,7 +231,7 @@ function updateTyreBudgetSummary() {
         const leftDetail = r.wearL > 0
             ? `<span style="color:#88ccff;font-size:0.8em;">
                 🔵 G : ${r.wearL.toFixed(2)}%/t
-                → <strong style="color:#fff;">${r.maxLapsL.toFixed(1)}t</strong>
+                → <strong style="color:var(--text);">${r.maxLapsL.toFixed(1)}t</strong>
                 (${(r.maxLapsL / toursParStint).toFixed(1)} stints)
                </span>`
             : `<span style="color:#444;font-size:0.8em;">🔵 G : —</span>`;
@@ -240,7 +240,7 @@ function updateTyreBudgetSummary() {
         const rightDetail = r.wearR > 0
             ? `<span style="color:#ffaa66;font-size:0.8em;">
                 🟠 D : ${r.wearR.toFixed(2)}%/t
-                → <strong style="color:#fff;">${r.maxLapsR.toFixed(1)}t</strong>
+                → <strong style="color:var(--text);">${r.maxLapsR.toFixed(1)}t</strong>
                 (${(r.maxLapsR / toursParStint).toFixed(1)} stints)
                </span>`
             : `<span style="color:#444;font-size:0.8em;">🟠 D : —</span>`;
@@ -272,13 +272,13 @@ function updateTyreBudgetSummary() {
                     padding:2px 10px;font-size:0.85em;font-weight:bold;">
                     ${label}
                 </span>
-                <span style="color:#fff;font-weight:bold;font-size:1.0em;">
+                <span style="color:var(--text);font-weight:bold;font-size:1.0em;">
                     ${r.maxLaps.toFixed(1)} tours
                 </span>
-                <span style="color:#aaa;font-size:0.82em;">
+                <span style="color:var(--text-3);font-size:0.82em;">
                     = ${r.stints.toFixed(1)} stints
                 </span>
-                <span style="color:#888;font-size:0.75em;">
+                <span style="color:var(--text-4);font-size:0.75em;">
                     ⚠ limitant : ${r.limitSide}
                     (${r.worstWear.toFixed(2)}%/t)
                 </span>
@@ -297,7 +297,7 @@ function updateTyreBudgetSummary() {
             ${desequilibre}
 
             <!-- Barre de durée de vie -->
-            <div style="background:rgba(255,255,255,0.07);
+            <div style="background:rgba(var(--fg-rgb),0.07);
                 border-radius:3px;height:5px;overflow:hidden;margin-top:5px;">
                 <div style="width:${barW}%;height:5px;background:${color};
                     border-radius:3px;transition:width 0.3s;"></div>
@@ -307,12 +307,12 @@ function updateTyreBudgetSummary() {
             ${(r.wearL > 0 && r.wearR > 0) ? `
             <div style="display:flex;gap:6px;margin-top:4px;align-items:center;">
                 <span style="color:#88ccff;font-size:0.7em;width:12px;">G</span>
-                <div style="flex:1;background:rgba(255,255,255,0.06);
+                <div style="flex:1;background:rgba(var(--fg-rgb),0.06);
                     border-radius:2px;height:3px;overflow:hidden;">
                     <div style="width:${Math.min(100,r.maxLapsL/r.maxLaps*100)}%;
                         height:3px;background:#88ccff;border-radius:2px;"></div>
                 </div>
-                <div style="flex:1;background:rgba(255,255,255,0.06);
+                <div style="flex:1;background:rgba(var(--fg-rgb),0.06);
                     border-radius:2px;height:3px;overflow:hidden;">
                     <div style="width:${Math.min(100,r.maxLapsR/r.maxLaps*100)}%;
                         height:3px;background:#ffaa66;border-radius:2px;"></div>
@@ -337,7 +337,7 @@ function updateTyreBudgetSummary() {
             const longerStints = longerLaps / toursParStint;
             recoDetail = `<br><span style="color:#88ccff;font-size:0.9em;">
                 💡 Côté ${longerSide} tient
-                <strong style="color:#fff;">${longerStints.toFixed(1)} stints</strong>
+                <strong style="color:var(--text);">${longerStints.toFixed(1)} stints</strong>
                 — envisager un changement asymétrique.
             </span>`;
         }
@@ -345,21 +345,21 @@ function updateTyreBudgetSummary() {
 
     html += `
         <div style="width:100%;margin-top:12px;padding:10px 14px;
-            background:rgba(0,255,136,0.06);border-radius:8px;
-            border-left:3px solid #00ff88;font-size:0.84em;line-height:1.8;">
-            🏆 <strong style="color:#00ff88;">Recommandation :</strong>
+            background:rgba(var(--accent-rgb),0.06);border-radius:8px;
+            border-left:3px solid var(--accent);font-size:0.84em;line-height:1.8;">
+            🏆 <strong style="color:var(--accent);">Recommandation :</strong>
             Gomme <strong style="color:${bestColor};">${TYRE_LABELS[best.compound]}</strong>
-            — facteur limitant <strong style="color:#fff;">${best.maxLaps.toFixed(1)} tours</strong>
+            — facteur limitant <strong style="color:var(--text);">${best.maxLaps.toFixed(1)} tours</strong>
             (côté ${best.limitSide} · ${best.worstWear.toFixed(2)}%/tour).
             <br>
             ${best.stints >= 2
-                ? `✅ Couvre <strong style="color:#fff;">
+                ? `✅ Couvre <strong style="color:var(--text);">
                     ${Math.floor(best.stints)} stints complets</strong> sans changement.`
                 : `⚠️ Changement nécessaire
                     <strong style="color:#ffaa00;">avant la fin du 1er stint</strong>.`}
             ${recoDetail}
             ${results.length > 1
-                ? `<br><span style="color:#666;font-size:0.9em;">
+                ? `<br><span style="color:var(--text-4);font-size:0.9em;">
                     Gain vs ${TYRE_LABELS[results[results.length-1].compound]} :
                     +${(best.maxLaps - results[results.length-1].maxLaps).toFixed(1)} tours
                     (+${(best.stints  - results[results.length-1].stints).toFixed(1)} stints)
@@ -513,7 +513,7 @@ function buildTyreLifeBars(isLive) {
                         const info = document.createElement('div');
                         info.className = 'tyre-life-info';
                         info.textContent = 'roulez 3 tours minimum pour afficher la durée de vie';
-                        info.style.cssText = 'font-size:10px;line-height:1.2;color:#999;font-style:italic;margin-top:2px;';
+                        info.style.cssText = 'font-size:10px;line-height:1.2;color:var(--text-3);font-style:italic;margin-top:2px;';
                         infoCellStart.appendChild(info);
                     }
                 }
@@ -619,7 +619,7 @@ function buildTyreLifeBars(isLive) {
                         const info = document.createElement('div');
                         info.className = 'tyre-life-info';
                         info.textContent = 'roulez 3 tours minimum pour afficher la durée de vie';
-                        info.style.cssText = 'font-size:10px;line-height:1.2;color:#999;font-style:italic;margin-top:2px;';
+                        info.style.cssText = 'font-size:10px;line-height:1.2;color:var(--text-3);font-style:italic;margin-top:2px;';
                         infoCell.appendChild(info);
                     }
                 }
@@ -753,7 +753,7 @@ function _updateLiveTyreWearLabels() {
         if (wearPerLap <= 0) {
             const toursRest = Math.max(0, (pct - 40) / 1);
             lbl.textContent = `≈${toursRest.toFixed(0)}t ?`;
-            lbl.style.color = '#888';
+            lbl.style.color = 'var(--text-4)';
             return;
         }
 

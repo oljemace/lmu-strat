@@ -127,7 +127,7 @@ function _updateTyreStock(fitL, fitR, live) {
     const liveBudget = document.getElementById('liveTyreBudget')?.value;
     // Live : le stock est la valeur du champ « Stock pneus restant » (vide = inconnu)
     if (live && (liveBudget === '' || liveBudget == null)) {
-        rem.textContent = '-'; rem.style.color = '#fff'; rem.title = 'Renseigner « Stock pneus restant »';
+        rem.textContent = '-'; rem.style.color = 'var(--text)'; rem.title = 'Renseigner « Stock pneus restant »';
         const t0 = document.getElementById('liveTyreStockTotal'); if (t0) t0.textContent = '-';
         return;
     }
@@ -137,7 +137,7 @@ function _updateTyreStock(fitL, fitR, live) {
     const used = 2 * (n(fitL) + n(fitR));
     const left = total - used;
     rem.textContent = left;
-    rem.style.color = left < 0 ? '#ff4444' : left === 0 ? '#ffaa00' : '#fff';
+    rem.style.color = left < 0 ? '#ff4444' : left === 0 ? '#ffaa00' : 'var(--text)';
     rem.title = left < 0 ? `${-left} pneu(x) à réutiliser !` : `${used} utilisé(s) sur ${total}`;
     const t = document.getElementById(live ? 'liveTyreStockTotal' : 'tyreStockTotal');
     if (t) t.textContent = total;
@@ -265,12 +265,12 @@ function renderDriverLanes(wrapper, stints, lapTime, realStart, totalRealSec, li
     const decorate = track => {
         for (let i = 1; i < NT; i++) {
             const g = document.createElement('div');
-            g.style.cssText = `position:absolute;left:${i / NT * 100}%;top:0;bottom:0;width:1px;background:rgba(255,255,255,0.06);pointer-events:none;`;
+            g.style.cssText = `position:absolute;left:${i / NT * 100}%;top:0;bottom:0;width:1px;background:rgba(var(--fg-rgb),0.06);pointer-events:none;`;
             track.appendChild(g);
         }
         if (nowPct >= 0 && nowPct <= 100) {
             const n = document.createElement('div');
-            n.style.cssText = `position:absolute;left:${nowPct}%;top:0;bottom:0;width:2px;background:#fff;box-shadow:0 0 6px rgba(255,255,255,0.7);pointer-events:none;z-index:3;`;
+            n.style.cssText = `position:absolute;left:${nowPct}%;top:0;bottom:0;width:2px;background:var(--text);box-shadow:0 0 6px rgba(var(--fg-rgb),0.7);pointer-events:none;z-index:3;`;
             track.appendChild(n);
         }
     };
@@ -298,10 +298,10 @@ function renderDriverLanes(wrapper, stints, lapTime, realStart, totalRealSec, li
         const name  = d >= 0 ? getDriverName(d) : 'Non assigné';
 
         const track = makeRow(
-            `<div style="display:flex;align-items:center;gap:6px;color:#fff;font-weight:bold;font-size:0.85em;white-space:nowrap;">`
+            `<div style="display:flex;align-items:center;gap:6px;color:var(--text);font-weight:bold;font-size:0.85em;white-space:nowrap;">`
             + `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${color};flex:none;"></span>`
             + `<span style="overflow:hidden;text-overflow:ellipsis;">${esc(name)}</span></div>`
-            + `<div style="color:#999;font-size:0.72em;padding-left:15px;">${fmtH(sec)} · ${mine.length} stint${mine.length > 1 ? 's' : ''}</div>`,
+            + `<div style="color:var(--text-3);font-size:0.72em;padding-left:15px;">${fmtH(sec)} · ${mine.length} stint${mine.length > 1 ? 's' : ''}</div>`,
             44);
         track.dataset.lane = d;
 
@@ -339,9 +339,9 @@ function renderDriverLanes(wrapper, stints, lapTime, realStart, totalRealSec, li
     };
     const tyreRows = {};
     [['left', '🔵 Pneus G', fitL], ['right', '🟠 Pneus D', fitR]].forEach(([side, title, fits]) => {
-        const track = makeRow(`<div style="color:#ccc;font-weight:bold;font-size:0.8em;white-space:nowrap;">${title}</div>`, 28);
+        const track = makeRow(`<div style="color:var(--text-2);font-weight:bold;font-size:0.8em;white-space:nowrap;">${title}</div>`, 28);
         track.dataset.tyreSide = side;
-        track.style.border = '1px dashed rgba(255,255,255,0.12)';
+        track.style.border = '1px dashed rgba(var(--fg-rgb),0.12)';
         const marker = document.createElement('div');
         marker.className = 'tyre-drop-marker';
         marker.style.cssText = 'display:none;position:absolute;top:-2px;bottom:-2px;width:3px;border-radius:2px;pointer-events:none;z-index:4;';
@@ -447,7 +447,7 @@ function renderDriverLanes(wrapper, stints, lapTime, realStart, totalRealSec, li
             const snapSec = 12 / trackW * totalRealSec;   // ~12 px
             const guide = Object.values(tyreRows).map(tr => {
                 const g = document.createElement('div');
-                g.style.cssText = 'display:none;position:absolute;top:-2px;bottom:-2px;width:2px;background:#00ff88;box-shadow:0 0 6px #00ff88;pointer-events:none;z-index:6;';
+                g.style.cssText = 'display:none;position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--accent);box-shadow:0 0 6px var(--accent);pointer-events:none;z-index:6;';
                 tr.appendChild(g); return g;
             });
             const move = e => {
@@ -457,7 +457,7 @@ function renderDriverLanes(wrapper, stints, lapTime, realStart, totalRealSec, li
                 if (snapped !== null) drive = snapped;
                 blk.style.width = `calc(${drive / totalRealSec * 100}% - 2px)`;
                 blk.style.zIndex = 20;
-                blk.style.outline = snapped !== null ? '2px solid #00ff88' : '';
+                blk.style.outline = snapped !== null ? '2px solid var(--accent)' : '';
                 guide.forEach(g => { g.style.display = snapped !== null ? 'block' : 'none'; g.style.left = `${(slot.start + drive) / totalRealSec * 100}%`; });
                 if (lbl) lbl.textContent = fmtM(drive);
             };
@@ -502,7 +502,7 @@ function renderDriverLanes(wrapper, stints, lapTime, realStart, totalRealSec, li
                 blk.style.opacity = '0.85';
                 blk.style.boxShadow = '0 6px 18px rgba(0,0,0,0.6)';
                 const tg = target(e.clientX, e.clientY);
-                tracks.forEach(t => { t.el.style.background = (t === tg.track) ? 'rgba(0,255,136,0.12)' : 'rgba(0,0,0,0.25)'; });
+                tracks.forEach(t => { t.el.style.background = (t === tg.track) ? 'rgba(var(--accent-rgb),0.12)' : 'rgba(0,0,0,0.25)'; });
             };
             const up = e => {
                 blk.removeEventListener('pointermove', move);

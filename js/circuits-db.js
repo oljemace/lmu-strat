@@ -417,7 +417,7 @@ function renderCircuitMatrix() {
         .sort((a, b) => (a[1].name || '').localeCompare(b[1].name || ''));
 
     if (circuitEntries.length === 0) {
-        table.innerHTML = `<tr><td style="color:#666;padding:20px;text-align:center;">
+        table.innerHTML = `<tr><td style="color:var(--text-4);padding:20px;text-align:center;">
             Aucun circuit enregistré.</td></tr>`;
         if (countLabel) countLabel.textContent = '';
         return;
@@ -483,21 +483,21 @@ function renderCircuitMatrix() {
     // Colonne 1 : voiture + colonne 2 : gomme
     html += `
         <th style="
-            background:#0d1a2e;color:#00ff88;
+            background:#0d1a2e;color:var(--accent);
             font-size:0.85em;padding:8px 10px;
-            white-space:nowrap;border-bottom:2px solid rgba(0,255,136,0.3);
+            white-space:nowrap;border-bottom:2px solid rgba(var(--accent-rgb),0.3);
             position:sticky;left:0;z-index:4;
             box-shadow:2px 0 6px rgba(0,0,0,0.8);
-            border-right:1px solid rgba(0,255,136,0.15);">
+            border-right:1px solid rgba(var(--accent-rgb),0.15);">
             🏎️ Voiture
         </th>
         <th id="matrixColGomme" style="
-            background:#0d1a2e;color:#00ff88;
+            background:#0d1a2e;color:var(--accent);
             font-size:0.85em;padding:8px 10px;
-            white-space:nowrap;border-bottom:2px solid rgba(0,255,136,0.3);
+            white-space:nowrap;border-bottom:2px solid rgba(var(--accent-rgb),0.3);
             position:sticky;left:140px;z-index:4;
             box-shadow:2px 0 6px rgba(0,0,0,0.8);
-            border-right:1px solid rgba(0,255,136,0.1);">
+            border-right:1px solid rgba(var(--accent-rgb),0.1);">
             🔘 Gomme
         </th>`;
         
@@ -505,9 +505,9 @@ function renderCircuitMatrix() {
     circuitEntries.forEach(([, c]) => {
         html += `
             <th style="
-                background:rgba(0,255,136,0.12);color:#00ff88;
+                background:rgba(var(--accent-rgb),0.12);color:var(--accent);
                 font-size:0.85em;padding:8px 12px;text-align:center;
-                white-space:nowrap;border-bottom:2px solid rgba(0,255,136,0.3);
+                white-space:nowrap;border-bottom:2px solid rgba(var(--accent-rgb),0.3);
                 min-width:130px;">
                 🏁 ${c.name || '?'}
             </th>`;
@@ -529,28 +529,28 @@ function renderCircuitMatrix() {
             position:sticky;left:0;z-index:2;
             background:#0d1a2e;
             box-shadow:2px 0 6px rgba(0,0,0,0.8);
-            border-right:1px solid rgba(0,255,136,0.15);`;
+            border-right:1px solid rgba(var(--accent-rgb),0.15);`;
 
         const stickyStyle2 = `
             position:sticky;left:${col1W}px;z-index:2;
             background:#0d1a2e;
             box-shadow:2px 0 6px rgba(0,0,0,0.8);
-            border-right:1px solid rgba(0,255,136,0.1);`;
+            border-right:1px solid rgba(var(--accent-rgb),0.1);`;
 
         // ── Ligne ⏱ Temps au tour + 🔋 Conso ──
         html += `<tr style="background:${rowBg};">`;
         html += `
             <td rowspan="4"
                 style="${stickyStyle}
-                    color:#fff;font-weight:bold;font-size:0.82em;
+                    color:var(--text);font-weight:bold;font-size:0.82em;
                     padding:8px 10px;vertical-align:middle;
-                    border-top:2px solid rgba(255,255,255,0.08);
+                    border-top:2px solid rgba(var(--fg-rgb),0.08);
                     white-space:nowrap;min-width:${col1W}px;width:${col1W}px;">
                 ${carLabel}
             </td>
             <td style="${stickyStyle2}
-                color:#aaa;font-size:0.78em;padding:6px 10px;
-                border-top:2px solid rgba(255,255,255,0.08);
+                color:var(--text-3);font-size:0.78em;padding:6px 10px;
+                border-top:2px solid rgba(var(--fg-rgb),0.08);
                 white-space:nowrap;">
                 ⏱ T.Tour<br>🔋 EV/t
             </td>`;
@@ -561,13 +561,13 @@ function renderCircuitMatrix() {
                 html += `<td style="
                     text-align:center;color:#333;font-size:0.78em;
                     padding:6px 8px;
-                    border-top:2px solid rgba(255,255,255,0.08);">—</td>`;
+                    border-top:2px solid rgba(var(--fg-rgb),0.08);">—</td>`;
             } else {
                 const hasData = data.lapMin || data.lapSec || data.evPerLap;
                 html += `<td style="
                     position:relative;
                     text-align:center;padding:6px 8px;
-                    border-top:2px solid rgba(255,255,255,0.08);
+                    border-top:2px solid rgba(var(--fg-rgb),0.08);
                     cursor:pointer;"
                     title="Cliquer pour charger dans la stratégie"
                     onclick="loadCircuitIntoStrategy('${circId}','${carId}')">
@@ -577,7 +577,7 @@ function renderCircuitMatrix() {
                         style="position:absolute;top:1px;right:1px;width:16px;height:16px;line-height:14px;
                             padding:0;border:none;border-radius:3px;background:rgba(255,68,102,0.15);
                             color:#ff6688;font-size:0.72em;cursor:pointer;z-index:1;">🗑</button>
-                    <div style="color:#fff;font-weight:bold;font-size:0.88em;">
+                    <div style="color:var(--text);font-weight:bold;font-size:0.88em;">
                         ${lapTimeStr(data)}
                     </div>
                     <div style="color:#88ccff;font-size:0.75em;margin-top:2px;">
@@ -635,7 +635,7 @@ function renderCircuitMatrix() {
                                 style="position:absolute;top:1px;right:1px;width:16px;height:16px;line-height:14px;
                                     padding:0;border:none;border-radius:3px;background:rgba(255,68,102,0.15);
                                     color:#ff6688;font-size:0.72em;cursor:pointer;z-index:1;">🗑</button>
-                            <div style="color:#fff;font-size:0.82em;font-weight:bold;">
+                            <div style="color:var(--text);font-size:0.82em;font-weight:bold;">
                                 ${life.worstWear.toFixed(2)}%/t
                             </div>
                             <div style="color:${stintColor};font-size:0.72em;margin-top:1px;">
@@ -699,7 +699,7 @@ function loadCircuitIntoStrategy(circuitId, carId) {
     const circBlock = document.getElementById('circuitLoadInfo');
     if (circBlock) {
         circBlock.style.transition = 'background 0.2s';
-        circBlock.style.background = 'rgba(0,255,136,0.18)';
+        circBlock.style.background = 'rgba(var(--accent-rgb),0.18)';
         setTimeout(() => circBlock.style.background = 'transparent', 800);
     }
 }

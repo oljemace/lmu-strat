@@ -39,7 +39,7 @@ function updateCircTyreWearUI(corner, compound, rawVal) {
             ? Math.max(0.08, (maxWear - wearPerLap) / maxWear + 0.15)
             : 0;
         bar.style.width      = wearPerLap > 0 ? `${Math.min(100, ratio * 100)}%` : '0%';
-        bar.style.background = wearPerLap > 0 ? TYRE_COLORS[compound] : 'rgba(255,255,255,0.1)';
+        bar.style.background = wearPerLap > 0 ? TYRE_COLORS[compound] : 'rgba(var(--fg-rgb),0.1)';
     }
 
     // Label tours / stints

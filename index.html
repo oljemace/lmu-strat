@@ -5,7 +5,9 @@
     
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calculateur de Stratégie - Endurance LMU</title>
-    <link rel="stylesheet" href="css/styles.css?v=20261028b">
+    <link rel="stylesheet" href="css/themes.css?v=20261029c">
+    <link rel="stylesheet" href="css/styles.css?v=20261029a">
+    <script src="js/appearance.js?v=20261029c"></script>
 
 </head>
 <body>
@@ -26,7 +28,7 @@
         width:100%;
         max-width:420px;
         background:rgba(0,0,0,0.38);
-        border:1px solid rgba(0,255,136,0.28);
+        border:1px solid rgba(var(--accent-rgb),0.28);
         border-radius:16px;
         padding:32px;
         box-shadow:0 12px 45px rgba(0,0,0,0.5);
@@ -38,7 +40,7 @@
         ">🔒</div>
 
         <h2 style="
-            color:#00ff88;
+            color:var(--accent);
             margin:0 0 8px 0;
             font-size:1.8em;
         ">
@@ -46,14 +48,14 @@
         </h2>
 
         <div style="
-            color:#999;
+            color:var(--text-3);
             font-size:0.95em;
             margin-bottom:25px;
         ">
             <span id="gateSubtitle">Connectez-vous avec votre compte équipe pour accéder au calculateur</span>
         </div>
 
-        <div id="gateInviteBanner" style="display:none;background:rgba(0,255,136,0.12);border:1px solid rgba(0,255,136,0.35);
+        <div id="gateInviteBanner" style="display:none;background:rgba(var(--accent-rgb),0.12);border:1px solid rgba(var(--accent-rgb),0.35);
              color:#9fffd0;border-radius:9px;padding:10px 12px;font-size:0.9em;margin-bottom:14px;">
             ✉️ Vous êtes invité(e) à rejoindre une équipe. Créez votre compte (ou connectez-vous si vous en avez déjà un).
         </div>
@@ -68,10 +70,10 @@
                 display:none;
                 width:100%;
                 padding:13px 14px;
-                border:2px solid rgba(255,255,255,0.18);
+                border:2px solid rgba(var(--fg-rgb),0.18);
                 border-radius:9px;
-                background:rgba(255,255,255,0.08);
-                color:#fff;
+                background:rgba(var(--fg-rgb),0.08);
+                color:var(--text);
                 font-size:1em;
                 outline:none;
                 margin-bottom:10px;
@@ -87,10 +89,10 @@
             style="
                 width:100%;
                 padding:13px 14px;
-                border:2px solid rgba(255,255,255,0.18);
+                border:2px solid rgba(var(--fg-rgb),0.18);
                 border-radius:9px;
-                background:rgba(255,255,255,0.08);
-                color:#fff;
+                background:rgba(var(--fg-rgb),0.08);
+                color:var(--text);
                 font-size:1em;
                 outline:none;
                 margin-bottom:10px;
@@ -107,10 +109,10 @@
             style="
                 width:100%;
                 padding:13px 14px;
-                border:2px solid rgba(255,255,255,0.18);
+                border:2px solid rgba(var(--fg-rgb),0.18);
                 border-radius:9px;
-                background:rgba(255,255,255,0.08);
-                color:#fff;
+                background:rgba(var(--fg-rgb),0.08);
+                color:var(--text);
                 font-size:1em;
                 outline:none;
                 margin-bottom:12px;
@@ -126,7 +128,7 @@
                 padding:13px 20px;
                 border:none;
                 border-radius:9px;
-                background:linear-gradient(135deg,#00ff88,#00cc6a);
+                background:linear-gradient(135deg,var(--accent),var(--accent-2));
                 color:#000;
                 font-size:1em;
                 font-weight:bold;
@@ -141,9 +143,9 @@
             font-size:0.8em;
             margin-top:14px;
         ">
-            <a id="gateToggle" href="#" style="color:#00ff88;display:none;" onclick="toggleGateMode(); return false;"></a>
+            <a id="gateToggle" href="#" style="color:var(--accent);display:none;" onclick="toggleGateMode(); return false;"></a>
             <span id="gateNoInvite">Pas encore de compte ? Demandez un lien d'invitation à l'administrateur de votre équipe.</span>
-            <div style="margin-top:8px;"><a id="gateForgot" href="#" style="color:#888;" onclick="resetPasswordFromGate(); return false;">Mot de passe oublié ?</a></div>
+            <div style="margin-top:8px;"><a id="gateForgot" href="#" style="color:var(--text-4);" onclick="resetPasswordFromGate(); return false;">Mot de passe oublié ?</a></div>
         </div>
 
         <div
@@ -159,42 +161,42 @@
     </div>
 </div>
 
-<div id="sessionBar" style="position: fixed; top: 0px; left: 0px; right: 0px; z-index: 9999; background: rgba(0, 20, 40, 0.97); border-bottom: 2px solid rgb(0, 255, 136); padding: 8px 20px; display: flex; align-items: center; gap: 12px; font-family: &quot;Segoe UI&quot;, sans-serif; font-size: 0.9em; flex-wrap: wrap;">
+<div id="sessionBar" style="position: fixed; top: 0px; left: 0px; right: 0px; z-index: 9999; background: var(--bar-bg); border-bottom: 2px solid var(--accent); padding: 8px 20px; display: flex; align-items: center; gap: 12px; font-family: &quot;Segoe UI&quot;, sans-serif; font-size: 0.9em; flex-wrap: wrap;">
         <span id="teamBadge" style="font-size:0.9em;"></span>
-        <button id="teamPanelBtn" onclick="openTeamPanel()" title="Membres et invitations" style="padding:4px 10px;background:transparent;color:#00ff88;border:1px solid #00ff88;
+        <button id="teamPanelBtn" onclick="openTeamPanel()" title="Membres et invitations" style="padding:4px 10px;background:transparent;color:var(--accent);border:1px solid var(--accent);
                    border-radius:6px;font-size:0.85em;cursor:pointer;">👥 Équipe</button>
-        <span style="color:#00ff88;font-weight:bold;">🏎️ Session</span>
+        <span style="color:var(--accent);font-weight:bold;">🏎️ Session</span>
 
         <select id="sessionSelect"
-            style="padding:4px 8px;border-radius:6px;border:1px solid #00ff88;
-                   background:#111;color:#fff;font-size:0.9em;min-width:160px;">
+            style="padding:4px 8px;border-radius:6px;border:1px solid var(--accent);
+                   background:var(--input-bg);color:var(--text);font-size:0.9em;min-width:160px;">
             <option value="">— Choisir une session —</option>
         </select>
 
-        <button data-requires-write onclick="createSession()" style="padding:4px 12px;background:#00ff88;color:#000;border:none;
+        <button data-requires-write onclick="createSession()" style="padding:4px 12px;background:var(--accent);color:#000;border:none;
                    border-radius:6px;font-weight:bold;cursor:pointer;">
             + Nouvelle
         </button>
 
         <input data-requires-write id="sessionNameInput" placeholder="Nom de la session" style="padding:4px 8px;border-radius:6px;border:1px solid #555;
-                   background:#111;color:#fff;font-size:0.9em;width:140px;">
+                   background:var(--input-bg);color:var(--text);font-size:0.9em;width:140px;">
 
-        <button data-requires-admin id="renameSessionBtn" onclick="renameSession()" title="Renommer la session sélectionnée" style="display:none;padding:4px 10px;background:transparent;color:#00ff88;border:1px solid #00ff88;
+        <button data-requires-admin id="renameSessionBtn" onclick="renameSession()" title="Renommer la session sélectionnée" style="display:none;padding:4px 10px;background:transparent;color:var(--accent);border:1px solid var(--accent);
                    border-radius:6px;font-size:0.85em;cursor:pointer;">✏️ Renommer</button>
         <button data-requires-admin id="deleteSessionBtn" onclick="deleteSession()" title="Supprimer la session sélectionnée" style="display:none;padding:4px 10px;background:transparent;color:#ff6b6b;border:1px solid #ff6b6b;
                    border-radius:6px;font-size:0.85em;cursor:pointer;">🗑️ Supprimer</button>
 
         <div style="margin-left:auto;display:flex;align-items:center;gap:14px;">
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;">
-                <span id="syncStatus" style="font-size:0.8em;color:#888;">
+                <span id="syncStatus" style="font-size:0.8em;color:var(--text-4);">
                     ⬤ Non connecté
                 </span>
                 <span id="syncTime" style="font-size:0.9em;color:#555;font-style:italic;white-space:nowrap;">
                 </span>
             </div>
-            <div style="display:flex;align-items:center;gap:8px;border-left:1px solid rgba(255,255,255,0.15);padding-left:14px;">
-                <span id="authUserLabel" style="font-size:0.85em;color:#00ff88;"></span>
-                <button onclick="signOutUser()" style="padding:4px 10px;background:transparent;color:#ccc;border:1px solid #555;
+            <div style="display:flex;align-items:center;gap:8px;border-left:1px solid rgba(var(--fg-rgb),0.15);padding-left:14px;">
+                <span id="authUserLabel" style="font-size:0.85em;color:var(--accent);"></span>
+                <button onclick="signOutUser()" style="padding:4px 10px;background:transparent;color:var(--text-2);border:1px solid #555;
                            border-radius:6px;font-size:0.8em;cursor:pointer;">
                     Déconnexion
                 </button>
@@ -206,7 +208,7 @@
 
 
     <!-- ══════════ ONGLETS ══════════ -->
-<div class="tab-bar" style="display:flex;gap:8px;margin-bottom:20px;border-bottom:2px solid rgba(0,255,136,0.2);padding-bottom:0;">
+<div class="tab-bar" style="display:flex;gap:8px;margin-bottom:20px;border-bottom:2px solid rgba(var(--accent-rgb),0.2);padding-bottom:0;">
     <button class="tab-btn active" data-tab="strategy" onclick="switchTab('strategy')">🏁 Stratégie</button>
     <button class="tab-btn" data-tab="circuits" onclick="switchTab('circuits')">📚 Base Circuits</button>
 </div>
@@ -215,9 +217,9 @@
     <h1>🏎️ Calculateur de Stratégie 🏎</h1>
     <p class="subtitle">Calcul automatique des stints avec timeline de course</p>
 
-    <div id="teamTelemetrySection" style="display:none;margin-bottom:25px;background:rgba(255,255,255,0.04);
-                border:1px solid rgba(0,255,136,0.2);border-radius:12px;padding:16px 18px;">
-        <div style="color:#00ff88;font-weight:bold;margin-bottom:10px;">
+    <div id="teamTelemetrySection" style="display:none;margin-bottom:25px;background:rgba(var(--fg-rgb),0.04);
+                border:1px solid rgba(var(--accent-rgb),0.2);border-radius:12px;padding:16px 18px;">
+        <div style="color:var(--accent);font-weight:bold;margin-bottom:10px;">
             📡 Télémétrie équipe en direct
         </div>
         <div id="teamTelemetryList" style="display:flex;flex-wrap:wrap;gap:12px;"></div>
@@ -226,30 +228,30 @@
     <div id="calcModeSwitcher" style="display:flex;gap:14px;margin-bottom:22px;flex-wrap:wrap;">
     <div class="calc-mode-card active" data-mode="planning" onclick="switchCalcMode('planning')"
         style="flex:1;min-width:220px;cursor:pointer;padding:16px 20px;border-radius:12px;
-               background:rgba(0,255,136,0.08);border:2px solid #00ff88;
+               background:rgba(var(--accent-rgb),0.08);border:2px solid var(--accent);
                display:flex;align-items:center;gap:14px;transition:all 0.2s;">
         <div style="font-size:1.8em;">📋</div>
         <div>
-            <div style="color:#00ff88;font-weight:bold;font-size:1.05em;">Mode Planification</div>
-            <div style="color:#aaa;font-size:0.82em;">Stratégie à partir des données de départ</div>
+            <div style="color:var(--accent);font-weight:bold;font-size:1.05em;">Mode Planification</div>
+            <div style="color:var(--text-3);font-size:0.82em;">Stratégie à partir des données de départ</div>
         </div>
     </div>
     <div class="calc-mode-card" data-mode="live" onclick="switchCalcMode('live')"
         style="flex:1;min-width:220px;cursor:pointer;padding:16px 20px;border-radius:12px;
-               background:rgba(255,255,255,0.03);border:2px solid rgba(255,255,255,0.12);
+               background:rgba(var(--fg-rgb),0.03);border:2px solid rgba(var(--fg-rgb),0.12);
                display:flex;align-items:center;gap:14px;transition:all 0.2s;">
         <div style="font-size:1.8em;">🔴</div>
         <div>
-            <div style="color:#ccc;font-weight:bold;font-size:1.05em;">Mode Live</div>
-            <div style="color:#aaa;font-size:0.82em;">Télémétrie en temps réel</div>
+            <div style="color:var(--text-2);font-weight:bold;font-size:1.05em;">Mode Live</div>
+            <div style="color:var(--text-3);font-size:0.82em;">Télémétrie en temps réel</div>
         </div>
     </div>
 </div>
 
 <div id="planningModeSection">
-<h2 style="color:#00ff88;margin:0 0 4px 0;">📋 Mode Planification</h2>
+<h2 style="color:var(--accent);margin:0 0 4px 0;">📋 Mode Planification</h2>
     <div id="raceContextBadge" style="display:none;flex-wrap:wrap;gap:8px;margin:0 0 10px 0;font-weight:600;"></div>
-    <p style="color:#aaa;font-size:0.85em;margin:0 0 14px 0;">
+    <p style="color:var(--text-3);font-size:0.85em;margin:0 0 14px 0;">
         Stratégie calculée à partir des données de départ saisies ci-dessous (avant course, ou en l'absence de
         connexion live).
     </p>
@@ -262,7 +264,7 @@
             <div class="input-group" style="background:rgba(0,170,255,0.08);padding:15px;border-radius:10px;border:1px solid rgba(0,170,255,0.3);">
     <label style="color:#00aaff;">🏁 Circuit</label>
     <div style="display:flex;gap:8px;">
-        <select id="circuitSelect" onchange="loadCircuitData()" style="flex:1;padding:8px;border:2px solid rgba(0,170,255,0.4);border-radius:8px;background:rgba(255,255,255,0.1);color:#fff;font-size:1em;"><option value="">— Aucun circuit —</option><option value="circ_default_barcelone">Barcelone (Catalunya)</option><option value="circ_default_cota">COTA (Austin)</option><option value="circ_default_daytona">Daytona (Road Course)</option><option value="circ_default_lagunaseca">Laguna Seca</option><option value="circ_default_lemans">Le Mans</option><option value="circ_default_monza">Monza</option><option value="circ_default_sebring">Sebring</option><option value="circ_default_spa">Spa-Francorchamps</option></select>
+        <select id="circuitSelect" onchange="loadCircuitData()" style="flex:1;padding:8px;border:2px solid rgba(0,170,255,0.4);border-radius:8px;background:rgba(var(--fg-rgb),0.1);color:var(--text);font-size:1em;"><option value="">— Aucun circuit —</option><option value="circ_default_barcelone">Barcelone (Catalunya)</option><option value="circ_default_cota">COTA (Austin)</option><option value="circ_default_daytona">Daytona (Road Course)</option><option value="circ_default_lagunaseca">Laguna Seca</option><option value="circ_default_lemans">Le Mans</option><option value="circ_default_monza">Monza</option><option value="circ_default_sebring">Sebring</option><option value="circ_default_spa">Spa-Francorchamps</option></select>
         <button onclick="switchTab('circuits')" style="padding:8px 14px;background:rgba(0,170,255,0.2);border:1px solid #00aaff;border-radius:8px;color:#00aaff;font-weight:bold;cursor:pointer;">
             ⚙️ Gérer
         </button>
@@ -270,12 +272,12 @@
     <div style="margin-top:8px;">
         <label style="color:#00aaff;font-size:0.88em;margin-bottom:4px;display:block;">🏎️ Voiture</label>
         <select id="stratCarSelect" onchange="loadCircuitData()" style="width:100%;padding:8px;border:2px solid rgba(0,170,255,0.4);
-                   border-radius:8px;background:rgba(255,255,255,0.1);color:#fff;font-size:1em;"><option value="">— Choisir une voiture —</option><optgroup label="LMH"><option value="toyota_gr010">Toyota GR010 Hybrid</option><option value="ferrari_499p">Ferrari 499P</option><option value="peugeot_9x8_2024">Peugeot 9X8 (2024)</option><option value="aston_valkyrie">Aston Martin Valkyrie AMR-LMH</option><option value="glickenhaus_007">Glickenhaus SCG 007</option><option value="isotta_tipo6">Isotta Fraschini Tipo 6</option><option value="vanwall_680">Vanwall Vandervell 680</option></optgroup><optgroup label="LMDh"><option value="porsche_963">Porsche 963</option><option value="cadillac_vseriesr">Cadillac V-Series.R</option><option value="bmw_mhybridv8">BMW M Hybrid V8</option><option value="alpine_a424">Alpine A424</option><option value="lamborghini_sc63">Lamborghini SC63</option><option value="genesis_gmr001">Genesis GMR-001</option></optgroup></select>
+                   border-radius:8px;background:rgba(var(--fg-rgb),0.1);color:var(--text);font-size:1em;"><option value="">— Choisir une voiture —</option><optgroup label="LMH"><option value="toyota_gr010">Toyota GR010 Hybrid</option><option value="ferrari_499p">Ferrari 499P</option><option value="peugeot_9x8_2024">Peugeot 9X8 (2024)</option><option value="aston_valkyrie">Aston Martin Valkyrie AMR-LMH</option><option value="glickenhaus_007">Glickenhaus SCG 007</option><option value="isotta_tipo6">Isotta Fraschini Tipo 6</option><option value="vanwall_680">Vanwall Vandervell 680</option></optgroup><optgroup label="LMDh"><option value="porsche_963">Porsche 963</option><option value="cadillac_vseriesr">Cadillac V-Series.R</option><option value="bmw_mhybridv8">BMW M Hybrid V8</option><option value="alpine_a424">Alpine A424</option><option value="lamborghini_sc63">Lamborghini SC63</option><option value="genesis_gmr001">Genesis GMR-001</option></optgroup></select>
     </div>
     <div id="circuitLoadInfo" style="color:#88ccff;font-size:0.8em;margin-top:6px;">✅ "Le Mans" / Peugeot 9X8 (2024) — 3:35.0 · 8%/tour</div>
 </div>
 
-            <h2 style="color:#00ff88;margin-bottom:20px;">📊 Données de Départ</h2>
+            <h2 style="color:var(--accent);margin-bottom:20px;">📊 Données de Départ</h2>
 
 			<!-- Heure départ réelle -->
 			<div class="input-group">
@@ -333,7 +335,7 @@
             <!-- Multiplicateur -->
             <div class="input-group">
                 <label>⏩ Multiplicateur de temps</label>
-                <select id="timeMultiplier" style="width:100%;padding:6px 7px;border:2px solid rgba(255,255,255,0.2);border-radius:8px;background:rgba(255,255,255,0.1);color:#fff;font-size:1em;">
+                <select id="timeMultiplier" style="width:100%;padding:6px 7px;border:2px solid rgba(var(--fg-rgb),0.2);border-radius:8px;background:rgba(var(--fg-rgb),0.1);color:var(--text);font-size:1em;">
                     <option value="1" selected="">x1 (Temps réel)</option>
                     <option value="2">x2</option>
                     <option value="3">x3</option>
@@ -350,16 +352,16 @@
             </div>
 
             <hr class="section-divider">
-            <h2 style="color:#00ff88;margin-bottom:20px;">🏎️ Usure des Pneus</h2>
+            <h2 style="color:var(--accent);margin-bottom:20px;">🏎️ Usure des Pneus</h2>
 
             <div class="tyre-strategy-section">
-                <div style="color:#aaa;font-size:0.82em;margin-bottom:8px;">
-                    Saisir l'<strong style="color:#fff;">usure par tour en %</strong> pour chaque gomme.
+                <div style="color:var(--text-3);font-size:0.82em;margin-bottom:8px;">
+                    Saisir l'<strong style="color:var(--text);">usure par tour en %</strong> pour chaque gomme.
                     Pneu neuf = 100% · Seuil critique = 40% · Marge exploitable =
-                    <strong style="color:#00ff88;">60%</strong>.
+                    <strong style="color:var(--accent);">60%</strong>.
                     <span style="color:#ffaa00;">0 = gomme non utilisée.</span>
                     <br>
-                    <span style="color:#888;font-size:0.9em;">
+                    <span style="color:var(--text-4);font-size:0.9em;">
                         Tours max = 60% ÷ usure/tour
                     </span>
                 </div>
@@ -374,7 +376,7 @@
                             <div style="flex:1;">
                                 <input type="number" class="tyre-wear-input soft" id="tyre_FL_soft" value="0" min="0" max="100" step="0.1" placeholder="%/tour" oninput="updateTyreWearUI('FL','soft',this.value)">
                                 <div class="tyre-wear-bar-wrap">
-                                    <div class="tyre-wear-bar" id="tyre_FL_soft_bar" style="width: 0%; background: rgba(255, 255, 255, 0.1);"></div>
+                                    <div class="tyre-wear-bar" id="tyre_FL_soft_bar" style="width: 0%; background: rgba(var(--fg-rgb), 0.1);"></div>
                                 </div>
                             </div>
                             <span class="tyre-wear-label" id="tyre_FL_soft_lbl" style="color: rgb(85, 85, 85);">—</span>
@@ -394,7 +396,7 @@
                             <div style="flex:1;">
                                 <input type="number" class="tyre-wear-input hard" id="tyre_FL_hard" value="0" min="0" max="100" step="0.1" placeholder="%/tour" oninput="updateTyreWearUI('FL','hard',this.value)">
                                 <div class="tyre-wear-bar-wrap">
-                                    <div class="tyre-wear-bar" id="tyre_FL_hard_bar" style="width: 0%; background: rgba(255, 255, 255, 0.1);"></div>
+                                    <div class="tyre-wear-bar" id="tyre_FL_hard_bar" style="width: 0%; background: rgba(var(--fg-rgb), 0.1);"></div>
                                 </div>
                             </div>
                             <span class="tyre-wear-label" id="tyre_FL_hard_lbl" style="color: rgb(85, 85, 85);">—</span>
@@ -404,7 +406,7 @@
                             <div style="flex:1;">
                                 <input type="number" class="tyre-wear-input wet" id="tyre_FL_wet" value="0" min="0" max="100" step="0.1" placeholder="%/tour" oninput="updateTyreWearUI('FL','wet',this.value)">
                                 <div class="tyre-wear-bar-wrap">
-                                    <div class="tyre-wear-bar" id="tyre_FL_wet_bar" style="width: 0%; background: rgba(255, 255, 255, 0.1);"></div>
+                                    <div class="tyre-wear-bar" id="tyre_FL_wet_bar" style="width: 0%; background: rgba(var(--fg-rgb), 0.1);"></div>
                                 </div>
                             </div>
                             <span class="tyre-wear-label" id="tyre_FL_wet_lbl" style="color: rgb(85, 85, 85);">—</span>
@@ -419,7 +421,7 @@
                             <div style="flex:1;">
                                 <input type="number" class="tyre-wear-input soft" id="tyre_FR_soft" value="0" min="0" max="100" step="0.1" placeholder="%/tour" oninput="updateTyreWearUI('FR','soft',this.value)">
                                 <div class="tyre-wear-bar-wrap">
-                                    <div class="tyre-wear-bar" id="tyre_FR_soft_bar" style="width: 0%; background: rgba(255, 255, 255, 0.1);"></div>
+                                    <div class="tyre-wear-bar" id="tyre_FR_soft_bar" style="width: 0%; background: rgba(var(--fg-rgb), 0.1);"></div>
                                 </div>
                             </div>
                             <span class="tyre-wear-label" id="tyre_FR_soft_lbl" style="color: rgb(85, 85, 85);">—</span>
@@ -439,7 +441,7 @@
                             <div style="flex:1;">
                                 <input type="number" class="tyre-wear-input hard" id="tyre_FR_hard" value="0" min="0" max="100" step="0.1" placeholder="%/tour" oninput="updateTyreWearUI('FR','hard',this.value)">
                                 <div class="tyre-wear-bar-wrap">
-                                    <div class="tyre-wear-bar" id="tyre_FR_hard_bar" style="width: 0%; background: rgba(255, 255, 255, 0.1);"></div>
+                                    <div class="tyre-wear-bar" id="tyre_FR_hard_bar" style="width: 0%; background: rgba(var(--fg-rgb), 0.1);"></div>
                                 </div>
                             </div>
                             <span class="tyre-wear-label" id="tyre_FR_hard_lbl" style="color: rgb(85, 85, 85);">—</span>
@@ -449,7 +451,7 @@
                             <div style="flex:1;">
                                 <input type="number" class="tyre-wear-input wet" id="tyre_FR_wet" value="0" min="0" max="100" step="0.1" placeholder="%/tour" oninput="updateTyreWearUI('FR','wet',this.value)">
                                 <div class="tyre-wear-bar-wrap">
-                                    <div class="tyre-wear-bar" id="tyre_FR_wet_bar" style="width: 0%; background: rgba(255, 255, 255, 0.1);"></div>
+                                    <div class="tyre-wear-bar" id="tyre_FR_wet_bar" style="width: 0%; background: rgba(var(--fg-rgb), 0.1);"></div>
                                 </div>
                             </div>
                             <span class="tyre-wear-label" id="tyre_FR_wet_lbl" style="color: rgb(85, 85, 85);">—</span>
@@ -464,7 +466,7 @@
                             <div style="flex:1;">
                                 <input type="number" class="tyre-wear-input soft" id="tyre_RL_soft" value="0" min="0" max="100" step="0.1" placeholder="%/tour" oninput="updateTyreWearUI('RL','soft',this.value)">
                                 <div class="tyre-wear-bar-wrap">
-                                    <div class="tyre-wear-bar" id="tyre_RL_soft_bar" style="width: 0%; background: rgba(255, 255, 255, 0.1);"></div>
+                                    <div class="tyre-wear-bar" id="tyre_RL_soft_bar" style="width: 0%; background: rgba(var(--fg-rgb), 0.1);"></div>
                                 </div>
                             </div>
                             <span class="tyre-wear-label" id="tyre_RL_soft_lbl" style="color: rgb(85, 85, 85);">—</span>
@@ -474,7 +476,7 @@
                             <div style="flex:1;">
                                 <input type="number" class="tyre-wear-input medium" id="tyre_RL_medium" value="0" min="0" max="100" step="0.1" placeholder="%/tour" oninput="updateTyreWearUI('RL','medium',this.value)">
                                 <div class="tyre-wear-bar-wrap">
-                                    <div class="tyre-wear-bar" id="tyre_RL_medium_bar" style="width: 0%; background: rgba(255, 255, 255, 0.1);"></div>
+                                    <div class="tyre-wear-bar" id="tyre_RL_medium_bar" style="width: 0%; background: rgba(var(--fg-rgb), 0.1);"></div>
                                 </div>
                             </div>
                             <span class="tyre-wear-label" id="tyre_RL_medium_lbl" style="color: rgb(85, 85, 85);">—</span>
@@ -484,7 +486,7 @@
                             <div style="flex:1;">
                                 <input type="number" class="tyre-wear-input hard" id="tyre_RL_hard" value="0" min="0" max="100" step="0.1" placeholder="%/tour" oninput="updateTyreWearUI('RL','hard',this.value)">
                                 <div class="tyre-wear-bar-wrap">
-                                    <div class="tyre-wear-bar" id="tyre_RL_hard_bar" style="width: 0%; background: rgba(255, 255, 255, 0.1);"></div>
+                                    <div class="tyre-wear-bar" id="tyre_RL_hard_bar" style="width: 0%; background: rgba(var(--fg-rgb), 0.1);"></div>
                                 </div>
                             </div>
                             <span class="tyre-wear-label" id="tyre_RL_hard_lbl" style="color: rgb(85, 85, 85);">—</span>
@@ -494,7 +496,7 @@
                             <div style="flex:1;">
                                 <input type="number" class="tyre-wear-input wet" id="tyre_RL_wet" value="0" min="0" max="100" step="0.1" placeholder="%/tour" oninput="updateTyreWearUI('RL','wet',this.value)">
                                 <div class="tyre-wear-bar-wrap">
-                                    <div class="tyre-wear-bar" id="tyre_RL_wet_bar" style="width: 0%; background: rgba(255, 255, 255, 0.1);"></div>
+                                    <div class="tyre-wear-bar" id="tyre_RL_wet_bar" style="width: 0%; background: rgba(var(--fg-rgb), 0.1);"></div>
                                 </div>
                             </div>
                             <span class="tyre-wear-label" id="tyre_RL_wet_lbl" style="color: rgb(85, 85, 85);">—</span>
@@ -509,7 +511,7 @@
                             <div style="flex:1;">
                                 <input type="number" class="tyre-wear-input soft" id="tyre_RR_soft" value="0" min="0" max="100" step="0.1" placeholder="%/tour" oninput="updateTyreWearUI('RR','soft',this.value)">
                                 <div class="tyre-wear-bar-wrap">
-                                    <div class="tyre-wear-bar" id="tyre_RR_soft_bar" style="width: 0%; background: rgba(255, 255, 255, 0.1);"></div>
+                                    <div class="tyre-wear-bar" id="tyre_RR_soft_bar" style="width: 0%; background: rgba(var(--fg-rgb), 0.1);"></div>
                                 </div>
                             </div>
                             <span class="tyre-wear-label" id="tyre_RR_soft_lbl" style="color: rgb(85, 85, 85);">—</span>
@@ -519,7 +521,7 @@
                             <div style="flex:1;">
                                 <input type="number" class="tyre-wear-input medium" id="tyre_RR_medium" value="0" min="0" max="100" step="0.1" placeholder="%/tour" oninput="updateTyreWearUI('RR','medium',this.value)">
                                 <div class="tyre-wear-bar-wrap">
-                                    <div class="tyre-wear-bar" id="tyre_RR_medium_bar" style="width: 0%; background: rgba(255, 255, 255, 0.1);"></div>
+                                    <div class="tyre-wear-bar" id="tyre_RR_medium_bar" style="width: 0%; background: rgba(var(--fg-rgb), 0.1);"></div>
                                 </div>
                             </div>
                             <span class="tyre-wear-label" id="tyre_RR_medium_lbl" style="color: rgb(85, 85, 85);">—</span>
@@ -529,7 +531,7 @@
                             <div style="flex:1;">
                                 <input type="number" class="tyre-wear-input hard" id="tyre_RR_hard" value="0" min="0" max="100" step="0.1" placeholder="%/tour" oninput="updateTyreWearUI('RR','hard',this.value)">
                                 <div class="tyre-wear-bar-wrap">
-                                    <div class="tyre-wear-bar" id="tyre_RR_hard_bar" style="width: 0%; background: rgba(255, 255, 255, 0.1);"></div>
+                                    <div class="tyre-wear-bar" id="tyre_RR_hard_bar" style="width: 0%; background: rgba(var(--fg-rgb), 0.1);"></div>
                                 </div>
                             </div>
                             <span class="tyre-wear-label" id="tyre_RR_hard_lbl" style="color: rgb(85, 85, 85);">—</span>
@@ -539,7 +541,7 @@
                             <div style="flex:1;">
                                 <input type="number" class="tyre-wear-input wet" id="tyre_RR_wet" value="0" min="0" max="100" step="0.1" placeholder="%/tour" oninput="updateTyreWearUI('RR','wet',this.value)">
                                 <div class="tyre-wear-bar-wrap">
-                                    <div class="tyre-wear-bar" id="tyre_RR_wet_bar" style="width: 0%; background: rgba(255, 255, 255, 0.1);"></div>
+                                    <div class="tyre-wear-bar" id="tyre_RR_wet_bar" style="width: 0%; background: rgba(var(--fg-rgb), 0.1);"></div>
                                 </div>
                             </div>
                             <span class="tyre-wear-label" id="tyre_RR_wet_lbl" style="color: rgb(85, 85, 85);">—</span>
@@ -550,7 +552,7 @@
 
                 <!-- Récapitulatif durée de vie par gomme -->
                 <div class="tyre-stint-budget" id="tyreBudgetSummary">
-        <div style="width:100%;margin-bottom:10px;color:#00ff88;
+        <div style="width:100%;margin-bottom:10px;color:var(--accent);
             font-weight:bold;font-size:0.9em;">
             📊 Durée de vie par gomme — usure séparée G / D
             <span style="color:#555;font-size:0.78em;font-weight:normal;">
@@ -569,13 +571,13 @@
                     padding:2px 10px;font-size:0.85em;font-weight:bold;">
                     Medium
                 </span>
-                <span style="color:#fff;font-weight:bold;font-size:1.0em;">
+                <span style="color:var(--text);font-weight:bold;font-size:1.0em;">
                     120.0 tours
                 </span>
-                <span style="color:#aaa;font-size:0.82em;">
+                <span style="color:var(--text-3);font-size:0.82em;">
                     = 9.6 stints
                 </span>
-                <span style="color:#888;font-size:0.75em;">
+                <span style="color:var(--text-4);font-size:0.75em;">
                     ⚠ limitant : Droite
                     (0.50%/t)
                 </span>
@@ -586,12 +588,12 @@
             <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:6px;">
                 <span style="color:#88ccff;font-size:0.8em;">
                 🔵 G : 0.40%/t
-                → <strong style="color:#fff;">150.0t</strong>
+                → <strong style="color:var(--text);">150.0t</strong>
                 (12.0 stints)
                </span>
                 <span style="color:#ffaa66;font-size:0.8em;">
                 🟠 D : 0.50%/t
-                → <strong style="color:#fff;">120.0t</strong>
+                → <strong style="color:var(--text);">120.0t</strong>
                 (9.6 stints)
                </span>
             </div>
@@ -604,7 +606,7 @@
                 </span>
 
             <!-- Barre de durée de vie -->
-            <div style="background:rgba(255,255,255,0.07);
+            <div style="background:rgba(var(--fg-rgb),0.07);
                 border-radius:3px;height:5px;overflow:hidden;margin-top:5px;">
                 <div style="width:100%;height:5px;background:#ffcc00;
                     border-radius:3px;transition:width 0.3s;"></div>
@@ -614,12 +616,12 @@
             
             <div style="display:flex;gap:6px;margin-top:4px;align-items:center;">
                 <span style="color:#88ccff;font-size:0.7em;width:12px;">G</span>
-                <div style="flex:1;background:rgba(255,255,255,0.06);
+                <div style="flex:1;background:rgba(var(--fg-rgb),0.06);
                     border-radius:2px;height:3px;overflow:hidden;">
                     <div style="width:100%;
                         height:3px;background:#88ccff;border-radius:2px;"></div>
                 </div>
-                <div style="flex:1;background:rgba(255,255,255,0.06);
+                <div style="flex:1;background:rgba(var(--fg-rgb),0.06);
                     border-radius:2px;height:3px;overflow:hidden;">
                     <div style="width:100%;
                         height:3px;background:#ffaa66;border-radius:2px;"></div>
@@ -628,18 +630,18 @@
             </div>
         </div>
         <div style="width:100%;margin-top:12px;padding:10px 14px;
-            background:rgba(0,255,136,0.06);border-radius:8px;
-            border-left:3px solid #00ff88;font-size:0.84em;line-height:1.8;">
-            🏆 <strong style="color:#00ff88;">Recommandation :</strong>
+            background:rgba(var(--accent-rgb),0.06);border-radius:8px;
+            border-left:3px solid var(--accent);font-size:0.84em;line-height:1.8;">
+            🏆 <strong style="color:var(--accent);">Recommandation :</strong>
             Gomme <strong style="color:#ffcc00;">Medium</strong>
-            — facteur limitant <strong style="color:#fff;">120.0 tours</strong>
+            — facteur limitant <strong style="color:var(--text);">120.0 tours</strong>
             (côté Droite · 0.50%/tour).
             <br>
-            ✅ Couvre <strong style="color:#fff;">
+            ✅ Couvre <strong style="color:var(--text);">
                     9 stints complets</strong> sans changement.
             <br><span style="color:#88ccff;font-size:0.9em;">
                 💡 Côté Gauche tient
-                <strong style="color:#fff;">12.0 stints</strong>
+                <strong style="color:var(--text);">12.0 stints</strong>
                 — envisager un changement asymétrique.
             </span>
             
@@ -657,7 +659,7 @@
         <div class="right-column">
         <div class="input-section race-setup">
             <div class="race-setup-grid">
-            <h2 style="color:#00ff88;margin-bottom:20px;">⏱️ Durée de Course & Temps au Tour</h2>
+            <h2 style="color:var(--accent);margin-bottom:20px;">⏱️ Durée de Course & Temps au Tour</h2>
 
             <!-- Durée de course -->
             <div class="input-group">
@@ -732,12 +734,12 @@
             <!-- Valeur fixe 100% — gérée par le tableau des stints -->
             <input type="hidden" id="evRefuelPerStint" value="100">
 
-<h2 style="color:#00ff88;margin-bottom:20px;">👤 Pilotes</h2>
+<h2 style="color:var(--accent);margin-bottom:20px;">👤 Pilotes</h2>
 
 <div class="input-group">
     <label for="driverCount">Nombre de pilotes</label>
-    <select id="driverCount" onchange="renderDriverInputs()" style="width:100%;padding:6px 7px;border:2px solid rgba(255,255,255,0.2);
-        border-radius:8px;background:rgba(255,255,255,0.1);color:#fff;font-size:1em;">
+    <select id="driverCount" onchange="renderDriverInputs()" style="width:100%;padding:6px 7px;border:2px solid rgba(var(--fg-rgb),0.2);
+        border-radius:8px;background:rgba(var(--fg-rgb),0.1);color:var(--text);font-size:1em;">
         <option value="1">1 pilote</option>
         <option value="2" selected="">2 pilotes</option>
         <option value="3">3 pilotes</option>
@@ -748,7 +750,7 @@
 </div>
 
 <div id="driverInputsContainer"><div class="driver-input-row">
-            <input type="color" id="driverColor_0" class="driver-color-swatch" value="#00ff88" onchange="window._liveModeActive ? recalculateLive() : calculate()" title="Couleur du pilote 1">
+            <input type="color" id="driverColor_0" class="driver-color-swatch" value="var(--accent)" onchange="window._liveModeActive ? recalculateLive() : calculate()" title="Couleur du pilote 1">
             <input type="text" id="driverName_0" class="driver-name-input" placeholder="Pilote 1" value="Pilote 1" oninput="onDriverNameInput()">
         </div><div class="driver-input-row">
             <input type="color" id="driverColor_1" class="driver-color-swatch" value="#00aaff" onchange="window._liveModeActive ? recalculateLive() : calculate()" title="Couleur du pilote 2">
@@ -757,7 +759,7 @@
             </div>
         </div>
         <div class="result-section">
-            <h2 style="color:#00ff88;margin-bottom:20px;">📈 Résultats</h2>
+            <h2 style="color:var(--accent);margin-bottom:20px;">📈 Résultats</h2>
 
             <div class="result-item">
                 <div class="result-label">🔢 Nombre de tours théorique</div>
@@ -772,7 +774,7 @@
             </div>
 
             <div class="info-box">
-                <h3 style="color:#00ff88;margin-top:0;margin-bottom:10px;font-size:1em;">ℹ️ Calculs de Stint (Auto)</h3>
+                <h3 style="color:var(--accent);margin-top:0;margin-bottom:10px;font-size:1em;">ℹ️ Calculs de Stint (Auto)</h3>
                 <div class="info-row">
                     <span class="info-label">Tours max par stint :</span>
                     <span class="info-val" id="calcStintLaps">12.50 tours</span>
@@ -800,21 +802,21 @@
     <!-- ── Contrôle zoom timeline ── -->
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:8px;">
     <div style="display:flex;align-items:center;gap:10px;">
-        <span style="color:#aaa;font-size:0.85em;">🔍 Zoom timeline :</span>
+        <span style="color:var(--text-3);font-size:0.85em;">🔍 Zoom timeline :</span>
         <button onclick="adjustTimelineZoom(-0.5)" style="width:28px;height:28px;border:none;border-radius:6px;
-                background:rgba(0,255,136,0.2);color:#00ff88;font-size:1.1em;
+                background:rgba(var(--accent-rgb),0.2);color:var(--accent);font-size:1.1em;
                 font-weight:bold;cursor:pointer;">−</button>
-        <input type="range" id="timelineZoom" min="1" max="10" step="0.5" value="1" oninput="applyTimelineZoom()" style="width:160px;accent-color:#00ff88;cursor:pointer;">
+        <input type="range" id="timelineZoom" min="1" max="10" step="0.5" value="1" oninput="applyTimelineZoom()" style="width:160px;accent-color:var(--accent);cursor:pointer;">
         <button onclick="adjustTimelineZoom(0.5)" style="width:28px;height:28px;border:none;border-radius:6px;
-                background:rgba(0,255,136,0.2);color:#00ff88;font-size:1.1em;
+                background:rgba(var(--accent-rgb),0.2);color:var(--accent);font-size:1.1em;
                 font-weight:bold;cursor:pointer;">+</button>
-        <span id="timelineZoomLabel" style="color:#00ff88;font-size:0.85em;font-weight:bold;min-width:35px;">x1</span>
+        <span id="timelineZoomLabel" style="color:var(--accent);font-size:0.85em;font-weight:bold;min-width:35px;">x1</span>
         <button onclick="resetTimelineZoom()" style="padding:3px 10px;border:none;border-radius:6px;
-                background:rgba(255,255,255,0.1);color:#aaa;font-size:0.8em;cursor:pointer;">
+                background:rgba(var(--fg-rgb),0.1);color:var(--text-3);font-size:0.8em;cursor:pointer;">
             Reset
         </button>
-        <label style="display:flex;align-items:center;gap:5px;color:#aaa;font-size:0.8em;cursor:pointer;margin-left:8px;" title="Affiche ou masque le badge horaire / temps restant sur la timeline (préférence personnelle)">
-            <input type="checkbox" id="showNowBadge" checked onchange="toggleNowBadge(this.checked)" style="accent-color:#00ff88;cursor:pointer;">
+        <label style="display:flex;align-items:center;gap:5px;color:var(--text-3);font-size:0.8em;cursor:pointer;margin-left:8px;" title="Affiche ou masque le badge horaire / temps restant sur la timeline (préférence personnelle)">
+            <input type="checkbox" id="showNowBadge" checked onchange="toggleNowBadge(this.checked)" style="accent-color:var(--accent);cursor:pointer;">
             🕐 Repère « maintenant »
         </label>
     </div>
@@ -825,7 +827,7 @@
     <div id="planBar" class="plan-bar"></div>
     <div id="tyreStockStrip" class="tyre-stock-strip">
         <span class="tyre-stock-title">🛞 Stock de pneus <small>glisser une gomme sur la ligne Pneus G ou D</small></span>
-        <div class="tyre-stock-icon" data-compound="soft" style="--tc:#dddddd;" title="Soft — glisser sur la ligne Pneus G ou D">S</div>
+        <div class="tyre-stock-icon" data-compound="soft" style="--tc:var(--text-2);" title="Soft — glisser sur la ligne Pneus G ou D">S</div>
         <div class="tyre-stock-icon" data-compound="medium" style="--tc:#ffcc00;" title="Medium — glisser sur la ligne Pneus G ou D">M</div>
         <div class="tyre-stock-icon" data-compound="hard" style="--tc:#ff6060;" title="Hard — glisser sur la ligne Pneus G ou D">H</div>
         <div class="tyre-stock-icon" data-compound="wet" style="--tc:#3399ff;" title="Wet — glisser sur la ligne Pneus G ou D">W</div>
@@ -844,7 +846,7 @@
 </div>
 
 <div style="margin-top:30px;">
-        <h3 style="color:#00ff88;margin-bottom:15px;">📋 Détail des Stints</h3>
+        <h3 style="color:var(--accent);margin-bottom:15px;">📋 Détail des Stints</h3>
 
         <!-- ── Bande supérieure : Pneus de départ + Recalcul live ── -->
         <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:14px;">
@@ -853,10 +855,10 @@
             <!-- Pneus de départ -->
             <div id="startTyresBlock" style="            
                 display:flex;align-items:center;flex-wrap:wrap;gap:10px;
-                background:rgba(0,255,136,0.06);border:1px solid rgba(0,255,136,0.2);
+                background:rgba(var(--accent-rgb),0.06);border:1px solid rgba(var(--accent-rgb),0.2);
                 border-radius:10px;padding:10px 14px;white-space:nowrap;">
 
-                <span style="color:#00ff88;font-weight:bold;font-size:0.88em;white-space:nowrap;">
+                <span style="color:var(--accent);font-weight:bold;font-size:0.88em;white-space:nowrap;">
                     🏁 Départ S1
                 </span>
 
@@ -865,11 +867,11 @@
                     <select id="startTyreLeft"
                         onchange="onStartTyreChange()"
                         style="padding:3px 6px;border-radius:6px;
-                               border:1.5px solid rgba(255,255,255,0.15);
-                               background:rgba(255,255,255,0.07);color:#fff;
+                               border:1.5px solid rgba(var(--fg-rgb),0.15);
+                               background:rgba(var(--fg-rgb),0.07);color:var(--text);
                                font-size:0.85em;cursor:pointer;">
                         <option value="none">—</option>
-                        <option value="soft"   style="color:#dddddd;background:#111;">⚪ Soft</option>
+                        <option value="soft"   style="color:var(--text-2);background:var(--input-bg);">⚪ Soft</option>
                         <option value="medium" style="color:#ffcc00;background:#1a1400;">🟡 Med</option>
                         <option value="hard"   style="color:#ff6060;background:#1a0000;">🔴 Hard</option>
                         <option value="wet"    style="color:#3399ff;background:#00101a;">🔵 Wet</option>
@@ -881,18 +883,18 @@
                     <select id="startTyreRight"
                         onchange="onStartTyreChange()"
                         style="padding:3px 6px;border-radius:6px;
-                               border:1.5px solid rgba(255,255,255,0.15);
-                               background:rgba(255,255,255,0.07);color:#fff;
+                               border:1.5px solid rgba(var(--fg-rgb),0.15);
+                               background:rgba(var(--fg-rgb),0.07);color:var(--text);
                                font-size:0.85em;cursor:pointer;">
                         <option value="none">—</option>
-                        <option value="soft"   style="color:#dddddd;background:#111;">⚪ Soft</option>
+                        <option value="soft"   style="color:var(--text-2);background:var(--input-bg);">⚪ Soft</option>
                         <option value="medium" style="color:#ffcc00;background:#1a1400;">🟡 Med</option>
                         <option value="hard"   style="color:#ff6060;background:#1a0000;">🔴 Hard</option>
                         <option value="wet"    style="color:#3399ff;background:#00101a;">🔵 Wet</option>
                     </select>
                 </div>
 
-                <div id="startTyreLifeInfo" style="color:#aaa;font-size:0.78em;font-style:italic;"></div>
+                <div id="startTyreLifeInfo" style="color:var(--text-3);font-size:0.78em;font-style:italic;"></div>
             </div>
 
         </div><!-- fin grille bande supérieure -->
@@ -914,18 +916,18 @@
                 <th style="width: 62px; overflow: hidden; white-space: nowrap;">EV Conso<div class="col-resizer"></div></th>
                 <th style="width: 93px; overflow: hidden; white-space: nowrap;">🏁 Arrêt Stand<div class="col-resizer"></div></th>
                 <th id="refuelRateHeader" style="width: 107px; overflow: hidden; white-space: nowrap;">⛽ Refuel %<br>
-                    <small style="color:#aaa;font-weight:normal;">Débit :
-                        <input type="number" id="refuelRate" value="0.4" min="0.1" max="6" step="0.1" onchange="window._liveModeActive ? recalculateLive() : calculate()" style="width:45px;padding:2px 4px;background:rgba(255,255,255,0.1);
-                                border:1px solid rgba(255,255,255,0.3);border-radius:4px;
-                                color:#fff;font-size:0.9em;text-align:center;"> s/%
+                    <small style="color:var(--text-3);font-weight:normal;">Débit :
+                        <input type="number" id="refuelRate" value="0.4" min="0.1" max="6" step="0.1" onchange="window._liveModeActive ? recalculateLive() : calculate()" style="width:45px;padding:2px 4px;background:rgba(var(--fg-rgb),0.1);
+                                border:1px solid rgba(var(--fg-rgb),0.3);border-radius:4px;
+                                color:var(--text);font-size:0.9em;text-align:center;"> s/%
                     </small>
                 <div class="col-resizer"></div></th>
                 <th colspan="2" style="text-align: center; padding-bottom: 2px; width: 198px; overflow: hidden; white-space: nowrap;">
                     <div id="tyreGaugeContainer" style="display: block; margin-bottom: 4px;">
-                        <div style="background:rgba(255,255,255,0.08);border-radius:4px;height:6px;width:100%;overflow:hidden;">
-                            <div id="tyreGaugeBar" style="height: 6px; border-radius: 4px; background: rgb(0, 255, 136); width: 100%; transition: width 0.3s, background 0.3s;"></div>
+                        <div style="background:rgba(var(--fg-rgb),0.08);border-radius:4px;height:6px;width:100%;overflow:hidden;">
+                            <div id="tyreGaugeBar" style="height: 6px; border-radius: 4px; background: var(--accent); width: 100%; transition: width 0.3s, background 0.3s;"></div>
                         </div>
-                        <div id="tyreGaugeLabel" style="color: rgb(0, 255, 136); font-size: 0.78em; font-weight: bold; margin-top: 3px; white-space: nowrap; text-align: center;">🟢 10 pneus restants (0 utilisés)</div>
+                        <div id="tyreGaugeLabel" style="color: var(--accent); font-size: 0.78em; font-weight: bold; margin-top: 3px; white-space: nowrap; text-align: center;">🟢 10 pneus restants (0 utilisés)</div>
                     </div>
                     <div style="display:flex;justify-content:space-around;gap:4px;">
                         <span title="Changement pneus côté gauche">🔧 Pneus G</span>
@@ -946,17 +948,17 @@
     <div id="stintManualControls" style="display:none;margin-top:12px;
         display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
         <button onclick="addManualStint()" style="padding:8px 18px;background:linear-gradient(135deg,#00aaff,#0077cc);
-                border:none;border-radius:8px;color:#fff;font-size:0.95em;
+                border:none;border-radius:8px;color:var(--text);font-size:0.95em;
                 font-weight:bold;cursor:pointer;transition:all 0.2s;">
             ➕ Ajouter un stint
         </button>
         <button onclick="removeLastManualStint()" id="btnRemoveStint" style="display:none;padding:8px 18px;
                 background:linear-gradient(135deg,#ff6b6b,#cc4444);
-                border:none;border-radius:8px;color:#fff;font-size:0.95em;
+                border:none;border-radius:8px;color:var(--text);font-size:0.95em;
                 font-weight:bold;cursor:pointer;transition:all 0.2s;">
             ➖ Supprimer dernier stint
         </button>
-        <span id="manualStintInfo" style="color:#aaa;font-size:0.82em;font-style:italic;"></span>
+        <span id="manualStintInfo" style="color:var(--text-3);font-size:0.82em;font-style:italic;"></span>
     </div>
 </div>
 </div>
@@ -971,7 +973,7 @@
                 ACTIF
             </span>
         </h2>
-        <p style="color:#aaa;font-size:0.85em;margin:0 0 14px 0;">
+        <p style="color:var(--text-3);font-size:0.85em;margin:0 0 14px 0;">
             Alimenté en direct par le <b>connecteur LMU</b> (programme <code>.exe</code> à ouvrir sur votre PC avant ou pendant
             la course) : il lit la télémétrie du jeu et l'envoie ici. Sans connexion, tous les champs ci-dessous
             restent modifiables à la main — la table des stints est alors recalculée avec vos valeurs saisies,
@@ -980,21 +982,21 @@
 
         <!-- ── Connexion ── -->
         <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:16px;">
-            <span id="liveMapStatusDot" style="width:10px;height:10px;border-radius:50%;background:#666;display:inline-block;"></span>
+            <span id="liveMapStatusDot" style="width:10px;height:10px;border-radius:50%;background:var(--text-4);display:inline-block;"></span>
             <label style="color:#ffaa66;font-size:0.85em;">Source :</label>
             <select id="liveSourceSelect" onchange="onLiveSourceChange()" title="Mon PC : le programme tourne sur cet ordinateur. À distance : données diffusées par le pilote via l'équipe."
-                style="padding:6px;border:2px solid rgba(255,136,0,0.4);border-radius:6px;background:#1e2646;color:#fff;max-width:260px;">
+                style="padding:6px;border:2px solid rgba(255,136,0,0.4);border-radius:6px;background:var(--bg-1);color:var(--text);max-width:260px;">
                 <option value="local">💻 Mon PC (programme lancé ici)</option>
                 <option value="auto">🌐 À distance — pilote au volant</option>
             </select>
             <label style="color:#ffaa66;font-size:0.85em;">Port local :</label>
-            <input type="number" id="liveMapPort" value="8777" min="1" max="65535" style="width:80px;padding:6px;border:2px solid rgba(255,136,0,0.4);border-radius:6px;background:rgba(255,255,255,0.1);color:#fff;">
+            <input type="number" id="liveMapPort" value="8777" min="1" max="65535" style="width:80px;padding:6px;border:2px solid rgba(255,136,0,0.4);border-radius:6px;background:rgba(var(--fg-rgb),0.1);color:var(--text);">
             <a id="liveLaunchConnectorBtn" href="lmu-connecteur://open" onclick="onLaunchConnectorClick()"
                title="Ouvre le connecteur LMU installé sur ce PC (disponible après sa première ouverture à la main)."
                style="padding:8px 16px;background:rgba(255,136,0,0.18);border:1px solid #ff8800;border-radius:8px;color:#ff8800;font-weight:bold;text-decoration:none;cursor:pointer;">
                 🚀 Lancer le connecteur
             </a>
-            <button id="liveMapToggleBtn" onclick="toggleLiveMap()" style="padding:8px 16px;background:rgba(0,255,136,0.2);border:1px solid #00ff88;border-radius:8px;color:#00ff88;font-weight:bold;cursor:pointer;">
+            <button id="liveMapToggleBtn" onclick="toggleLiveMap()" style="padding:8px 16px;background:rgba(var(--accent-rgb),0.2);border:1px solid var(--accent);border-radius:8px;color:var(--accent);font-weight:bold;cursor:pointer;">
                 ▶️ Connecter
             </button>
             <button onclick="resetLiveMapTrail()" style="padding:8px 14px;background:rgba(255,170,0,0.15);border:1px solid #ffaa00;border-radius:8px;color:#ffaa00;cursor:pointer;">
@@ -1003,11 +1005,11 @@
             <button id="btnStopLive" onclick="resetLiveMode()"
                 style="display:none;padding:8px 14px;
                        background:linear-gradient(135deg,#ff6b6b,#ee5a5a);
-                       border:none;border-radius:8px;color:#fff;font-size:0.9em;
+                       border:none;border-radius:8px;color:var(--text);font-size:0.9em;
                        font-weight:bold;cursor:pointer;">
                 ⏹ Fin live
             </button>
-            <span id="liveMapStatusText" style="color:#aaa;font-size:0.82em;">Non connecté.</span>
+            <span id="liveMapStatusText" style="color:var(--text-3);font-size:0.82em;">Non connecté.</span>
         </div>
 
         <!-- ── Variables live pour la stratégie ── -->
@@ -1015,15 +1017,15 @@
 
             <div class="input-group" style="margin-bottom:0;min-width:150px;">
                 <label style="font-size:0.82em;">⏳ Durée de course restante</label>
-                <div id="liveRaceDurationRemaining" style="padding:7px 10px;border:2px solid rgba(255,255,255,0.15);
-                    border-radius:8px;background:rgba(255,255,255,0.05);color:#fff;font-size:0.95em;min-height:19px;">—</div>
+                <div id="liveRaceDurationRemaining" style="padding:7px 10px;border:2px solid rgba(var(--fg-rgb),0.15);
+                    border-radius:8px;background:rgba(var(--fg-rgb),0.05);color:var(--text);font-size:0.95em;min-height:19px;">—</div>
             </div>
 
             <div class="input-group" style="margin-bottom:0;min-width:120px;">
                 <label for="evCurrent" style="font-size:0.82em;">⚡ EV actuelle (%)</label>
                 <input type="number" id="evCurrent" value="100" min="0" max="100" step="1"
-                    style="width:100%;padding:7px 10px;border:2px solid rgba(255,255,255,0.2);
-                           border-radius:8px;background:rgba(255,255,255,0.1);color:#fff;font-size:0.95em;">
+                    style="width:100%;padding:7px 10px;border:2px solid rgba(var(--fg-rgb),0.2);
+                           border-radius:8px;background:rgba(var(--fg-rgb),0.1);color:var(--text);font-size:0.95em;">
             </div>
 
             <div class="input-group" style="margin-bottom:0;min-width:130px;">
@@ -1032,7 +1034,7 @@
                     title="Nombre de tours complets déjà réalisés au moment du recalcul"
                     style="width:100%;padding:7px 10px;border:2px solid rgba(0,170,255,0.35);
                         border-radius:8px;background:rgba(0,170,255,0.08);
-                        color:#fff;font-size:0.95em;">
+                        color:var(--text);font-size:0.95em;">
             </div>
 
             <!-- Temps au tour réel -->
@@ -1065,8 +1067,8 @@
                     </div>
                 </div>
                 <select id="liveLapTimeAvgWindow" title="Fenêtre de moyenne (tours)"
-                    style="margin-top:4px;padding:2px 4px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);
-                           background:rgba(255,255,255,0.07);color:#ccc;font-size:0.75em;">
+                    style="margin-top:4px;padding:2px 4px;border-radius:6px;border:1px solid rgba(var(--fg-rgb),0.2);
+                           background:rgba(var(--fg-rgb),0.07);color:var(--text-2);font-size:0.75em;">
                     <option value="3">moy. 3 tours</option>
                     <option value="5" selected>moy. 5 tours</option>
                     <option value="10">moy. 10 tours</option>
@@ -1077,16 +1079,16 @@
             <div class="input-group" style="margin-bottom:0;min-width:150px;">
                 <label for="evPerLapReal" style="font-size:0.82em;">🔋 Conso EV réelle/tour (%)</label>
                 <input type="number" id="evPerLapReal" value="8.0" step="0.1" min="0.1"
-                    style="width:100%;padding:7px 10px;border:2px solid rgba(255,255,255,0.2);
-                           border-radius:8px;background:rgba(255,255,255,0.1);color:#fff;font-size:0.95em;">
+                    style="width:100%;padding:7px 10px;border:2px solid rgba(var(--fg-rgb),0.2);
+                           border-radius:8px;background:rgba(var(--fg-rgb),0.1);color:var(--text);font-size:0.95em;">
                 <select id="liveEvAvgWindow" title="Fenêtre de moyenne (tours)"
-                    style="margin-top:4px;padding:2px 4px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);
-                           background:rgba(255,255,255,0.07);color:#ccc;font-size:0.75em;">
+                    style="margin-top:4px;padding:2px 4px;border-radius:6px;border:1px solid rgba(var(--fg-rgb),0.2);
+                           background:rgba(var(--fg-rgb),0.07);color:var(--text-2);font-size:0.75em;">
                     <option value="3">moy. 3 tours</option>
                     <option value="5" selected>moy. 5 tours</option>
                     <option value="10">moy. 10 tours</option>
                 </select>
-                <div id="liveEvPerLapMsg" style="margin-top:3px;font-size:0.72em;color:#888;max-width:190px;"></div>
+                <div id="liveEvPerLapMsg" style="margin-top:3px;font-size:0.72em;color:var(--text-4);max-width:190px;"></div>
             </div>
 
             <!-- Stock pneus live -->
@@ -1096,7 +1098,7 @@
                     placeholder="à remplir si pas de données live"
                     min="0" max="100" step="1"
                     style="width:100%;padding:7px 10px;border:2px solid rgba(255,102,0,0.4);
-                        border-radius:8px;background:rgba(255,102,0,0.08);color:#fff;font-size:0.95em;">
+                        border-radius:8px;background:rgba(255,102,0,0.08);color:var(--text);font-size:0.95em;">
             </div>
 
             <!-- Pneus actuels G/D : vie restante + delta d'usure -->
@@ -1108,51 +1110,51 @@
                         <span style="font-size:0.8em;color:#88ccff;min-width:95px;">🔵 Gomme G</span>
                         <select id="liveTyreCompoundLeft" onchange="onLiveTyreCompoundChange()"
                             style="padding:3px 6px;border-radius:6px;border:1px solid rgba(136,204,255,0.5);
-                                background:rgba(255,255,255,0.08);color:#fff;font-size:0.85em;">
+                                background:rgba(var(--fg-rgb),0.08);color:var(--text);font-size:0.85em;">
                             <option value="none">—</option>
-                            <option value="soft" style="color:#dddddd;">⚪ Soft</option>
+                            <option value="soft" style="color:var(--text-2);">⚪ Soft</option>
                             <option value="medium" style="color:#ffcc00;">🟡 Med</option>
                             <option value="hard" style="color:#ff6060;">🔴 Hard</option>
                             <option value="wet" style="color:#3399ff;">🔵 Wet</option>
                         </select>
-                        <span style="font-size:0.78em;color:#888;">vie%</span>
+                        <span style="font-size:0.78em;color:var(--text-4);">vie%</span>
                         <input type="number" id="liveTyreWearLeft" value="" placeholder="neuf=100"
                             min="0" max="100" step="1" oninput="onLiveTyreWearInput();"
                             style="width:80px;padding:4px 6px;border:1.5px solid rgba(136,204,255,0.4);
-                                border-radius:6px;background:rgba(136,204,255,0.06);color:#fff;font-size:0.85em;text-align:center;">
+                                border-radius:6px;background:rgba(136,204,255,0.06);color:var(--text);font-size:0.85em;text-align:center;">
                         <span id="liveTyreWearLeftLaps" style="color:#88ccff;font-size:0.75em;min-width:60px;"></span>
                     </div>
                     <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
                         <span style="font-size:0.8em;color:#88ccff;min-width:95px;">Δ usure G/tour</span>
-                        <span id="liveWearDeltaLeft" style="font-size:0.85em;color:#fff;">—</span>
+                        <span id="liveWearDeltaLeft" style="font-size:0.85em;color:var(--text);">—</span>
                     </div>
                     <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
                         <span style="font-size:0.8em;color:#ffaa66;min-width:95px;">🟠 Gomme D</span>
                         <select id="liveTyreCompoundRight" onchange="onLiveTyreCompoundChange()"
                             style="padding:3px 6px;border-radius:6px;border:1px solid rgba(255,170,102,0.5);
-                                background:rgba(255,255,255,0.08);color:#fff;font-size:0.85em;">
+                                background:rgba(var(--fg-rgb),0.08);color:var(--text);font-size:0.85em;">
                             <option value="none">—</option>
-                            <option value="soft" style="color:#dddddd;">⚪ Soft</option>
+                            <option value="soft" style="color:var(--text-2);">⚪ Soft</option>
                             <option value="medium" style="color:#ffcc00;">🟡 Med</option>
                             <option value="hard" style="color:#ff6060;">🔴 Hard</option>
                             <option value="wet" style="color:#3399ff;">🔵 Wet</option>
                         </select>
-                        <span style="font-size:0.78em;color:#888;">vie%</span>
+                        <span style="font-size:0.78em;color:var(--text-4);">vie%</span>
                         <input type="number" id="liveTyreWearRight" value="" placeholder="neuf=100"
                             min="0" max="100" step="1" oninput="onLiveTyreWearInput();"
                             style="width:80px;padding:4px 6px;border:1.5px solid rgba(255,170,102,0.4);
-                                border-radius:6px;background:rgba(255,170,102,0.06);color:#fff;font-size:0.85em;text-align:center;">
+                                border-radius:6px;background:rgba(255,170,102,0.06);color:var(--text);font-size:0.85em;text-align:center;">
                         <span id="liveTyreWearRightLaps" style="color:#ffaa66;font-size:0.75em;min-width:60px;"></span>
                     </div>
                     <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
                         <span style="font-size:0.8em;color:#ffaa66;min-width:95px;">Δ usure D/tour</span>
-                        <span id="liveWearDeltaRight" style="font-size:0.85em;color:#fff;">—</span>
+                        <span id="liveWearDeltaRight" style="font-size:0.85em;color:var(--text);">—</span>
                     </div>
                     <div style="display:flex;align-items:center;gap:6px;">
-                        <span style="font-size:0.78em;color:#888;">Fenêtre delta d'usure :</span>
+                        <span style="font-size:0.78em;color:var(--text-4);">Fenêtre delta d'usure :</span>
                         <select id="liveWearAvgWindow" title="Fenêtre de moyenne (tours)"
-                            style="padding:2px 4px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);
-                                   background:rgba(255,255,255,0.07);color:#ccc;font-size:0.75em;">
+                            style="padding:2px 4px;border-radius:6px;border:1px solid rgba(var(--fg-rgb),0.2);
+                                   background:rgba(var(--fg-rgb),0.07);color:var(--text-2);font-size:0.75em;">
                             <option value="3">moy. 3 tours</option>
                             <option value="5" selected>moy. 5 tours</option>
                             <option value="10">moy. 10 tours</option>
@@ -1164,8 +1166,8 @@
             <div class="input-group" style="margin-bottom:0;min-width:200px;align-self:flex-start;">
                 <label style="color:#88ccff;font-size:0.82em;" title="Usure/tour mesurée en live, mémorisée par côté et composé pour cette session (moyenne selon la fenêtre choisie, min. 3 tours). Utilisée pour la durée de vie des gommes des stints futurs.">📊 Usures mesurées (session)</label>
                 <div id="liveMeasuredWearRecap" style="background:rgba(136,204,255,0.06);border:1px solid rgba(136,204,255,0.25);
-                            border-radius:8px;padding:8px 10px;font-size:0.8em;color:#ddd;display:flex;flex-direction:column;gap:4px;">
-                    <div style="color:#888;font-style:italic;">roulez 3 tours minimum</div>
+                            border-radius:8px;padding:8px 10px;font-size:0.8em;color:var(--text-2);display:flex;flex-direction:column;gap:4px;">
+                    <div style="color:var(--text-4);font-style:italic;">roulez 3 tours minimum</div>
                 </div>
             </div>
         </div>
@@ -1175,29 +1177,29 @@
             background:rgba(0,0,0,0.25);border-radius:8px;border-left:4px solid #ffaa00;">
             <div style="display:flex;flex-wrap:wrap;gap:14px;">
                 <div>
-                    <div style="color:#999;font-size:0.78em;text-transform:uppercase;letter-spacing:1px;">Temps restant</div>
-                    <div id="liveTempsRestant" style="color:#fff;font-size:1.35em;font-weight:bold;"></div>
+                    <div style="color:var(--text-3);font-size:0.78em;text-transform:uppercase;letter-spacing:1px;">Temps restant</div>
+                    <div id="liveTempsRestant" style="color:var(--text);font-size:1.35em;font-weight:bold;"></div>
                 </div>
                 <div>
-                    <div style="color:#999;font-size:0.78em;text-transform:uppercase;letter-spacing:1px;">Tours restants</div>
-                    <div id="liveToursRestants" style="color:#fff;font-size:1.35em;font-weight:bold;"></div>
+                    <div style="color:var(--text-3);font-size:0.78em;text-transform:uppercase;letter-spacing:1px;">Tours restants</div>
+                    <div id="liveToursRestants" style="color:var(--text);font-size:1.35em;font-weight:bold;"></div>
                 </div>
                 <div>
-                    <div style="color:#999;font-size:0.78em;text-transform:uppercase;letter-spacing:1px;">Prochain pit</div>
-                    <div id="liveToursParStint" style="color:#fff;font-size:1.35em;font-weight:bold;"></div>
+                    <div style="color:var(--text-3);font-size:0.78em;text-transform:uppercase;letter-spacing:1px;">Prochain pit</div>
+                    <div id="liveToursParStint" style="color:var(--text);font-size:1.35em;font-weight:bold;"></div>
                 </div>
                 <div>
-                    <div style="color:#999;font-size:0.78em;text-transform:uppercase;letter-spacing:1px;">Stints restants</div>
-                    <div id="liveStintsRestants" style="color:#fff;font-size:1.35em;font-weight:bold;"></div>
+                    <div style="color:var(--text-3);font-size:0.78em;text-transform:uppercase;letter-spacing:1px;">Stints restants</div>
+                    <div id="liveStintsRestants" style="color:var(--text);font-size:1.35em;font-weight:bold;"></div>
                 </div>
                 <div>
-                    <div style="color:#999;font-size:0.78em;text-transform:uppercase;letter-spacing:1px;">Durée stint</div>
-                    <div id="liveDureeStint" style="color:#fff;font-size:1.35em;font-weight:bold;"></div>
+                    <div style="color:var(--text-3);font-size:0.78em;text-transform:uppercase;letter-spacing:1px;">Durée stint</div>
+                    <div id="liveDureeStint" style="color:var(--text);font-size:1.35em;font-weight:bold;"></div>
                 </div>
                 <div>
-                    <div style="color:#999;font-size:0.78em;text-transform:uppercase;letter-spacing:1px;">🎯 Conso cible (-1 pit)</div>
+                    <div style="color:var(--text-3);font-size:0.78em;text-transform:uppercase;letter-spacing:1px;">🎯 Conso cible (-1 pit)</div>
                     <div id="liveConsoTarget" style="color:#ffff00;font-size:1.2em;font-weight:bold;"></div>
-                    <div id="liveConsoTargetDetail" style="color:#aaa;font-size:0.72em;margin-top:1px;"></div>
+                    <div id="liveConsoTargetDetail" style="color:var(--text-3);font-size:0.72em;margin-top:1px;"></div>
                 </div>
             </div>
             <div id="liveRecalcNote" style="margin-top:8px;color:#ffaa00;font-size:0.82em;"></div>
@@ -1206,8 +1208,20 @@
         <!-- ── Carte live (bonus visuel, même connexion) ── -->
         <details>
             <summary style="color:#88ccff;cursor:pointer;font-size:0.85em;">🗺️ Carte live (position des voitures)</summary>
-            <canvas id="liveMapCanvas" width="900" height="500" style="width:100%;max-width:900px;height:auto;aspect-ratio:9/5;background:rgba(0,0,0,0.35);border-radius:10px;border:1px solid rgba(255,255,255,0.1);display:block;margin-top:10px;"></canvas>
-            <div id="liveMapLegend" style="margin-top:10px;display:flex;flex-wrap:wrap;gap:10px;font-size:0.82em;color:#ccc;"></div>
+            <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start;margin-top:10px;">
+                <canvas id="liveMapCanvas" width="900" height="500" style="width:100%;max-width:900px;flex:1 1 500px;height:auto;aspect-ratio:9/5;background:rgba(0,0,0,0.35);border-radius:10px;border:1px solid rgba(var(--fg-rgb),0.1);display:block;"></canvas>
+                <div style="flex:0 0 140px;display:flex;flex-direction:column;gap:8px;">
+                    <div style="background:rgba(var(--fg-rgb),0.04);border:1px solid rgba(var(--fg-rgb),0.1);border-radius:10px;padding:10px;">
+                        <div style="color:var(--text-3);font-size:0.72em;text-transform:uppercase;letter-spacing:1px;">🌡️ Air</div>
+                        <div id="liveMapAmbientTemp" style="color:var(--text);font-size:1.15em;font-weight:bold;">— °C</div>
+                    </div>
+                    <div style="background:rgba(var(--fg-rgb),0.04);border:1px solid rgba(var(--fg-rgb),0.1);border-radius:10px;padding:10px;">
+                        <div style="color:var(--text-3);font-size:0.72em;text-transform:uppercase;letter-spacing:1px;">🛣️ Piste</div>
+                        <div id="liveMapTrackTemp" style="color:var(--text);font-size:1.15em;font-weight:bold;">— °C</div>
+                    </div>
+                </div>
+            </div>
+            <div id="liveMapLegend" style="margin-top:10px;display:flex;flex-wrap:wrap;gap:10px;font-size:0.82em;color:var(--text-2);"></div>
         </details>
     </div>
 
@@ -1217,17 +1231,17 @@
     <!-- ── Contrôle zoom timeline ── -->
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:8px;">
     <div style="display:flex;align-items:center;gap:10px;">
-        <span style="color:#aaa;font-size:0.85em;">🔍 Zoom timeline :</span>
+        <span style="color:var(--text-3);font-size:0.85em;">🔍 Zoom timeline :</span>
         <button onclick="adjustTimelineZoom(-0.5, true)" style="width:28px;height:28px;border:none;border-radius:6px;
-                background:rgba(0,255,136,0.2);color:#00ff88;font-size:1.1em;
+                background:rgba(var(--accent-rgb),0.2);color:var(--accent);font-size:1.1em;
                 font-weight:bold;cursor:pointer;">−</button>
-        <input type="range" id="liveTimelineZoom" min="1" max="10" step="0.5" value="1" oninput="applyTimelineZoom(true)" style="width:160px;accent-color:#00ff88;cursor:pointer;">
+        <input type="range" id="liveTimelineZoom" min="1" max="10" step="0.5" value="1" oninput="applyTimelineZoom(true)" style="width:160px;accent-color:var(--accent);cursor:pointer;">
         <button onclick="adjustTimelineZoom(0.5, true)" style="width:28px;height:28px;border:none;border-radius:6px;
-                background:rgba(0,255,136,0.2);color:#00ff88;font-size:1.1em;
+                background:rgba(var(--accent-rgb),0.2);color:var(--accent);font-size:1.1em;
                 font-weight:bold;cursor:pointer;">+</button>
-        <span id="liveTimelineZoomLabel" style="color:#00ff88;font-size:0.85em;font-weight:bold;min-width:35px;">x1</span>
+        <span id="liveTimelineZoomLabel" style="color:var(--accent);font-size:0.85em;font-weight:bold;min-width:35px;">x1</span>
         <button onclick="resetTimelineZoom(true)" style="padding:3px 10px;border:none;border-radius:6px;
-                background:rgba(255,255,255,0.1);color:#aaa;font-size:0.8em;cursor:pointer;">
+                background:rgba(var(--fg-rgb),0.1);color:var(--text-3);font-size:0.8em;cursor:pointer;">
             Reset
         </button>
     </div>
@@ -1236,7 +1250,7 @@
     <!-- ── Stock de pneus live (glisser vers la timeline par pilote) ── -->
     <div id="liveTyreStockStrip" class="tyre-stock-strip">
         <span class="tyre-stock-title">🛞 Stock de pneus <small>glisser une gomme sur la ligne Pneus G ou D (arrêts futurs)</small></span>
-        <div class="tyre-stock-icon" data-compound="soft" style="--tc:#dddddd;" title="Soft — glisser sur la ligne Pneus G ou D">S</div>
+        <div class="tyre-stock-icon" data-compound="soft" style="--tc:var(--text-2);" title="Soft — glisser sur la ligne Pneus G ou D">S</div>
         <div class="tyre-stock-icon" data-compound="medium" style="--tc:#ffcc00;" title="Medium — glisser sur la ligne Pneus G ou D">M</div>
         <div class="tyre-stock-icon" data-compound="hard" style="--tc:#ff6060;" title="Hard — glisser sur la ligne Pneus G ou D">H</div>
         <div class="tyre-stock-icon" data-compound="wet" style="--tc:#3399ff;" title="Wet — glisser sur la ligne Pneus G ou D">W</div>
@@ -1279,16 +1293,16 @@
                 <th style="width: 62px; overflow: hidden; white-space: nowrap;">EV Conso<div class="col-resizer"></div></th>
                 <th style="width: 93px; overflow: hidden; white-space: nowrap;">🏁 Arrêt Stand<div class="col-resizer"></div></th>
                 <th id="liveRefuelRateHeader" style="width: 107px; overflow: hidden; white-space: nowrap;">⛽ Refuel %<br>
-                    <small style="color:#aaa;font-weight:normal;">Débit :
-                        <span style="color:#fff;">(réglage commun, voir Planification)</span>
+                    <small style="color:var(--text-3);font-weight:normal;">Débit :
+                        <span style="color:var(--text);">(réglage commun, voir Planification)</span>
                     </small>
                 <div class="col-resizer"></div></th>
                 <th colspan="2" style="text-align: center; padding-bottom: 2px; width: 198px; overflow: hidden; white-space: nowrap;">
                     <div id="liveTyreGaugeContainer" style="display: block; margin-bottom: 4px;">
-                        <div style="background:rgba(255,255,255,0.08);border-radius:4px;height:6px;width:100%;overflow:hidden;">
-                            <div id="liveTyreGaugeBar" style="height: 6px; border-radius: 4px; background: rgb(0, 255, 136); width: 100%; transition: width 0.3s, background 0.3s;"></div>
+                        <div style="background:rgba(var(--fg-rgb),0.08);border-radius:4px;height:6px;width:100%;overflow:hidden;">
+                            <div id="liveTyreGaugeBar" style="height: 6px; border-radius: 4px; background: var(--accent); width: 100%; transition: width 0.3s, background 0.3s;"></div>
                         </div>
-                        <div id="liveTyreGaugeLabel" style="color: rgb(0, 255, 136); font-size: 0.78em; font-weight: bold; margin-top: 3px; white-space: nowrap; text-align: center;">🟢 10 pneus restants (0 utilisés)</div>
+                        <div id="liveTyreGaugeLabel" style="color: var(--accent); font-size: 0.78em; font-weight: bold; margin-top: 3px; white-space: nowrap; text-align: center;">🟢 10 pneus restants (0 utilisés)</div>
                     </div>
                     <div style="display:flex;justify-content:space-around;gap:4px;">
                         <span title="Changement pneus côté gauche">🔧 Pneus G</span>
@@ -1309,17 +1323,17 @@
     <div id="liveStintManualControls" style="display:none;margin-top:12px;
         display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
         <button onclick="addManualStint('live')" style="padding:8px 18px;background:linear-gradient(135deg,#00aaff,#0077cc);
-                border:none;border-radius:8px;color:#fff;font-size:0.95em;
+                border:none;border-radius:8px;color:var(--text);font-size:0.95em;
                 font-weight:bold;cursor:pointer;transition:all 0.2s;">
             ➕ Ajouter un stint
         </button>
         <button onclick="removeLastManualStint('live')" id="liveBtnRemoveStint" style="display:none;padding:8px 18px;
                 background:linear-gradient(135deg,#ff6b6b,#cc4444);
-                border:none;border-radius:8px;color:#fff;font-size:0.95em;
+                border:none;border-radius:8px;color:var(--text);font-size:0.95em;
                 font-weight:bold;cursor:pointer;transition:all 0.2s;">
             ➖ Supprimer dernier stint
         </button>
-        <span id="liveManualStintInfo" style="color:#aaa;font-size:0.82em;font-style:italic;"></span>
+        <span id="liveManualStintInfo" style="color:var(--text-3);font-size:0.82em;font-style:italic;"></span>
     </div>
 </div>
 
@@ -1329,46 +1343,46 @@
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;">
 
             <!-- Vitesse & Moteur -->
-            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,136,0,0.25);border-radius:10px;padding:14px 16px;">
+            <div style="background:rgba(var(--fg-rgb),0.04);border:1px solid rgba(255,136,0,0.25);border-radius:10px;padding:14px 16px;">
                 <div style="color:#ff8800;font-weight:bold;font-size:0.9em;margin-bottom:10px;">🚗 Vitesse &amp; Moteur</div>
-                <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:0.88em;"><span style="color:#aaa;">Vitesse</span><span style="color:#fff;font-weight:bold;" id="liveSpeedKmh">— km/h</span></div>
-                <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:0.88em;"><span style="color:#aaa;">Rapport</span><span style="color:#fff;font-weight:bold;" id="liveGear">—</span></div>
-                <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:0.88em;"><span style="color:#aaa;">Régime moteur</span><span style="color:#fff;font-weight:bold;" id="liveRpm">— tr/min</span></div>
-                <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:0.88em;"><span style="color:#aaa;">Temp. eau</span><span style="color:#fff;font-weight:bold;" id="liveWaterTemp">— °C</span></div>
-                <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:0.88em;"><span style="color:#aaa;">Temp. huile</span><span style="color:#fff;font-weight:bold;" id="liveOilTemp">— °C</span></div>
+                <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(var(--fg-rgb),0.06);font-size:0.88em;"><span style="color:var(--text-3);">Vitesse</span><span style="color:var(--text);font-weight:bold;" id="liveSpeedKmh">— km/h</span></div>
+                <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(var(--fg-rgb),0.06);font-size:0.88em;"><span style="color:var(--text-3);">Rapport</span><span style="color:var(--text);font-weight:bold;" id="liveGear">—</span></div>
+                <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(var(--fg-rgb),0.06);font-size:0.88em;"><span style="color:var(--text-3);">Régime moteur</span><span style="color:var(--text);font-weight:bold;" id="liveRpm">— tr/min</span></div>
+                <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(var(--fg-rgb),0.06);font-size:0.88em;"><span style="color:var(--text-3);">Temp. eau</span><span style="color:var(--text);font-weight:bold;" id="liveWaterTemp">— °C</span></div>
+                <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(var(--fg-rgb),0.06);font-size:0.88em;"><span style="color:var(--text-3);">Temp. huile</span><span style="color:var(--text);font-weight:bold;" id="liveOilTemp">— °C</span></div>
             </div>
 
             <!-- Commandes pilote -->
-            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,136,0,0.25);border-radius:10px;padding:14px 16px;">
+            <div style="background:rgba(var(--fg-rgb),0.04);border:1px solid rgba(255,136,0,0.25);border-radius:10px;padding:14px 16px;">
                 <div style="color:#ff8800;font-weight:bold;font-size:0.9em;margin-bottom:10px;">🎮 Commandes pilote</div>
                 <div style="display:flex;flex-direction:column;gap:10px;">
                     
                 <div>
                     <div style="display:flex;justify-content:space-between;font-size:0.82em;margin-bottom:3px;">
-                        <span style="color:#aaa;">Accélérateur</span>
-                        <span id="liveThrottleVal" style="color:#fff;font-weight:bold;">—%</span>
+                        <span style="color:var(--text-3);">Accélérateur</span>
+                        <span id="liveThrottleVal" style="color:var(--text);font-weight:bold;">—%</span>
                     </div>
-                    <div style="background:rgba(255,255,255,0.08);border-radius:4px;height:10px;overflow:hidden;">
-                        <div id="liveThrottleBar" style="height:10px;width:0%;background:#00ff88;transition:width 0.15s linear;"></div>
+                    <div style="background:rgba(var(--fg-rgb),0.08);border-radius:4px;height:10px;overflow:hidden;">
+                        <div id="liveThrottleBar" style="height:10px;width:0%;background:var(--accent);transition:width 0.15s linear;"></div>
                     </div>
                 </div>
                     
                 <div>
                     <div style="display:flex;justify-content:space-between;font-size:0.82em;margin-bottom:3px;">
-                        <span style="color:#aaa;">Frein</span>
-                        <span id="liveBrakeVal" style="color:#fff;font-weight:bold;">—%</span>
+                        <span style="color:var(--text-3);">Frein</span>
+                        <span id="liveBrakeVal" style="color:var(--text);font-weight:bold;">—%</span>
                     </div>
-                    <div style="background:rgba(255,255,255,0.08);border-radius:4px;height:10px;overflow:hidden;">
+                    <div style="background:rgba(var(--fg-rgb),0.08);border-radius:4px;height:10px;overflow:hidden;">
                         <div id="liveBrakeBar" style="height:10px;width:0%;background:#ff4444;transition:width 0.15s linear;"></div>
                     </div>
                 </div>
                     
                 <div>
                     <div style="display:flex;justify-content:space-between;font-size:0.82em;margin-bottom:3px;">
-                        <span style="color:#aaa;">Direction</span>
-                        <span id="liveSteeringVal" style="color:#fff;font-weight:bold;">—%</span>
+                        <span style="color:var(--text-3);">Direction</span>
+                        <span id="liveSteeringVal" style="color:var(--text);font-weight:bold;">—%</span>
                     </div>
-                    <div style="background:rgba(255,255,255,0.08);border-radius:4px;height:10px;overflow:hidden;">
+                    <div style="background:rgba(var(--fg-rgb),0.08);border-radius:4px;height:10px;overflow:hidden;">
                         <div id="liveSteeringBar" style="height:10px;width:0%;background:#00aaff;transition:width 0.15s linear;"></div>
                     </div>
                 </div>
@@ -1376,105 +1390,105 @@
             </div>
 
             <!-- Carburant -->
-            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,136,0,0.25);border-radius:10px;padding:14px 16px;">
+            <div style="background:rgba(var(--fg-rgb),0.04);border:1px solid rgba(255,136,0,0.25);border-radius:10px;padding:14px 16px;">
                 <div style="color:#ff8800;font-weight:bold;font-size:0.9em;margin-bottom:10px;">⛽ Carburant</div>
-                <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:0.88em;"><span style="color:#aaa;">Litres actuels</span><span style="color:#fff;font-weight:bold;" id="liveFuelLiters">— L</span></div>
-                <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:0.88em;"><span style="color:#aaa;">Capacité réservoir</span><span style="color:#fff;font-weight:bold;" id="liveFuelCapacity">— L</span></div>
-                <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:0.88em;"><span style="color:#aaa;">Ratio carburant/EV</span><span style="color:#fff;font-weight:bold;" id="liveFuelEvRatio">—</span></div>
+                <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(var(--fg-rgb),0.06);font-size:0.88em;"><span style="color:var(--text-3);">Litres actuels</span><span style="color:var(--text);font-weight:bold;" id="liveFuelLiters">— L</span></div>
+                <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(var(--fg-rgb),0.06);font-size:0.88em;"><span style="color:var(--text-3);">Capacité réservoir</span><span style="color:var(--text);font-weight:bold;" id="liveFuelCapacity">— L</span></div>
+                <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(var(--fg-rgb),0.06);font-size:0.88em;"><span style="color:var(--text-3);">Ratio carburant/EV</span><span style="color:var(--text);font-weight:bold;" id="liveFuelEvRatio">—</span></div>
             </div>
 
             <!-- Piste & météo -->
-            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,136,0,0.25);border-radius:10px;padding:14px 16px;">
+            <div style="background:rgba(var(--fg-rgb),0.04);border:1px solid rgba(255,136,0,0.25);border-radius:10px;padding:14px 16px;">
                 <div style="color:#ff8800;font-weight:bold;font-size:0.9em;margin-bottom:10px;">🌦️ Piste &amp; météo</div>
-                <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:0.88em;"><span style="color:#aaa;">Température air</span><span style="color:#fff;font-weight:bold;" id="liveAmbientTemp">— °C</span></div>
-                <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:0.88em;"><span style="color:#aaa;">Température piste</span><span style="color:#fff;font-weight:bold;" id="liveTrackTemp">— °C</span></div>
-                <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:0.88em;"><span style="color:#aaa;">Pluie</span><span style="color:#fff;font-weight:bold;" id="liveRainingPct">—%</span></div>
-                <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:0.88em;"><span style="color:#aaa;">Piste mouillée</span><span style="color:#fff;font-weight:bold;" id="liveTrackWetnessPct">—%</span></div>
+                <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(var(--fg-rgb),0.06);font-size:0.88em;"><span style="color:var(--text-3);">Température air</span><span style="color:var(--text);font-weight:bold;" id="liveAmbientTemp">— °C</span></div>
+                <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(var(--fg-rgb),0.06);font-size:0.88em;"><span style="color:var(--text-3);">Température piste</span><span style="color:var(--text);font-weight:bold;" id="liveTrackTemp">— °C</span></div>
+                <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(var(--fg-rgb),0.06);font-size:0.88em;"><span style="color:var(--text-3);">Pluie</span><span style="color:var(--text);font-weight:bold;" id="liveRainingPct">—%</span></div>
+                <div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(var(--fg-rgb),0.06);font-size:0.88em;"><span style="color:var(--text-3);">Piste mouillée</span><span style="color:var(--text);font-weight:bold;" id="liveTrackWetnessPct">—%</span></div>
             </div>
 
             <!-- Températures pneus -->
-            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,136,0,0.25);border-radius:10px;padding:14px 16px;">
+            <div style="background:rgba(var(--fg-rgb),0.04);border:1px solid rgba(255,136,0,0.25);border-radius:10px;padding:14px 16px;">
                 <div style="color:#ff8800;font-weight:bold;font-size:0.9em;margin-bottom:10px;">🌡️ Températures pneus</div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
                 <div style="text-align:center;">
-                    <div style="color:#aaa;font-size:0.75em;">AV Gauche</div>
-                    <div id="liveTyreTempFL" style="color:#fff;font-weight:bold;">—°C</div>
+                    <div style="color:var(--text-3);font-size:0.75em;">AV Gauche</div>
+                    <div id="liveTyreTempFL" style="color:var(--text);font-weight:bold;">—°C</div>
                 </div>
                 <div style="text-align:center;">
-                    <div style="color:#aaa;font-size:0.75em;">AV Droit</div>
-                    <div id="liveTyreTempFR" style="color:#fff;font-weight:bold;">—°C</div>
+                    <div style="color:var(--text-3);font-size:0.75em;">AV Droit</div>
+                    <div id="liveTyreTempFR" style="color:var(--text);font-weight:bold;">—°C</div>
                 </div>
                 <div style="text-align:center;">
-                    <div style="color:#aaa;font-size:0.75em;">AR Gauche</div>
-                    <div id="liveTyreTempRL" style="color:#fff;font-weight:bold;">—°C</div>
+                    <div style="color:var(--text-3);font-size:0.75em;">AR Gauche</div>
+                    <div id="liveTyreTempRL" style="color:var(--text);font-weight:bold;">—°C</div>
                 </div>
                 <div style="text-align:center;">
-                    <div style="color:#aaa;font-size:0.75em;">AR Droit</div>
-                    <div id="liveTyreTempRR" style="color:#fff;font-weight:bold;">—°C</div>
+                    <div style="color:var(--text-3);font-size:0.75em;">AR Droit</div>
+                    <div id="liveTyreTempRR" style="color:var(--text);font-weight:bold;">—°C</div>
                 </div>
             </div>
             </div>
 
             <!-- Pressions pneus -->
-            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,136,0,0.25);border-radius:10px;padding:14px 16px;">
+            <div style="background:rgba(var(--fg-rgb),0.04);border:1px solid rgba(255,136,0,0.25);border-radius:10px;padding:14px 16px;">
                 <div style="color:#ff8800;font-weight:bold;font-size:0.9em;margin-bottom:10px;">🎈 Pressions pneus</div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
                 <div style="text-align:center;">
-                    <div style="color:#aaa;font-size:0.75em;">AV Gauche</div>
-                    <div id="liveTyrePressFL" style="color:#fff;font-weight:bold;">—</div>
+                    <div style="color:var(--text-3);font-size:0.75em;">AV Gauche</div>
+                    <div id="liveTyrePressFL" style="color:var(--text);font-weight:bold;">—</div>
                 </div>
                 <div style="text-align:center;">
-                    <div style="color:#aaa;font-size:0.75em;">AV Droit</div>
-                    <div id="liveTyrePressFR" style="color:#fff;font-weight:bold;">—</div>
+                    <div style="color:var(--text-3);font-size:0.75em;">AV Droit</div>
+                    <div id="liveTyrePressFR" style="color:var(--text);font-weight:bold;">—</div>
                 </div>
                 <div style="text-align:center;">
-                    <div style="color:#aaa;font-size:0.75em;">AR Gauche</div>
-                    <div id="liveTyrePressRL" style="color:#fff;font-weight:bold;">—</div>
+                    <div style="color:var(--text-3);font-size:0.75em;">AR Gauche</div>
+                    <div id="liveTyrePressRL" style="color:var(--text);font-weight:bold;">—</div>
                 </div>
                 <div style="text-align:center;">
-                    <div style="color:#aaa;font-size:0.75em;">AR Droit</div>
-                    <div id="liveTyrePressRR" style="color:#fff;font-weight:bold;">—</div>
+                    <div style="color:var(--text-3);font-size:0.75em;">AR Droit</div>
+                    <div id="liveTyrePressRR" style="color:var(--text);font-weight:bold;">—</div>
                 </div>
             </div>
             </div>
 
             <!-- Températures freins -->
-            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,136,0,0.25);border-radius:10px;padding:14px 16px;">
+            <div style="background:rgba(var(--fg-rgb),0.04);border:1px solid rgba(255,136,0,0.25);border-radius:10px;padding:14px 16px;">
                 <div style="color:#ff8800;font-weight:bold;font-size:0.9em;margin-bottom:10px;">🔥 Températures freins</div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
                 <div style="text-align:center;">
-                    <div style="color:#aaa;font-size:0.75em;">AV Gauche</div>
-                    <div id="liveBrakeTempFL" style="color:#fff;font-weight:bold;">—°C</div>
+                    <div style="color:var(--text-3);font-size:0.75em;">AV Gauche</div>
+                    <div id="liveBrakeTempFL" style="color:var(--text);font-weight:bold;">—°C</div>
                 </div>
                 <div style="text-align:center;">
-                    <div style="color:#aaa;font-size:0.75em;">AV Droit</div>
-                    <div id="liveBrakeTempFR" style="color:#fff;font-weight:bold;">—°C</div>
+                    <div style="color:var(--text-3);font-size:0.75em;">AV Droit</div>
+                    <div id="liveBrakeTempFR" style="color:var(--text);font-weight:bold;">—°C</div>
                 </div>
                 <div style="text-align:center;">
-                    <div style="color:#aaa;font-size:0.75em;">AR Gauche</div>
-                    <div id="liveBrakeTempRL" style="color:#fff;font-weight:bold;">—°C</div>
+                    <div style="color:var(--text-3);font-size:0.75em;">AR Gauche</div>
+                    <div id="liveBrakeTempRL" style="color:var(--text);font-weight:bold;">—°C</div>
                 </div>
                 <div style="text-align:center;">
-                    <div style="color:#aaa;font-size:0.75em;">AR Droit</div>
-                    <div id="liveBrakeTempRR" style="color:#fff;font-weight:bold;">—°C</div>
+                    <div style="color:var(--text-3);font-size:0.75em;">AR Droit</div>
+                    <div id="liveBrakeTempRR" style="color:var(--text);font-weight:bold;">—°C</div>
                 </div>
             </div>
             </div>
 
             <!-- Pilotes proches / Grille complète -->
-            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,136,0,0.25);border-radius:10px;padding:14px 16px;grid-column:1 / -1;">
+            <div style="background:rgba(var(--fg-rgb),0.04);border:1px solid rgba(255,136,0,0.25);border-radius:10px;padding:14px 16px;grid-column:1 / -1;">
                 <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
                     <div style="color:#ff8800;font-weight:bold;font-size:0.9em;">🏁 Ordre de course</div>
                     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
                         <button type="button" id="liveStandingsModeNearbyBtn" onclick="setLiveStandingsMode('nearby')" style="padding:4px 10px;border-radius:6px;border:1px solid #ff8800;background:rgba(255,136,0,0.18);color:#ff8800;font-size:0.78em;font-weight:bold;cursor:pointer;">Proches</button>
-                        <button type="button" id="liveStandingsModeFullBtn" onclick="setLiveStandingsMode('full')" style="padding:4px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:transparent;color:#aaa;font-size:0.78em;font-weight:bold;cursor:pointer;">Grille complète</button>
-                        <span id="liveStandingsModeHint" style="color:#666;font-size:0.72em;">Jusqu'à 6 devant · 6 derrière</span>
+                        <button type="button" id="liveStandingsModeFullBtn" onclick="setLiveStandingsMode('full')" style="padding:4px 10px;border-radius:6px;border:1px solid rgba(var(--fg-rgb),0.2);background:transparent;color:var(--text-3);font-size:0.78em;font-weight:bold;cursor:pointer;">Grille complète</button>
+                        <span id="liveStandingsModeHint" style="color:var(--text-4);font-size:0.72em;">Jusqu'à 6 devant · 6 derrière</span>
                     </div>
                 </div>
                 <div style="overflow-x:auto;">
                     <table style="width:100%;border-collapse:collapse;font-size:0.82em;white-space:nowrap;">
                         <thead>
-                            <tr style="color:#888;">
+                            <tr style="color:var(--text-4);">
                                 <th style="text-align:left;padding:3px 6px;font-weight:normal;">Pos</th>
                                 <th style="text-align:left;padding:3px 6px;font-weight:normal;">Pilote</th>
                                 <th style="text-align:right;padding:3px 6px;font-weight:normal;">Écart</th>
@@ -1487,7 +1501,7 @@
                             </tr>
                         </thead>
                         <tbody id="liveNearbyDrivers">
-                            <tr><td colspan="9" style="color:#888;padding:6px;white-space:normal;">En attente de télémétrie live.</td></tr>
+                            <tr><td colspan="9" style="color:var(--text-4);padding:6px;white-space:normal;">En attente de télémétrie live.</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -1501,9 +1515,9 @@
     <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;margin-bottom:15px;">
         <div>
             <div class="live-chart-eyebrow">📊 Analyse de relais</div>
-            <h3 style="color:#fff;margin:2px 0 0;">Évolution de la course</h3>
+            <h3 style="color:var(--text);margin:2px 0 0;">Évolution de la course</h3>
         </div>
-        <span style="color:#888;font-size:0.8em;">Tour live + tours terminés</span>
+        <span style="color:var(--text-4);font-size:0.8em;">Tour live + tours terminés</span>
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:14px;">
 
@@ -1564,7 +1578,7 @@
                 <button type="button" class="live-trace-toggle active" data-trace="bestSession" style="color:#aa66ff;" onclick="toggleLiveTraceSeries('bestSession')"><span class="swatch"></span>Meilleur de la session</button>
                 <button type="button" class="live-trace-toggle active" data-trace="bestEvent" style="color:#00ccff;" onclick="toggleLiveTraceSeries('bestEvent')"><span class="swatch"></span>Meilleur de l'événement</button>
                 <button type="button" class="live-trace-toggle active" data-trace="last" style="color:#ffaa00;" onclick="toggleLiveTraceSeries('last')"><span class="swatch"></span>Dernier tour</button>
-                <button type="button" class="live-trace-toggle active" data-trace="current" style="color:#00ff88;" onclick="toggleLiveTraceSeries('current')"><span class="swatch"></span>Actuel · live</button>
+                <button type="button" class="live-trace-toggle active" data-trace="current" style="color:var(--accent);" onclick="toggleLiveTraceSeries('current')"><span class="swatch"></span>Actuel · live</button>
             </div>
         </div>
         <canvas id="chartDriverTrace" width="1200" height="320" class="live-chart-canvas" style="aspect-ratio:16/5;"></canvas>
@@ -1579,20 +1593,20 @@
 <!-- ══════════ PANNEAU BASE CIRCUITS ══════════ -->
 <div id="tab-circuits" class="tab-panel">
     <div class="input-section" style="max-width:900px;margin:0 auto;">
-        <h2 style="color:#00ff88;">📚 Gestion des Circuits</h2>
+        <h2 style="color:var(--accent);">📚 Gestion des Circuits</h2>
 
         <div class="input-group">
             <label>Circuit à éditer</label>                    
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                <select id="circuitEditSelect" onchange="editCircuit(this.value)" style="flex:1;min-width:200px;padding:8px;border:2px solid rgba(255,255,255,0.2);border-radius:8px;background:rgba(255,255,255,0.1);color:#fff;"><option value="">— Nouveau circuit —</option><option value="circ_default_barcelone">Barcelone (Catalunya)</option><option value="circ_default_cota">COTA (Austin)</option><option value="circ_default_daytona">Daytona (Road Course)</option><option value="circ_default_lagunaseca">Laguna Seca</option><option value="circ_default_lemans">Le Mans</option><option value="circ_default_monza">Monza</option><option value="circ_default_sebring">Sebring</option><option value="circ_default_spa">Spa-Francorchamps</option></select>
-                <input type="text" id="circuitNameInput" placeholder="Nom du circuit (ex: Le Mans)" style="flex:1;min-width:200px;padding:8px;border:2px solid rgba(255,255,255,0.2);border-radius:8px;background:rgba(255,255,255,0.1);color:#fff;">
+                <select id="circuitEditSelect" onchange="editCircuit(this.value)" style="flex:1;min-width:200px;padding:8px;border:2px solid rgba(var(--fg-rgb),0.2);border-radius:8px;background:rgba(var(--fg-rgb),0.1);color:var(--text);"><option value="">— Nouveau circuit —</option><option value="circ_default_barcelone">Barcelone (Catalunya)</option><option value="circ_default_cota">COTA (Austin)</option><option value="circ_default_daytona">Daytona (Road Course)</option><option value="circ_default_lagunaseca">Laguna Seca</option><option value="circ_default_lemans">Le Mans</option><option value="circ_default_monza">Monza</option><option value="circ_default_sebring">Sebring</option><option value="circ_default_spa">Spa-Francorchamps</option></select>
+                <input type="text" id="circuitNameInput" placeholder="Nom du circuit (ex: Le Mans)" style="flex:1;min-width:200px;padding:8px;border:2px solid rgba(var(--fg-rgb),0.2);border-radius:8px;background:rgba(var(--fg-rgb),0.1);color:var(--text);">
             </div>
         </div>
 
         <div class="input-group">
             <label>🏎️ Voiture</label>
-            <select id="circCarSelect" style="width:100%;padding:8px;border:2px solid rgba(255,255,255,0.2);
-                       border-radius:8px;background:rgba(255,255,255,0.1);color:#fff;font-size:1em;" onchange="onCircCarChange()"><option value="">— Choisir une voiture —</option><optgroup label="LMH"><option value="toyota_gr010">Toyota GR010 Hybrid</option><option value="ferrari_499p">Ferrari 499P</option><option value="peugeot_9x8_2024">Peugeot 9X8 (2024)</option><option value="aston_valkyrie">Aston Martin Valkyrie AMR-LMH</option><option value="glickenhaus_007">Glickenhaus SCG 007</option><option value="isotta_tipo6">Isotta Fraschini Tipo 6</option><option value="vanwall_680">Vanwall Vandervell 680</option></optgroup><optgroup label="LMDh"><option value="porsche_963">Porsche 963</option><option value="cadillac_vseriesr">Cadillac V-Series.R</option><option value="bmw_mhybridv8">BMW M Hybrid V8</option><option value="alpine_a424">Alpine A424</option><option value="lamborghini_sc63">Lamborghini SC63</option><option value="genesis_gmr001">Genesis GMR-001</option></optgroup></select>
+            <select id="circCarSelect" style="width:100%;padding:8px;border:2px solid rgba(var(--fg-rgb),0.2);
+                       border-radius:8px;background:rgba(var(--fg-rgb),0.1);color:var(--text);font-size:1em;" onchange="onCircCarChange()"><option value="">— Choisir une voiture —</option><optgroup label="LMH"><option value="toyota_gr010">Toyota GR010 Hybrid</option><option value="ferrari_499p">Ferrari 499P</option><option value="peugeot_9x8_2024">Peugeot 9X8 (2024)</option><option value="aston_valkyrie">Aston Martin Valkyrie AMR-LMH</option><option value="glickenhaus_007">Glickenhaus SCG 007</option><option value="isotta_tipo6">Isotta Fraschini Tipo 6</option><option value="vanwall_680">Vanwall Vandervell 680</option></optgroup><optgroup label="LMDh"><option value="porsche_963">Porsche 963</option><option value="cadillac_vseriesr">Cadillac V-Series.R</option><option value="bmw_mhybridv8">BMW M Hybrid V8</option><option value="alpine_a424">Alpine A424</option><option value="lamborghini_sc63">Lamborghini SC63</option><option value="genesis_gmr001">Genesis GMR-001</option></optgroup></select>
         </div>
 
         <div class="input-group">
@@ -1625,7 +1639,7 @@
             <input type="number" id="circEvPerLap" value="8.0" step="0.1">
         </div>
 
- <h3 style="color:#00ff88;margin-top:20px;">🏎️ Usure des pneus (%/tour)</h3>
+ <h3 style="color:var(--accent);margin-top:20px;">🏎️ Usure des pneus (%/tour)</h3>
         <div class="note" style="margin-bottom:12px;">
             Usure par tour en % pour chaque gomme. 0 = gomme non utilisée sur ce circuit.
         </div>
@@ -1660,7 +1674,7 @@
                     <div style="flex:1;">
                         <input type="number" class="tyre-wear-input hard" id="circTyre_FL_hard" value="0" min="0" max="100" step="0.1" placeholder="%/tour" data-hooked="true">
                         <div class="tyre-wear-bar-wrap">
-                            <div class="tyre-wear-bar" id="circTyre_FL_hard_bar" style="width: 0%; background: rgba(255, 255, 255, 0.1);"></div>
+                            <div class="tyre-wear-bar" id="circTyre_FL_hard_bar" style="width: 0%; background: rgba(var(--fg-rgb), 0.1);"></div>
                         </div>
                     </div>
                     <span class="tyre-wear-label" id="circTyre_FL_hard_lbl" style="color: rgb(85, 85, 85);">—</span>
@@ -1670,7 +1684,7 @@
                             <div style="flex:1;">
                                 <input type="number" class="tyre-wear-input wet" id="circTyre_FL_wet" value="0" min="0" max="100" step="0.1" placeholder="%/tour" data-hooked="true">
                                 <div class="tyre-wear-bar-wrap">
-                                    <div class="tyre-wear-bar" id="circTyre_FL_wet_bar" style="width: 0%; background: rgba(255, 255, 255, 0.1);"></div>
+                                    <div class="tyre-wear-bar" id="circTyre_FL_wet_bar" style="width: 0%; background: rgba(var(--fg-rgb), 0.1);"></div>
                                 </div>
                             </div>
                             <span class="tyre-wear-label" id="circTyre_FL_wet_lbl" style="color: rgb(85, 85, 85);">—</span>
@@ -1695,7 +1709,7 @@
                     <div style="flex:1;">
                         <input type="number" class="tyre-wear-input medium" id="circTyre_FR_medium" value="0" min="0" max="100" step="0.1" placeholder="%/tour" data-hooked="true">
                         <div class="tyre-wear-bar-wrap">
-                            <div class="tyre-wear-bar" id="circTyre_FR_medium_bar" style="width: 0%; background: rgba(255, 255, 255, 0.1);"></div>
+                            <div class="tyre-wear-bar" id="circTyre_FR_medium_bar" style="width: 0%; background: rgba(var(--fg-rgb), 0.1);"></div>
                         </div>
                     </div>
                     <span class="tyre-wear-label" id="circTyre_FR_medium_lbl" style="color: rgb(85, 85, 85);">—</span>
@@ -1705,7 +1719,7 @@
                     <div style="flex:1;">
                         <input type="number" class="tyre-wear-input hard" id="circTyre_FR_hard" value="0" min="0" max="100" step="0.1" placeholder="%/tour" data-hooked="true">
                         <div class="tyre-wear-bar-wrap">
-                            <div class="tyre-wear-bar" id="circTyre_FR_hard_bar" style="width: 0%; background: rgba(255, 255, 255, 0.1);"></div>
+                            <div class="tyre-wear-bar" id="circTyre_FR_hard_bar" style="width: 0%; background: rgba(var(--fg-rgb), 0.1);"></div>
                         </div>
                     </div>
                     <span class="tyre-wear-label" id="circTyre_FR_hard_lbl" style="color: rgb(85, 85, 85);">—</span>
@@ -1715,7 +1729,7 @@
                             <div style="flex:1;">
                                 <input type="number" class="tyre-wear-input wet" id="circTyre_FR_wet" value="0" min="0" max="100" step="0.1" placeholder="%/tour" data-hooked="true">
                                 <div class="tyre-wear-bar-wrap">
-                                    <div class="tyre-wear-bar" id="circTyre_FR_wet_bar" style="width: 0%; background: rgba(255, 255, 255, 0.1);"></div>
+                                    <div class="tyre-wear-bar" id="circTyre_FR_wet_bar" style="width: 0%; background: rgba(var(--fg-rgb), 0.1);"></div>
                                 </div>
                             </div>
                             <span class="tyre-wear-label" id="circTyre_FR_wet_lbl" style="color: rgb(85, 85, 85);">—</span>
@@ -1730,7 +1744,7 @@
                     <div style="flex:1;">
                         <input type="number" class="tyre-wear-input soft" id="circTyre_RL_soft" value="0" min="0" max="100" step="0.1" placeholder="%/tour" data-hooked="true">
                         <div class="tyre-wear-bar-wrap">
-                            <div class="tyre-wear-bar" id="circTyre_RL_soft_bar" style="width: 0%; background: rgba(255, 255, 255, 0.1);"></div>
+                            <div class="tyre-wear-bar" id="circTyre_RL_soft_bar" style="width: 0%; background: rgba(var(--fg-rgb), 0.1);"></div>
                         </div>
                     </div>
                     <span class="tyre-wear-label" id="circTyre_RL_soft_lbl" style="color: rgb(85, 85, 85);">—</span>
@@ -1740,7 +1754,7 @@
                     <div style="flex:1;">
                         <input type="number" class="tyre-wear-input medium" id="circTyre_RL_medium" value="0" min="0" max="100" step="0.1" placeholder="%/tour" data-hooked="true">
                         <div class="tyre-wear-bar-wrap">
-                            <div class="tyre-wear-bar" id="circTyre_RL_medium_bar" style="width: 0%; background: rgba(255, 255, 255, 0.1);"></div>
+                            <div class="tyre-wear-bar" id="circTyre_RL_medium_bar" style="width: 0%; background: rgba(var(--fg-rgb), 0.1);"></div>
                         </div>
                     </div>
                     <span class="tyre-wear-label" id="circTyre_RL_medium_lbl" style="color: rgb(85, 85, 85);">—</span>
@@ -1750,7 +1764,7 @@
                     <div style="flex:1;">
                         <input type="number" class="tyre-wear-input hard" id="circTyre_RL_hard" value="0" min="0" max="100" step="0.1" placeholder="%/tour" data-hooked="true">
                         <div class="tyre-wear-bar-wrap">
-                            <div class="tyre-wear-bar" id="circTyre_RL_hard_bar" style="width: 0%; background: rgba(255, 255, 255, 0.1);"></div>
+                            <div class="tyre-wear-bar" id="circTyre_RL_hard_bar" style="width: 0%; background: rgba(var(--fg-rgb), 0.1);"></div>
                         </div>
                     </div>
                     <span class="tyre-wear-label" id="circTyre_RL_hard_lbl" style="color: rgb(85, 85, 85);">—</span>
@@ -1760,7 +1774,7 @@
                             <div style="flex:1;">
                                 <input type="number" class="tyre-wear-input wet" id="circTyre_RL_wet" value="0" min="0" max="100" step="0.1" placeholder="%/tour" data-hooked="true">
                                 <div class="tyre-wear-bar-wrap">
-                                    <div class="tyre-wear-bar" id="circTyre_RL_wet_bar" style="width: 0%; background: rgba(255, 255, 255, 0.1);"></div>
+                                    <div class="tyre-wear-bar" id="circTyre_RL_wet_bar" style="width: 0%; background: rgba(var(--fg-rgb), 0.1);"></div>
                                 </div>
                             </div>
                             <span class="tyre-wear-label" id="circTyre_RL_wet_lbl" style="color: rgb(85, 85, 85);">—</span>
@@ -1775,7 +1789,7 @@
                     <div style="flex:1;">
                         <input type="number" class="tyre-wear-input soft" id="circTyre_RR_soft" value="0" min="0" max="100" step="0.1" placeholder="%/tour" data-hooked="true">
                         <div class="tyre-wear-bar-wrap">
-                            <div class="tyre-wear-bar" id="circTyre_RR_soft_bar" style="width: 0%; background: rgba(255, 255, 255, 0.1);"></div>
+                            <div class="tyre-wear-bar" id="circTyre_RR_soft_bar" style="width: 0%; background: rgba(var(--fg-rgb), 0.1);"></div>
                         </div>
                     </div>
                     <span class="tyre-wear-label" id="circTyre_RR_soft_lbl" style="color: rgb(85, 85, 85);">—</span>
@@ -1785,7 +1799,7 @@
                     <div style="flex:1;">
                         <input type="number" class="tyre-wear-input medium" id="circTyre_RR_medium" value="0" min="0" max="100" step="0.1" placeholder="%/tour" data-hooked="true">
                         <div class="tyre-wear-bar-wrap">
-                            <div class="tyre-wear-bar" id="circTyre_RR_medium_bar" style="width: 0%; background: rgba(255, 255, 255, 0.1);"></div>
+                            <div class="tyre-wear-bar" id="circTyre_RR_medium_bar" style="width: 0%; background: rgba(var(--fg-rgb), 0.1);"></div>
                         </div>
                     </div>
                     <span class="tyre-wear-label" id="circTyre_RR_medium_lbl" style="color: rgb(85, 85, 85);">—</span>
@@ -1795,7 +1809,7 @@
                     <div style="flex:1;">
                         <input type="number" class="tyre-wear-input hard" id="circTyre_RR_hard" value="0" min="0" max="100" step="0.1" placeholder="%/tour" data-hooked="true">
                         <div class="tyre-wear-bar-wrap">
-                            <div class="tyre-wear-bar" id="circTyre_RR_hard_bar" style="width: 0%; background: rgba(255, 255, 255, 0.1);"></div>
+                            <div class="tyre-wear-bar" id="circTyre_RR_hard_bar" style="width: 0%; background: rgba(var(--fg-rgb), 0.1);"></div>
                         </div>
                     </div>
                     <span class="tyre-wear-label" id="circTyre_RR_hard_lbl" style="color: rgb(85, 85, 85);">—</span>
@@ -1805,7 +1819,7 @@
                             <div style="flex:1;">
                                 <input type="number" class="tyre-wear-input wet" id="circTyre_RR_wet" value="0" min="0" max="100" step="0.1" placeholder="%/tour" data-hooked="true">
                                 <div class="tyre-wear-bar-wrap">
-                                    <div class="tyre-wear-bar" id="circTyre_RR_wet_bar" style="width: 0%; background: rgba(255, 255, 255, 0.1);"></div>
+                                    <div class="tyre-wear-bar" id="circTyre_RR_wet_bar" style="width: 0%; background: rgba(var(--fg-rgb), 0.1);"></div>
                                 </div>
                             </div>
                             <span class="tyre-wear-label" id="circTyre_RR_wet_lbl" style="color: rgb(85, 85, 85);">—</span>
@@ -1831,18 +1845,18 @@
                 style="
                     display:flex;align-items:center;gap:10px;
                     cursor:pointer;
-                    background:rgba(0,255,136,0.07);
-                    border:1px solid rgba(0,255,136,0.25);
+                    background:rgba(var(--accent-rgb),0.07);
+                    border:1px solid rgba(var(--accent-rgb),0.25);
                     border-radius:10px;
                     padding:12px 18px;
                     user-select:none;
                     transition:background 0.2s;">
                 <span style="font-size:1.2em;">📊</span>
-                <span style="color:#00ff88;font-weight:bold;font-size:1.05em;">
+                <span style="color:var(--accent);font-weight:bold;font-size:1.05em;">
                     Vue d'ensemble — Matrice Circuits × Voitures
                 </span>
                 <span id="matrixToggleIcon"
-                    style="margin-left:auto;color:#00ff88;font-size:1.1em;
+                    style="margin-left:auto;color:var(--accent);font-size:1.1em;
                            transition:transform 0.3s;">▼</span>
             </div>
 
@@ -1850,15 +1864,15 @@
             <div id="matrixFilterBar"
                 style="display:none;margin-top:10px;
                        display:none;align-items:center;gap:10px;flex-wrap:wrap;">
-                <label style="color:#aaa;font-size:0.88em;margin-bottom:0;">
+                <label style="color:var(--text-3);font-size:0.88em;margin-bottom:0;">
                     🔍 Filtrer par voiture :
                 </label>
                 <select id="matrixCarFilter"
                     onchange="renderCircuitMatrix()"
                     style="padding:5px 10px;border-radius:7px;
-                           border:1px solid rgba(0,255,136,0.3);
-                           background:rgba(255,255,255,0.07);
-                           color:#fff;font-size:0.88em;min-width:200px;">
+                           border:1px solid rgba(var(--accent-rgb),0.3);
+                           background:rgba(var(--fg-rgb),0.07);
+                           color:var(--text);font-size:0.88em;min-width:200px;">
                     <option value="">— Toutes les voitures —</option>
                 </select>
                 <span id="matrixCountLabel"
@@ -1875,7 +1889,7 @@
                                opacity 0.35s ease;">
             <div style="margin-top:12px;overflow-x:auto;position:relative;
                         scrollbar-width:thin;
-                        scrollbar-color:#00ff88 rgba(255,255,255,0.05);">                            
+                        scrollbar-color:var(--accent) rgba(var(--fg-rgb),0.05);">                            
                 <table id="circuitMatrix"
                     style="
                         border-collapse:separate;

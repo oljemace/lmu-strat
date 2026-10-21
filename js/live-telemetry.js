@@ -31,6 +31,23 @@ function _liveMapColorFor(id) {
     return c;
 }
 
+// Couleur par catégorie (classement multi-catégories endurance) — priorité sur
+// la couleur « stable » ci-dessus dès que la classe de la voiture est connue.
+// Les libellés de classe LMU varient selon le nom exact du BOP/plugin ; on
+// matche donc par sous-chaîne insensible à la casse plutôt que par égalité
+// stricte.
+function _liveClassColorFor(vclass) {
+    const c = (vclass || '').toLowerCase();
+    if (c.includes('hypercar') || c.includes('lmh') || c.includes('gtp')) return '#ff3344';
+    if (c.includes('gt3')) return '#33cc55';
+    if (c.includes('lmp2')) {
+        if (c.includes('elms')) return '#ff9900';
+        if (c.includes('wec')) return '#3388ff';
+        return '#3388ff'; // LMP2 par défaut (WEC) si la ligue n'est pas précisée dans le libellé
+    }
+    return null;
+}
+
 function resetLiveMapTrail() {
     window._liveMap.trail = [];
     window._liveMap.bounds = null;
@@ -85,9 +102,9 @@ function _liveMapStop() {
     if (window._liveStats.pollTimer) clearInterval(window._liveStats.pollTimer);
     window._liveStats.pollTimer = null;
     const btn = document.getElementById('liveMapToggleBtn');
-    if (btn) { btn.textContent = '▶️ Connecter'; btn.style.background = 'rgba(0,255,136,0.2)'; btn.style.borderColor = '#00ff88'; btn.style.color = '#00ff88'; }
+    if (btn) { btn.textContent = '▶️ Connecter'; btn.style.background = 'rgba(var(--accent-rgb),0.2)'; btn.style.borderColor = 'var(--accent)'; btn.style.color = 'var(--accent)'; }
     const dot = document.getElementById('liveMapStatusDot');
-    if (dot) dot.style.background = '#666';
+    if (dot) dot.style.background = 'var(--text-4)';
     const txt = document.getElementById('liveMapStatusText');
     if (txt) txt.textContent = 'Non connecté.';
     const lsTxt = document.getElementById('liveStatsStatusText');
@@ -122,7 +139,7 @@ async function _liveMapPollOnce() {
             if (txt) txt.textContent = '⏳ Serveur local joint, mais LMU non détecté — ' + (data.error || 'lancez le jeu.');
             return;
         }
-        if (dot) dot.style.background = '#00ff88';
+        if (dot) dot.style.background = 'var(--accent)';
         if (txt) txt.textContent = `✅ ${data.track || 'Circuit'} — ${data.numVehicles} voiture(s)`;
         _liveMapAccumulateTrail(data);
         _liveMapDraw(data);
@@ -171,8 +188,11 @@ function _liveMapDraw(data) {
     const spanX = Math.max(1, b.maxX - b.minX);
     const spanZ = Math.max(1, b.maxZ - b.minZ);
     const scale = Math.min((W - 2*pad) / spanX, (H - 2*pad) / spanZ);
+    // Axe X inversé (b.maxX - x au lieu de x - b.minX) : la carte apparaissait
+    // en miroir horizontal par rapport au circuit réel (repère monde LMU vu
+    // depuis le dessus vs. vue habituelle des cartes de circuit).
     const toPx = (x, z) => {
-        const px = pad + (x - b.minX) * scale;
+        const px = pad + (b.maxX - x) * scale;
         const py = pad + (z - b.minZ) * scale;
         return [px, py];
     };
@@ -197,7 +217,7 @@ function _liveMapDraw(data) {
     const legendItems = [];
     (data.cars || []).forEach(car => {
         const [px, py] = toPx(car.x, car.z);
-        const color = _liveMapColorFor(car.id);
+        const color = _liveClassColorFor(car.vclass) || _liveMapColorFor(car.id);
         ctx.beginPath();
         ctx.arc(px, py, car.isPlayer ? 8 : 6, 0, Math.PI * 2);
         ctx.fillStyle = color;
@@ -361,15 +381,15 @@ function _mwRenderRecap() {
         const l = _mwAvg('left', c), r = _mwAvg('right', c);
         const nl = _mwLaps('left', c).length, nr = _mwLaps('right', c).length;
         if (l == null && r == null) {
-            if (nl || nr) rows.push(`<div style="color:#888;">${names[c]} · ${Math.max(nl, nr)}/3 tours…</div>`);
+            if (nl || nr) rows.push(`<div style="color:var(--text-4);">${names[c]} · ${Math.max(nl, nr)}/3 tours…</div>`);
             return;
         }
         rows.push(`<div><b>${names[c]}</b> · <span style="color:#88ccff;">G ${l != null ? l.toFixed(3) : '—'}</span>`
             + ` · <span style="color:#ffaa66;">D ${r != null ? r.toFixed(3) : '—'}</span>`
-            + ` <span style="color:#888;">%/t (${Math.max(nl, nr)} t)</span></div>`);
+            + ` <span style="color:var(--text-4);">%/t (${Math.max(nl, nr)} t)</span></div>`);
     });
     el.innerHTML = rows.length ? rows.join('')
-        : '<div style="color:#888;font-style:italic;">roulez 3 tours minimum</div>';
+        : '<div style="color:var(--text-4);font-style:italic;">roulez 3 tours minimum</div>';
 }
 
 
@@ -651,6 +671,8 @@ function _updateLiveTelemetryExtras(data) {
     // Piste & météo
     _setText('liveAmbientTemp', data.ambientTemp, ' °C');
     _setText('liveTrackTemp', data.trackTemp, ' °C');
+    _setText('liveMapAmbientTemp', data.ambientTemp, ' °C');
+    _setText('liveMapTrackTemp', data.trackTemp, ' °C');
     _setText('liveRainingPct', data.rainingPct, '%');
     _setText('liveTrackWetnessPct', data.trackWetnessPct, '%');
 
@@ -693,13 +715,13 @@ function setLiveStandingsMode(mode) {
     const isFull = window._liveStandingsMode === 'full';
     if (nearbyBtn) {
         nearbyBtn.style.background = isFull ? 'transparent' : 'rgba(255,136,0,0.18)';
-        nearbyBtn.style.borderColor = isFull ? 'rgba(255,255,255,0.2)' : '#ff8800';
-        nearbyBtn.style.color = isFull ? '#aaa' : '#ff8800';
+        nearbyBtn.style.borderColor = isFull ? 'rgba(var(--fg-rgb),0.2)' : '#ff8800';
+        nearbyBtn.style.color = isFull ? 'var(--text-3)' : '#ff8800';
     }
     if (fullBtn) {
         fullBtn.style.background = isFull ? 'rgba(255,136,0,0.18)' : 'transparent';
-        fullBtn.style.borderColor = isFull ? '#ff8800' : 'rgba(255,255,255,0.2)';
-        fullBtn.style.color = isFull ? '#ff8800' : '#aaa';
+        fullBtn.style.borderColor = isFull ? '#ff8800' : 'rgba(var(--fg-rgb),0.2)';
+        fullBtn.style.color = isFull ? '#ff8800' : 'var(--text-3)';
     }
     if (hint) hint.textContent = isFull ? '' : `Jusqu'à ${_LIVE_STANDINGS_WINDOW} devant · ${_LIVE_STANDINGS_WINDOW} derrière`;
     _renderLiveStandings();
@@ -776,30 +798,30 @@ function _liveStandingsRowHtml(d, posLabel, opts) {
     }
     if (stints == null) stints = _liveCarStintsRemaining(d);
     const stintsTxt = stints != null ? stints.toFixed(1) : '—';
-    const rowStyle = d.isPlayer ? 'background:rgba(0,255,136,0.12);' : '';
+    const rowStyle = d.isPlayer ? 'background:rgba(var(--accent-rgb),0.12);' : '';
     const classBadge = (opts && opts.showClassBadge && d.vclass)
         ? `<span style="display:inline-block;margin-right:5px;padding:0 4px;border-radius:3px;
                border:1px solid ${_liveClassColor(d.vclass)};color:${_liveClassColor(d.vclass)};
                font-size:0.72em;font-weight:bold;vertical-align:middle;">${esc(d.vclass)}</span>`
         : '';
-    return `<tr style="${rowStyle}border-bottom:1px solid rgba(255,255,255,0.06);">
-        <td style="padding:3px 6px;color:#aaa;">${posLabel}</td>
-        <td style="padding:3px 6px;color:#fff;text-align:left;">${classBadge}${name}${d.isPlayer ? ' ⭐' : ''}${d.inPits ? ' 🔧' : ''}</td>
+    return `<tr style="${rowStyle}border-bottom:1px solid rgba(var(--fg-rgb),0.06);">
+        <td style="padding:3px 6px;color:var(--text-3);">${posLabel}</td>
+        <td style="padding:3px 6px;color:var(--text);text-align:left;">${classBadge}${name}${d.isPlayer ? ' ⭐' : ''}${d.inPits ? ' 🔧' : ''}</td>
         <td style="padding:3px 6px;text-align:right;color:${gapColor};">${gap}</td>
-        <td style="padding:3px 6px;text-align:right;color:#aaa;">${lap}</td>
-        <td style="padding:3px 6px;text-align:right;color:#fff;">${ve}</td>
-        <td style="padding:3px 6px;text-align:right;color:#aaa;">${veAvg}</td>
-        <td style="padding:3px 6px;text-align:right;color:#aaa;">${avgLap}</td>
-        <td style="padding:3px 6px;text-align:right;color:#fff;">${stintsTxt}</td>
+        <td style="padding:3px 6px;text-align:right;color:var(--text-3);">${lap}</td>
+        <td style="padding:3px 6px;text-align:right;color:var(--text);">${ve}</td>
+        <td style="padding:3px 6px;text-align:right;color:var(--text-3);">${veAvg}</td>
+        <td style="padding:3px 6px;text-align:right;color:var(--text-3);">${avgLap}</td>
+        <td style="padding:3px 6px;text-align:right;color:var(--text);">${stintsTxt}</td>
         <td style="padding:3px 6px;text-align:center;"><span style="display:inline-flex;gap:3px;align-items:center;justify-content:center;">${_liveCompoundBadge(d.leftCompound)}${_liveCompoundBadge(d.rightCompound)}</span></td>
     </tr>`;
 }
 
 function _liveStandingsClassHeaderHtml(vclass, count) {
     const esc = _teamTelemetryEscapeHtml || (s => s);
-    return `<tr><td colspan="9" style="padding:8px 6px 4px;border-top:1px solid rgba(255,255,255,0.12);
+    return `<tr><td colspan="9" style="padding:8px 6px 4px;border-top:1px solid rgba(var(--fg-rgb),0.12);
         color:${_liveClassColor(vclass)};font-weight:bold;font-size:0.85em;letter-spacing:0.5px;">
-        ${esc(vclass)} <span style="color:#666;font-weight:normal;">(${count})</span>
+        ${esc(vclass)} <span style="color:var(--text-4);font-weight:normal;">(${count})</span>
     </td></tr>`;
 }
 
@@ -808,7 +830,7 @@ function _renderLiveStandings() {
     if (!el) return;
     const full = window._liveStandingsFull || [];
     if (full.length === 0) {
-        el.innerHTML = '<tr><td colspan="9" style="color:#888;padding:6px;white-space:normal;">En attente de télémétrie live.</td></tr>';
+        el.innerHTML = '<tr><td colspan="9" style="color:var(--text-4);padding:6px;white-space:normal;">En attente de télémétrie live.</td></tr>';
         return;
     }
     const mode = window._liveStandingsMode || 'nearby';
@@ -913,7 +935,7 @@ function _liveChartEmpty(canvas, legendEl, msg) {
     ctx.font = '13px sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText(msg || 'En attente de télémétrie live.', canvas.width / 2, canvas.height / 2);
-    if (legendEl) legendEl.innerHTML = `<span style="color:#666;">${msg || 'En attente de télémétrie live.'}</span>`;
+    if (legendEl) legendEl.innerHTML = `<span style="color:var(--text-4);">${msg || 'En attente de télémétrie live.'}</span>`;
 }
 
 /* Construit les points {x:numéro de tour, y:valeur} d'une série à partir des
@@ -1028,7 +1050,7 @@ function _drawLiveLineChart(canvas, legendEl, series, opts) {
             const last = s.points[s.points.length - 1];
             const fmt = s.axis === 'R' ? opts.yFmtR : opts.yFmtL;
             const val = last ? (fmt ? fmt(last.y) : last.y.toFixed(1)) : '—';
-            return `<span class="live-chart-legend-item"><span class="live-chart-legend-swatch" style="background:${s.color};"></span>${s.label} <b style="color:#fff;">${val}</b></span>`;
+            return `<span class="live-chart-legend-item"><span class="live-chart-legend-swatch" style="background:${s.color};"></span>${s.label} <b style="color:var(--text);">${val}</b></span>`;
         }).join(''));
     }
 }
@@ -1180,7 +1202,7 @@ function _drawDriverTraceChart(data) {
         return `<span class="live-chart-legend-item" style="opacity:${has ? 1 : 0.4};">
             <span class="live-chart-legend-swatch" style="background:${_LIVE_TRACE_COLORS[key]};"></span>${_LIVE_TRACE_LABELS[key]}${timeStr}
         </span>`;
-    }).join('') + '<span style="color:#666;">Trait plein = accélérateur · pointillé = frein</span>');
+    }).join('') + '<span style="color:var(--text-4);">Trait plein = accélérateur · pointillé = frein</span>');
 }
 
 function _updateLiveDriverTrace(data) {

@@ -1,0 +1,129 @@
+/* Thèmes de l'interface. Les couleurs de données (pneus, pilotes, statuts) restent fixes.
+   Variables : --bg-1/--bg-2 fond, --accent(-2/-rgb) couleur d'accent, --text(-2/-3/-4) textes,
+   --fg-rgb couleur des voiles translucides (blanc en sombre, bleu nuit en clair). */
+
+:root {
+    --bg-1: #1e2646;
+    --bg-2: #16213e;
+    --accent: #00ff88;
+    --accent-2: #00cc6a;
+    --accent-rgb: 0, 255, 136;
+    --text: #ffffff;
+    --text-2: #cccccc;
+    --text-3: #aaaaaa;
+    --text-4: #888888;
+    --fg-rgb: 255, 255, 255;
+    --panel-bg: rgba(0, 0, 0, 0.244);
+    --bar-bg: rgba(0, 20, 40, 0.97);
+    --input-bg: #111111;
+    --option-bg: #162f3e;
+    --font-ui: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    --ui-scale: 1;
+    color-scheme: dark;
+}
+
+:root[data-theme="midnight"] {
+    --bg-1: #07080d; --bg-2: #000000;
+    --accent: #4da3ff; --accent-2: #2f7fd6; --accent-rgb: 77, 163, 255;
+    --bar-bg: rgba(0, 0, 0, 0.97); --option-bg: #0b1220; --input-bg: #0a0a0f;
+}
+:root[data-theme="lemans"] {
+    --bg-1: #12234a; --bg-2: #0a1530;
+    --accent: #ffc83d; --accent-2: #e0a516; --accent-rgb: 255, 200, 61;
+    --bar-bg: rgba(8, 18, 44, 0.97); --option-bg: #12234a;
+}
+:root[data-theme="endurance"] {
+    --bg-1: #2b1a1d; --bg-2: #171012;
+    --accent: #ff4d4d; --accent-2: #d93636; --accent-rgb: 255, 77, 77;
+    --bar-bg: rgba(24, 10, 12, 0.97); --option-bg: #2b1a1d;
+}
+:root[data-theme="foret"] {
+    --bg-1: #17301f; --bg-2: #0d1d13;
+    --accent: #7bd88f; --accent-2: #55b86a; --accent-rgb: 123, 216, 143;
+    --bar-bg: rgba(8, 22, 14, 0.97); --option-bg: #17301f;
+}
+:root[data-theme="violet"] {
+    --bg-1: #261a45; --bg-2: #150d29;
+    --accent: #c77dff; --accent-2: #9d4edd; --accent-rgb: 199, 125, 255;
+    --bar-bg: rgba(18, 10, 36, 0.97); --option-bg: #261a45;
+}
+:root[data-theme="paddock"] {
+    --bg-1: #eef1f7; --bg-2: #dce3ef;
+    --accent: #0a8f56; --accent-2: #087a49; --accent-rgb: 10, 143, 86;
+    --text: #14203a; --text-2: #2c3b59; --text-3: #4b5878; --text-4: #6f7b96;
+    --fg-rgb: 20, 32, 58;
+    --panel-bg: rgba(255, 255, 255, 0.55);
+    --bar-bg: rgba(255, 255, 255, 0.97);
+    --input-bg: #ffffff; --option-bg: #ffffff;
+    color-scheme: light;
+}
+:root[data-theme="contraste"] {
+    --bg-1: #000000; --bg-2: #000000;
+    --accent: #ffee00; --accent-2: #e6d500; --accent-rgb: 255, 238, 0;
+    --text-2: #f0f0f0; --text-3: #dddddd; --text-4: #bbbbbb;
+    --panel-bg: rgba(0, 0, 0, 0.6); --bar-bg: #000000; --option-bg: #000000; --input-bg: #000000;
+}
+
+/* Police et taille choisies par l'utilisateur (la police monospace des formules est conservée) */
+body, body *:not(.formula):not(code):not(pre):not(canvas) { font-family: var(--font-ui) !important; }
+body { zoom: var(--ui-scale); }
+
+/* Thème clair : texte du gros bouton de calcul */
+:root[data-mode="light"] .btn-calculate { color: #fff; }
+
+/* ── Panneau Apparence ── */
+#appearanceBtn {
+    padding: 4px 10px; background: transparent; color: var(--accent); border: 1px solid var(--accent);
+    border-radius: 6px; font-size: 0.85em; cursor: pointer;
+}
+#appearanceOverlay {
+    position: fixed; inset: 0; z-index: 100001; background: rgba(0, 0, 0, 0.55);
+    display: none; align-items: flex-start; justify-content: center; padding: 60px 14px 20px; overflow: auto;
+}
+#appearanceOverlay.open { display: flex; }
+#appearancePanel {
+    width: 100%; max-width: 640px; background: var(--bg-2); color: var(--text);
+    border: 1px solid rgba(var(--accent-rgb), 0.35); border-radius: 14px; padding: 22px;
+    box-shadow: 0 12px 45px rgba(0, 0, 0, 0.5);
+}
+#appearancePanel h2 { margin: 0 0 4px; color: var(--accent); font-size: 1.3em; }
+#appearancePanel h3 { margin: 18px 0 8px; color: var(--text-2); font-size: 0.8em; letter-spacing: 1px; text-transform: uppercase; }
+.ap-head { display: flex; align-items: center; justify-content: space-between; }
+.ap-close, .ap-reset {
+    background: transparent; color: var(--text-2); border: 1px solid rgba(var(--fg-rgb), 0.3);
+    border-radius: 7px; padding: 5px 12px; cursor: pointer; font-size: 0.85em;
+}
+.ap-themes { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+.ap-theme {
+    cursor: pointer; border: 2px solid rgba(var(--fg-rgb), 0.15); border-radius: 10px; padding: 8px;
+    background: rgba(var(--fg-rgb), 0.04); color: var(--text); text-align: left; font-size: 0.85em;
+}
+.ap-theme:hover { border-color: rgba(var(--accent-rgb), 0.6); }
+.ap-theme.active { border-color: var(--accent); box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.35); }
+.ap-swatch { display: flex; height: 34px; border-radius: 6px; overflow: hidden; margin-bottom: 6px; border: 1px solid rgba(128, 128, 128, 0.4); }
+.ap-swatch span { flex: 1; }
+.ap-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.ap-row select, .ap-row input[type="color"] { background: var(--input-bg); color: var(--text); border: 1px solid rgba(var(--fg-rgb), 0.3); border-radius: 7px; padding: 5px 8px; }
+.ap-row input[type="color"] { width: 46px; height: 32px; padding: 2px; cursor: pointer; }
+.ap-row input[type="range"] { flex: 1; min-width: 160px; accent-color: var(--accent); }
+.ap-sample { margin-top: 10px; padding: 10px 12px; border-radius: 8px; background: rgba(var(--fg-rgb), 0.06); font-size: 1em; }
+
+/* Widgets et écran de connexion qui gardent leur propre fond sombre : ils conservent des textes clairs
+   même quand le thème global est clair. */
+:root[data-mode="light"] #accessGate,
+:root[data-mode="light"] #teamVoicePanel,
+:root[data-mode="light"] #teamVoiceToggle,
+:root[data-mode="light"] #teamChatPanel,
+:root[data-mode="light"] #teamChatToggle {
+    --text: #ffffff; --text-2: #cccccc; --text-3: #aaaaaa; --text-4: #888888; --fg-rgb: 255, 255, 255;
+    color-scheme: dark;
+}
+
+.ap-text { background: var(--input-bg); color: var(--text); border: 1px solid rgba(var(--fg-rgb), 0.3); border-radius: 7px; padding: 6px 9px; min-width: 190px; }
+.ap-mini { display: flex; gap: 4px; margin-top: 6px; flex-wrap: wrap; }
+.ap-mini button { background: rgba(var(--fg-rgb), 0.08); color: var(--text); border: 1px solid rgba(var(--fg-rgb), 0.25); border-radius: 6px; padding: 2px 6px; cursor: pointer; font-size: 0.85em; }
+.ap-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+.ap-field { display: flex; align-items: center; gap: 10px; margin: 0; color: var(--text-2); font-weight: 500; }
+.ap-field input[type="color"] { width: 46px; height: 32px; padding: 2px; cursor: pointer; background: var(--input-bg); border: 1px solid rgba(var(--fg-rgb), 0.3); border-radius: 7px; }
+.ap-msg { margin-top: 8px; color: var(--accent); font-size: 0.85em; }
+.ap-primary { background: var(--accent); color: #000; border-color: var(--accent); font-weight: bold; }

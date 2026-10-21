@@ -273,8 +273,8 @@ function updateTyreGauge() {
         label.style.color    = '#ffcc00';
         label.textContent    = `🟡 ${remaining} pneus restants (${usedLabel})${liveSuffix}`;
     } else {
-        bar.style.background = '#00ff88';
-        label.style.color    = '#00ff88';
+        bar.style.background = 'var(--accent)';
+        label.style.color    = 'var(--accent)';
         label.textContent    = `🟢 ${remaining} pneus restants (${usedLabel})${liveSuffix}`;
     }
 }

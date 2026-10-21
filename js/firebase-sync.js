@@ -52,38 +52,38 @@ function renderSessionUI() {
     bar.id = 'sessionBar';
     bar.style.cssText = `
         position:fixed;top:0;left:0;right:0;z-index:9999;
-        background:rgba(0,20,40,0.97);border-bottom:2px solid #00ff88;
+        background:var(--bar-bg);border-bottom:2px solid var(--accent);
         padding:8px 20px;display:flex;align-items:center;gap:12px;
         font-family:'Segoe UI',sans-serif;font-size:0.9em;flex-wrap:wrap;`;
 
     bar.innerHTML = `
         <span id="teamBadge" style="font-size:0.9em;"></span>
         <button id="teamPanelBtn" onclick="openTeamPanel()" title="Membres et invitations"
-            style="padding:4px 10px;background:transparent;color:#00ff88;border:1px solid #00ff88;
+            style="padding:4px 10px;background:transparent;color:var(--accent);border:1px solid var(--accent);
                    border-radius:6px;font-size:0.85em;cursor:pointer;">👥 Équipe</button>
-        <span style="color:#00ff88;font-weight:bold;">🏎️ Session</span>
+        <span style="color:var(--accent);font-weight:bold;">🏎️ Session</span>
         <select id="sessionSelect"
-            style="padding:4px 8px;border-radius:6px;border:1px solid #00ff88;
-                   background:#111;color:#fff;font-size:0.9em;min-width:160px;">
+            style="padding:4px 8px;border-radius:6px;border:1px solid var(--accent);
+                   background:var(--input-bg);color:var(--text);font-size:0.9em;min-width:160px;">
             <option value="">— Choisir une session —</option>
         </select>
         <button data-requires-write onclick="createSession()"
-            style="padding:4px 12px;background:#00ff88;color:#000;border:none;
+            style="padding:4px 12px;background:var(--accent);color:#000;border:none;
                    border-radius:6px;font-weight:bold;cursor:pointer;">
             + Nouvelle
         </button>
         <input data-requires-write id="sessionNameInput" placeholder="Nom de la session"
             style="padding:4px 8px;border-radius:6px;border:1px solid #555;
-                   background:#111;color:#fff;font-size:0.9em;width:140px;">
+                   background:var(--input-bg);color:var(--text);font-size:0.9em;width:140px;">
         <button data-requires-admin id="renameSessionBtn" onclick="renameSession()" title="Renommer la session sélectionnée"
-            style="display:none;padding:4px 10px;background:transparent;color:#00ff88;border:1px solid #00ff88;
+            style="display:none;padding:4px 10px;background:transparent;color:var(--accent);border:1px solid var(--accent);
                    border-radius:6px;font-size:0.85em;cursor:pointer;">✏️ Renommer</button>
         <button data-requires-admin id="deleteSessionBtn" onclick="deleteSession()" title="Supprimer la session sélectionnée"
             style="display:none;padding:4px 10px;background:transparent;color:#ff6b6b;border:1px solid #ff6b6b;
                    border-radius:6px;font-size:0.85em;cursor:pointer;">🗑️ Supprimer</button>
         <div style="margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:1px;">
             <span id="syncStatus"
-                style="font-size:0.8em;color:#888;">
+                style="font-size:0.8em;color:var(--text-4);">
                 ⬤ Non connecté
             </span>
             <span id="syncTime"

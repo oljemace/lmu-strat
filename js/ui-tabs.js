@@ -42,10 +42,10 @@ function switchCalcMode(mode) {
     document.querySelectorAll('.calc-mode-card').forEach(card => {
         const active = card.dataset.mode === mode;
         card.classList.toggle('active', active);
-        card.style.background  = active ? 'rgba(0,255,136,0.08)' : 'rgba(255,255,255,0.03)';
-        card.style.borderColor = active ? '#00ff88' : 'rgba(255,255,255,0.12)';
+        card.style.background  = active ? 'rgba(var(--accent-rgb),0.08)' : 'rgba(var(--fg-rgb),0.03)';
+        card.style.borderColor = active ? 'var(--accent)' : 'rgba(var(--fg-rgb),0.12)';
         // 2e enfant de la carte (le bloc texte) -> son 1er enfant (le titre)
         const titleEl = card.children[1]?.children[0];
-        if (titleEl) titleEl.style.color = active ? '#00ff88' : '#ccc';
+        if (titleEl) titleEl.style.color = active ? 'var(--accent)' : 'var(--text-2)';
     });
 }
