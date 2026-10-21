@@ -19,6 +19,40 @@ let _chatOpen = false;
 let _chatMyName = null;
 let _chatTeam = null;
 let _chatLastSend = 0;
+let _chatLastUnread = 0;
+let _chatBaseTitle = null;
+let _chatReady = false;          // faux jusqu'au premier chargement (pas de son pour l'historique)
+let _chatLastOtherTs = 0;
+let _chatAudio = null;
+
+function _chatSoundOn() {
+    try { return localStorage.getItem('lmuChatSound') !== '0'; } catch (e) { return true; }
+}
+function _chatSoundSet(on) {
+    try { localStorage.setItem('lmuChatSound', on ? '1' : '0'); } catch (e) { /* stockage indisponible */ }
+    const b = document.getElementById('teamChatSound');
+    if (b) { b.textContent = on ? '🔔' : '🔕'; b.title = on ? 'Son activé (cliquer pour couper)' : 'Son coupé (cliquer pour activer)'; }
+}
+// Petit « ding » à deux notes. Le navigateur n'autorise le son qu'après une première
+// interaction avec la page ; sinon l'appel échoue en silence.
+function _chatBeep() {
+    try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        if (!_chatAudio) _chatAudio = new AC();
+        if (_chatAudio.state === 'suspended') _chatAudio.resume();
+        const t0 = _chatAudio.currentTime;
+        [[880, 0], [1175, 0.14]].forEach(([f, dt]) => {
+            const o = _chatAudio.createOscillator(), g = _chatAudio.createGain();
+            o.type = 'sine'; o.frequency.value = f;
+            g.gain.setValueAtTime(0.0001, t0 + dt);
+            g.gain.exponentialRampToValueAtTime(0.18, t0 + dt + 0.02);
+            g.gain.exponentialRampToValueAtTime(0.0001, t0 + dt + 0.22);
+            o.connect(g); g.connect(_chatAudio.destination);
+            o.start(t0 + dt); o.stop(t0 + dt + 0.25);
+        });
+    } catch (e) { /* son indisponible */ }
+}
 
 function _chatSeenKey() {
     const u = window._firebaseAuth?.currentUser;
@@ -56,7 +90,8 @@ function _chatEnsureUI() {
         '<span id="teamChatBadge" style="display:none"></span></button>' +
         '<div id="teamChatPanel" style="display:none">' +
         '<div class="chat-head"><span>💬 Chat de l\'équipe</span>' +
-        '<button type="button" id="teamChatClose" aria-label="Fermer">✕</button></div>' +
+        '<span><button type="button" id="teamChatSound" aria-label="Son des notifications">🔔</button>' +
+        '<button type="button" id="teamChatClose" aria-label="Fermer">✕</button></span></div>' +
         '<div id="teamChatPresence" style="display:none"></div>' +
         '<div id="teamChatList"></div>' +
         '<div id="teamChatError" style="display:none"></div>' +
@@ -67,6 +102,21 @@ function _chatEnsureUI() {
 
     document.getElementById('teamChatToggle').addEventListener('click', () => _chatSetOpen(!_chatOpen));
     document.getElementById('teamChatClose').addEventListener('click', () => _chatSetOpen(false));
+    _chatSoundSet(_chatSoundOn());
+    document.getElementById('teamChatSound').addEventListener('click', () => {
+        const on = !_chatSoundOn();
+        _chatSoundSet(on);
+        if (on) _chatBeep();
+    });
+    // Débloque le son dès la première interaction avec la page
+    document.addEventListener('pointerdown', function unlock() {
+        document.removeEventListener('pointerdown', unlock);
+        try {
+            const AC = window.AudioContext || window.webkitAudioContext;
+            if (AC && !_chatAudio) _chatAudio = new AC();
+            if (_chatAudio && _chatAudio.state === 'suspended') _chatAudio.resume();
+        } catch (e) { /* sans conséquence */ }
+    });
     document.getElementById('teamChatForm').addEventListener('submit', e => { e.preventDefault(); chatSend(); });
     document.getElementById('teamChatInput').addEventListener('keydown', e => {
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); chatSend(); }
@@ -107,6 +157,21 @@ function _chatRender() {
         badge.textContent = unread > 99 ? '99+' : String(unread);
         badge.style.display = unread ? 'inline-block' : 'none';
     }
+    // Compteur dans le titre de l'onglet + animation quand un nouveau message arrive
+    if (_chatBaseTitle === null) _chatBaseTitle = document.title.replace(/^\(\d+\+?\) /, '');
+    document.title = (unread ? `(${unread > 99 ? '99+' : unread}) ` : '') + _chatBaseTitle;
+    if (unread > _chatLastUnread) {
+        const t = document.getElementById('teamChatToggle');
+        if (t) { t.classList.remove('chat-ping'); void t.offsetWidth; t.classList.add('chat-ping'); }
+    }
+    _chatLastUnread = unread;
+
+    // Son : un message d'un autre membre plus récent que tous ceux déjà vus
+    const others = msgs.filter(m => m.uid !== me);
+    const newest = others.length ? others[others.length - 1].t : 0;
+    if (_chatReady && newest > _chatLastOtherTs && _chatSoundOn()) _chatBeep();
+    if (newest > _chatLastOtherTs) _chatLastOtherTs = newest;
+    _chatReady = true;
     if (!_chatOpen) return;
 
     const nearBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 60;
@@ -208,6 +273,7 @@ function stopTeamChat() {
     if (_chatStop) { try { _chatStop(); } catch (e) { /* sans conséquence */ } }
     _chatStop = null;
     _chatMsgs = {};
+    _chatReady = false; _chatLastOtherTs = 0; _chatLastUnread = 0;
     document.getElementById('teamChatRoot')?.remove();
     _chatOpen = false;
 }
