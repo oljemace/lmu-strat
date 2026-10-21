@@ -247,7 +247,8 @@ function _chatEnsureUI() {
         '<div id="teamChatPanel" style="display:none">' +
         '<div id="teamChatResize" title="Glisser pour redimensionner (double-clic : taille initiale)"></div>' +
         '<div class="chat-head"><span>💬 Chat de l\'équipe</span>' +
-        '<span><button type="button" id="teamChatSound" aria-label="Son des notifications">🔔</button>' +
+        '<span><button type="button" id="teamChatPin" aria-label="Ancrer le chat">📌</button>' +
+        '<button type="button" id="teamChatSound" aria-label="Son des notifications">🔔</button>' +
         '<button type="button" id="teamChatClose" aria-label="Fermer">✕</button></span></div>' +
         '<div id="teamChatPresence" style="display:none"></div>' +
         '<div id="teamChatList"></div>' +
@@ -261,8 +262,18 @@ function _chatEnsureUI() {
         '<button type="submit">Envoyer</button></form></div>';
     document.body.appendChild(wrap);
 
-    document.getElementById('teamChatToggle').addEventListener('click', () => _chatSetOpen(!_chatOpen));
+    document.getElementById('teamChatToggle').addEventListener('click', () => {
+        if (_chatOpen && _chatPinned()) { document.getElementById('teamChatInput')?.focus(); return; }   // ancré : reste ouvert
+        _chatSetOpen(!_chatOpen);
+    });
     document.getElementById('teamChatClose').addEventListener('click', () => _chatSetOpen(false));
+    document.getElementById('teamChatPin').addEventListener('click', () => {
+        const on = !_chatPinned();
+        _chatPinSet(on);
+        if (on && !_chatOpen) _chatSetOpen(true, true);
+    });
+    _chatPinSet(_chatPinned());
+    if (_chatPinned() && _chatWasOpen()) _chatSetOpen(true, true);   // ancré : rouvert d'office (sans prendre le focus)
     _chatSoundSet(_chatSoundOn());
     document.getElementById('teamChatSound').addEventListener('click', () => {
         const on = !_chatSoundOn();
@@ -309,9 +320,10 @@ const CHAT_SIZE_KEY = 'lmuChatSize';
 function _chatApplySize(w, h) {
     const panel = document.getElementById('teamChatPanel');
     if (!panel) return;
-    if (!w || !h) { panel.style.width = ''; panel.style.height = ''; return; }
+    if (!w || !h) { panel.style.width = ''; panel.style.height = ''; if (typeof _dockLayout === 'function') _dockLayout(); return; }
     panel.style.width = Math.max(280, Math.min(w, window.innerWidth - 32)) + 'px';
     panel.style.height = Math.max(300, Math.min(h, window.innerHeight - 110)) + 'px';
+    if (typeof _dockLayout === 'function') _dockLayout();
 }
 function _chatResizeInit() {
     const panel = document.getElementById('teamChatPanel');
@@ -343,15 +355,38 @@ function _chatResizeInit() {
     });
 }
 
-function _chatSetOpen(open) {
+// Ancrage : un panneau ancré se fixe sur le bord droit de la fenêtre et reste ouvert (même après rechargement)
+const CHAT_PIN_KEY = 'lmuChatPinned';
+function _chatPinned() {
+    try { return localStorage.getItem(CHAT_PIN_KEY) === '1'; } catch (e) { return false; }
+}
+function _chatPinSet(on) {
+    try { localStorage.setItem(CHAT_PIN_KEY, on ? '1' : '0'); } catch (e) { /* stockage indisponible */ }
+    const pin = document.getElementById('teamChatPin');
+    if (pin) {
+        pin.classList.toggle('pinned', on);
+        pin.title = on ? 'Ancré au bord droit (cliquer pour libérer)' : 'Ancrer au bord droit de la fenêtre';
+    }
+    if (typeof _dockLayout === 'function') _dockLayout();
+}
+
+// Dernier état ouvert/fermé, pour rouvrir un panneau ancré tel qu'on l'a laissé
+function _chatWasOpen() {
+    try { return localStorage.getItem('lmuChatWasOpen') !== '0'; } catch (e) { return true; }
+}
+
+function _chatSetOpen(open, quiet) {
     _chatOpen = open;
+    try { localStorage.setItem('lmuChatWasOpen', open ? '1' : '0'); } catch (e) { /* stockage indisponible */ }
     const panel = document.getElementById('teamChatPanel');
     if (panel) panel.style.display = open ? 'flex' : 'none';
     if (open) {
-        if (typeof _vSetOpen === 'function') _vSetOpen(false);   // un seul panneau à la fois
+        // un seul panneau flottant à la fois ; un panneau ancré à droite reste en place
+        if (typeof _vSetOpen === 'function' && !(typeof _dockOn === 'function' && _dockOn('voice'))) _vSetOpen(false);
         _chatRender();
-        document.getElementById('teamChatInput')?.focus();
+        if (!quiet) document.getElementById('teamChatInput')?.focus();
     }
+    if (typeof _dockLayout === 'function') _dockLayout();
 }
 
 function _chatError(msg) {

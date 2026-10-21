@@ -352,7 +352,8 @@ function _vEnsureUI() {
         '<span id="teamVoiceCount" style="display:none"></span></button>' +
         '<div id="teamVoicePanel" style="display:none">' +
         '<div class="voice-head"><span>🎙️ Salons vocaux</span>' +
-        '<button type="button" id="teamVoiceClose" aria-label="Fermer">✕</button></div>' +
+        '<span><button type="button" id="teamVoicePin" aria-label="Ancrer les salons vocaux">📌</button>' +
+        '<button type="button" id="teamVoiceClose" aria-label="Fermer">✕</button></span></div>' +
         '<div id="teamVoiceList"></div>' +
         '<div id="teamVoiceError" style="display:none"></div>' +
         '<div class="voice-actions"><button type="button" id="teamVoiceMute" style="display:none"></button>' +
@@ -367,11 +368,12 @@ function _vEnsureUI() {
         '<div id="teamVoiceKeyRow"><label>⌨️ Raccourci micro</label><span id="teamVoiceKeyLabel"></span>' +
         '<button type="button" id="teamVoiceKeySet">Définir</button>' +
         '<button type="button" id="teamVoiceKeyClear" title="Effacer le raccourci" aria-label="Effacer le raccourci">✕</button>' +
-        '</div><div id="teamVoiceDeafRow"><label>🎧 Couper le son des autres</label><span id="teamVoiceDeafKeyLabel"></span>' +
-        '<button type="button" id="teamVoiceDeafKeySet">Définir</button>' +
-        '<button type="button" id="teamVoiceDeafKeyClear" title="Effacer le raccourci" aria-label="Effacer le raccourci">✕</button>' +
         '<button type="button" id="teamVoiceHidAdd" title="Autoriser un volant, une manette ou un boîtier à boutons" ' +
         'aria-label="Autoriser un périphérique">🎮</button></div>' +
+        '<div id="teamVoiceDeafRow"><label>🎧 Couper le son des autres</label><span id="teamVoiceDeafKeyLabel"></span>' +
+        '<button type="button" id="teamVoiceDeafKeySet">Définir</button>' +
+        '<button type="button" id="teamVoiceDeafKeyClear" title="Effacer le raccourci" aria-label="Effacer le raccourci">✕</button>' +
+        '</div>' +
         '<div id="teamVoiceKeyMsg" style="display:none"></div>' +
         '<div id="teamVoiceSndRow"><label><input type="checkbox" id="teamVoiceSndMic"> Sons du micro</label>' +
         '<label><input type="checkbox" id="teamVoiceSndRoom"> Sons du salon</label></div>' +
@@ -384,8 +386,18 @@ function _vEnsureUI() {
         '<span id="teamVoiceIceMsg"></span></div></div></div>' +
         '<div id="teamVoiceAudio" style="display:none"></div></div>';
     document.body.appendChild(wrap);
-    document.getElementById('teamVoiceToggle').addEventListener('click', () => _vSetOpen(!_vOpen()));
+    document.getElementById('teamVoiceToggle').addEventListener('click', () => {
+        if (_vOpen() && _vPinned()) return;             // ancré : reste ouvert
+        _vSetOpen(!_vOpen());
+    });
     document.getElementById('teamVoiceClose').addEventListener('click', () => _vSetOpen(false));
+    document.getElementById('teamVoicePin').addEventListener('click', () => {
+        const on = !_vPinned();
+        _vPinSet(on);
+        if (on && !_vOpen()) _vSetOpen(true);
+    });
+    _vPinSet(_vPinned());
+    window.addEventListener('resize', _dockLayout);
     document.getElementById('teamVoiceMute').addEventListener('click', voiceToggleMute);
     const noise = document.getElementById('teamVoiceNoise');
     noise.value = String(_vNoiseMode());
@@ -452,14 +464,90 @@ async function _vAdminSave() {
 
 function _vOpen() { return document.getElementById('teamVoicePanel')?.style.display === 'flex'; }
 
+/* ── Ancrage des panneaux vocal et chat ── */
+const VOICE_PIN_KEY = 'lmuVoicePinned';
+function _vPinned() {
+    try { return localStorage.getItem(VOICE_PIN_KEY) === '1'; } catch (e) { return false; }
+}
+function _vPinSet(on) {
+    try { localStorage.setItem(VOICE_PIN_KEY, on ? '1' : '0'); } catch (e) { /* stockage indisponible */ }
+    const pin = document.getElementById('teamVoicePin');
+    if (pin) {
+        pin.classList.toggle('pinned', on);
+        pin.title = on ? 'Ancré au bord droit (cliquer pour libérer)' : 'Ancrer au bord droit de la fenêtre';
+    }
+    _dockLayout();
+}
+
+/* Un panneau ancré se fixe contre le bord droit de la fenêtre, pleine hauteur, et la page se rétrécit
+   pour lui laisser la place. Ancrés tous les deux, ils s'empilent (vocal en haut, chat en bas).
+   Sur un écran étroit (moins de 720 px), l'ancrage est suspendu : les panneaux restent flottants. */
+const DOCK_W_KEY = 'lmuDockWidth';
+function _dockWidth() {
+    try { const v = Number(localStorage.getItem(DOCK_W_KEY)); if (v >= 280 && v <= 900) return v; } catch (e) { /* largeur par défaut */ }
+    return 360;
+}
+
+// which : 'chat' ou 'voice' — ancré, ouvert, et écran assez large
+function _dockOn(which) {
+    const pinned = which === 'chat' ? (typeof _chatPinned === 'function' && _chatPinned()) : _vPinned();
+    const el = document.getElementById(which === 'chat' ? 'teamChatPanel' : 'teamVoicePanel');
+    return !!pinned && window.innerWidth >= 720 && !!el && el.style.display !== 'none';
+}
+
+function _dockLayout() {
+    const c = document.getElementById('teamChatPanel'), v = document.getElementById('teamVoicePanel');
+    const dc = _dockOn('chat'), dv = _dockOn('voice'), any = dc || dv;
+    const w = Math.min(_dockWidth(), Math.max(280, window.innerWidth - 320));
+    document.documentElement.style.setProperty('--dock-w', w + 'px');
+    if (c) { c.classList.toggle('docked', dc); c.classList.toggle('dock-bottom', dc && dv); }
+    if (v) { v.classList.toggle('docked', dv); v.classList.toggle('dock-top', dv && dc); }
+    document.body.classList.toggle('has-dock', any);
+    document.body.style.paddingRight = any ? w + 'px' : '';
+    let grip = document.getElementById('teamDockGrip');
+    if (!grip && any) {
+        grip = document.createElement('div');
+        grip.id = 'teamDockGrip';
+        grip.title = 'Glisser pour changer la largeur (double-clic : largeur initiale)';
+        document.body.appendChild(grip);
+        grip.addEventListener('pointerdown', e => {
+            e.preventDefault();
+            grip.setPointerCapture(e.pointerId);
+            const move = ev => {
+                const nw = Math.max(280, Math.min(900, window.innerWidth - 320, window.innerWidth - ev.clientX));
+                try { localStorage.setItem(DOCK_W_KEY, String(Math.round(nw))); } catch (err) { /* sans conséquence */ }
+                _dockLayout();
+            };
+            const up = () => {
+                grip.removeEventListener('pointermove', move);
+                grip.removeEventListener('pointerup', up);
+                grip.removeEventListener('pointercancel', up);
+            };
+            grip.addEventListener('pointermove', move);
+            grip.addEventListener('pointerup', up);
+            grip.addEventListener('pointercancel', up);
+        });
+        grip.addEventListener('dblclick', () => {
+            try { localStorage.removeItem(DOCK_W_KEY); } catch (err) { /* sans conséquence */ }
+            _dockLayout();
+        });
+    }
+}
+
+function _vWasOpen() {
+    try { return localStorage.getItem('lmuVoiceWasOpen') !== '0'; } catch (e) { return true; }
+}
+
 function _vSetOpen(open) {
     const p = document.getElementById('teamVoicePanel');
     if (!p) return;
+    if (open !== _vOpen()) { try { localStorage.setItem('lmuVoiceWasOpen', open ? '1' : '0'); } catch (e) { /* stockage indisponible */ } }
     p.style.display = open ? 'flex' : 'none';
     if (open) {
-        if (typeof _chatSetOpen === 'function') _chatSetOpen(false);   // un seul panneau à la fois
+        if (typeof _chatSetOpen === 'function' && !_dockOn('chat')) _chatSetOpen(false);   // un seul panneau flottant à la fois
         _vRender();
     }
+    _dockLayout();
 }
 
 function _vSetError(msg) {
@@ -538,8 +626,12 @@ function _vRender() {
             const peer = here && _vc.peers[p.uid];
             const bad = peer && (peer.pc.connectionState === 'failed' || peer.pc.iceConnectionState === 'failed');
             const route = peer && peer.route;
-            st.textContent = (p.mu ? '🔇' : '') + (bad ? ' ⚠️' : '') +
+            // pour soi-même, l'état local fait foi (affichage immédiat)
+            const mine = p.uid === me && !!_vc;
+            const muted = mine ? _vc.muted : p.mu, deaf = mine ? _vc.deaf : p.de;
+            st.textContent = (muted ? '🔇' : '') + (deaf ? ' 🔕' : '') + (bad ? ' ⚠️' : '') +
                 (!bad && route ? (route === 'relay' ? ' 🛰️' : ' 🔗') : '');
+            if (muted || deaf) st.title = (muted ? 'Micro coupé' : '') + (muted && deaf ? ' · ' : '') + (deaf ? 'Son des autres coupé' : '');
             if (bad) st.title = 'Connexion impossible avec cette personne (réseau)';
             else if (route === 'relay') st.title = 'Lien relayé par le serveur TURN (consomme le quota du relais)';
             else if (route === 'direct') st.title = 'Lien direct (aucun quota consommé)';
@@ -1033,7 +1125,14 @@ async function voiceJoin(sid) {
             muted: false, deaf: false, seen: new Set(), levels: {} };
     _vWatchLevel(user.uid, chain.stream);
 
-    const beat = () => window._firebaseSet(myRef, { name, ts: Date.now(), n: nonce, mu: _vc ? _vc.muted : false }).catch(() => {});
+    const beat = () => {
+        const data = { name, ts: Date.now(), n: nonce, mu: _vc ? _vc.muted : false };
+        if (_vc && _vc.deaf) data.de = true;           // champ envoyé seulement quand on est « sourd »
+        window._firebaseSet(myRef, data).catch(() => {
+            // règles pas encore à jour : on garde au moins la présence, sans l'indicateur « sourd »
+            if (data.de) { delete data.de; window._firebaseSet(myRef, data).catch(() => {}); }
+        });
+    };
     _vc.beat = beat;
 
     // Boîte de signalisation : on la vide, puis on l'écoute
@@ -1088,6 +1187,7 @@ function voiceToggleDeaf() {
     _vc.deaf = !_vc.deaf;
     Object.keys(_vc.peers).forEach(u => { if (_vc.peers[u].audio) _vc.peers[u].audio.muted = _vc.deaf; });
     _vPlay('Mic', _vc.deaf ? 'deaf' : 'undeaf');
+    if (_vc.beat) _vc.beat();
     _vRender();
 }
 
@@ -1106,6 +1206,7 @@ function startTeamVoice() {
     _vTeam = window._teamId;
     _vEnsureUI();
     _vHotStart();
+    if (_vPinned() && _vWasOpen()) _vSetOpen(true);     // ancré : rouvert tel qu'on l'a laissé
     _vViewSid = window._presenceSession || null;
     _vWatch();
     _vRender();

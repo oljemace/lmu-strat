@@ -1141,6 +1141,20 @@ body.live-mode .plan-bar { display:none; }
 #teamVoicePanel { position: fixed; right: 18px; bottom: 80px; z-index: 900; width: 300px; max-width: calc(100vw - 32px); max-height: calc(100vh - 110px); flex-direction: column; background: #101a22; border: 1px solid rgba(0,170,255,0.4); border-radius: 12px; box-shadow: 0 8px 28px rgba(0,0,0,0.6); overflow: hidden; }
 #teamVoicePanel .voice-head { display: flex; justify-content: space-between; align-items: center; padding: 9px 12px; background: rgba(0,170,255,0.14); color: #9fd8ff; font-weight: 700; }
 #teamVoicePanel .voice-head button { background: none; border: 0; color: #ccc; cursor: pointer; font-size: 1em; }
+/* Panneaux ancrés au bord droit de la fenêtre (voir _dockLayout dans team-voice.js) */
+body.has-dock #teamChatToggle { right: calc(18px + var(--dock-w)); }
+body.has-dock #teamVoiceToggle { right: calc(80px + var(--dock-w)); }
+body.has-dock #teamChatPanel:not(.docked), body.has-dock #teamVoicePanel:not(.docked) { right: calc(18px + var(--dock-w)); }
+#teamChatPanel.docked, #teamVoicePanel.docked { right: 0; top: 0; bottom: 0; z-index: 880; width: var(--dock-w) !important; max-width: none; height: auto !important; max-height: none; border-radius: 0; border-width: 0 0 0 1px; box-shadow: -4px 0 18px rgba(0,0,0,0.45); }
+#teamVoicePanel.docked { overflow-y: auto; }
+#teamVoicePanel.dock-top { bottom: 50%; border-bottom: 1px solid rgba(255,255,255,0.15); }
+#teamChatPanel.dock-bottom { top: 50%; }
+#teamChatPanel.docked #teamChatResize { display: none; }
+#teamDockGrip { position: fixed; top: 0; bottom: 0; right: calc(var(--dock-w) - 3px); width: 7px; z-index: 890; cursor: ew-resize; touch-action: none; display: none; }
+#teamDockGrip:hover { background: rgba(0,255,136,0.35); }
+body.has-dock #teamDockGrip { display: block; }
+#teamVoicePin, #teamChatPin { opacity: 0.5; border-radius: 6px !important; }
+#teamVoicePin.pinned, #teamChatPin.pinned { opacity: 1; background: rgba(255,255,255,0.18) !important; }
 #teamVoiceList { padding: 8px 12px; overflow-y: auto; min-height: 60px; flex: 1 1 auto; }
 #teamVoiceList .voice-empty { color: #888; font-size: 0.9em; padding: 6px 0; }
 #teamVoiceList .voice-room { margin-bottom: 10px; }
@@ -1163,12 +1177,13 @@ body.live-mode .plan-bar { display:none; }
 #teamVoicePanel .voice-actions button.leave { border-color: #ff6b6b; background: rgba(255,107,107,0.12); color: #ff6b6b; }
 #teamVoicePanel .voice-actions button:disabled { opacity: 0.4; cursor: default; }
 #teamVoiceNoiseRow { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 0.8em; color: #bbb; }
-#teamVoiceKeyRow, #teamVoiceSndRow { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 0 12px 8px; font-size: 0.8em; color: #bbb; }
+#teamVoiceKeyRow, #teamVoiceDeafRow, #teamVoiceSndRow { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 0 12px 8px; font-size: 0.8em; color: #bbb; }
+#teamVoiceKeyRow label, #teamVoiceDeafRow label { flex: 1 0 100%; }
 #teamVoiceSndRow { gap: 14px; }
 #teamVoiceSndRow label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
-#teamVoiceKeyLabel { flex: 1; min-width: 6em; color: #fff; }
-#teamVoiceKeyRow button { background: #2a2f3a; color: #fff; border: 1px solid #444; border-radius: 6px; padding: 3px 8px; cursor: pointer; font-size: inherit; }
-#teamVoiceKeyRow button.listening { outline: 2px solid #00ff88; }
+#teamVoiceKeyLabel, #teamVoiceDeafKeyLabel { flex: 1; min-width: 6em; color: #fff; }
+#teamVoiceKeyRow button, #teamVoiceDeafRow button { background: #2a2f3a; color: #fff; border: 1px solid #444; border-radius: 6px; padding: 3px 8px; cursor: pointer; font-size: inherit; }
+#teamVoiceKeyRow button.listening, #teamVoiceDeafRow button.listening { outline: 2px solid #00ff88; }
 #teamVoiceKeyMsg { padding: 0 12px 8px; font-size: 0.75em; color: #9fd8ff; }
 #teamVoiceLevelRow { display: flex; align-items: center; gap: 8px; padding: 0 12px 8px; font-size: 0.8em; color: #bbb; }
 #teamVoiceLevelRow input[type=range] { flex: 1; accent-color: #00ff88; }
@@ -1243,3 +1258,4 @@ button.chat-file span { font-size: 0.8em; color: #8e9ac0; }
 #teamChatForm { display: flex; gap: 6px; padding: 8px; border-top: 1px solid rgba(255,255,255,0.1); }
 #teamChatForm textarea { flex: 1; resize: none; padding: 6px 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.08); color: #fff; font: inherit; }
 #teamChatForm button { padding: 0 12px; border-radius: 8px; border: 1px solid #00ff88; background: rgba(0,255,136,0.15); color: #00ff88; font-weight: 700; cursor: pointer; }
+#teamVoicePanel.docked .voice-head { position: sticky; top: 0; z-index: 1; background: #12303f; }
