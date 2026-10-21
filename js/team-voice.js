@@ -33,7 +33,7 @@ const VOICE_STALE_MS = 3 * 60 * 1000;
 const VOICE_NOISE_THRESHOLDS = [0, 0.006, 0.015];         // repli, sans RNNoise
 const VOICE_NOISE_THRESHOLDS_RN = [0, 0.002, 0.005];      // après RNNoise
 const VOICE_RNNOISE_VAD = [0, 0, 0.6];                    // seuil de probabilité de parole
-const VOICE_RNNOISE_URL = 'vendor/rnnoise/rnnoise-worklet.js?v=1';
+const VOICE_RNNOISE_URL = 'vendor/rnnoise/rnnoise-worklet.js?v=3';
 
 // Mode 3 « Maximale » : DeepFilterNet3 (plus précis que RNNoise, plus gourmand, ~24 Mo à
 // télécharger à la première utilisation). Fichiers hébergés ici (dossier vendor/deepfilternet3)
@@ -53,6 +53,17 @@ let _vJoinTok = 0;
 
 // Connexion active (null si on n'est dans aucun salon)
 let _vc = null;              // { sid, team, nonce, ice, stream, raw, ac, gate, peers, stops, myRef, name, muted, seen, levels }
+
+// Intensité de la réduction de bruit, 0..100 % (100 = pleine puissance)
+function _vNoiseLevel() {
+    try {
+        const raw = localStorage.getItem('lmuVoiceNoiseLevel');
+        const v = Number(raw);
+        return raw !== null && raw !== '' && v >= 0 && v <= 100 ? v : 100;
+    } catch (e) { return 100; }
+}
+// DeepFilterNet : l'intensité devient une limite d'atténuation en dB (100 = sans limite)
+function _vDfAtten(level) { return level >= 100 ? 100 : Math.round(level * 0.4); }
 
 function _vNoiseMode() {
     try { const v = Number(localStorage.getItem('lmuVoiceNoise')); return v === 0 || v === 2 || v === 3 ? v : 1; } catch (e) { return 1; }
@@ -114,7 +125,7 @@ async function _vSha256Hex(buf) {
 async function _vLoadDeepFilter(c) {
     const base = new URL(VOICE_DF_BASE, document.baseURI).href.replace(/\/$/, '');
     const mod = await import(base + '/index.esm.js?v=1');
-    const core = new mod.DeepFilterNet3Core({ sampleRate: 48000, noiseReductionLevel: 100, assetConfig: { cdnUrl: base } });
+    const core = new mod.DeepFilterNet3Core({ sampleRate: 48000, noiseReductionLevel: _vDfAtten(_vNoiseLevel()), assetConfig: { cdnUrl: base } });
     core.assetLoader.fetchAsset = async (url) => {
         const expected = VOICE_DF_SHA256[url.slice(base.length + 1)];
         if (!expected) throw new Error('fichier non prévu');
@@ -158,11 +169,16 @@ function _vApplyNoise(c, mode) {
     const dfOn = mode === 3 && !!c.df;
     if (c.df) c.df.core.setNoiseSuppressionEnabled(dfOn);
     const m = Math.min(mode, 2);       // pendant le chargement du mode 3, on reste sur RNNoise « fort »
+    const level = _vNoiseLevel(), wet = level / 100;
+    if (c.df) c.df.core.setSuppressionLevel(_vDfAtten(level));
     if (c.rn) {
         c.rn.parameters.get('bypass').value = (mode === 0 || dfOn) ? 1 : 0;
         c.rn.parameters.get('vad').value = VOICE_RNNOISE_VAD[m];
+        c.rn.parameters.get('wet').value = wet;
     }
-    if (c.gate) c.gate.parameters.get('threshold').value = (c.rn ? VOICE_NOISE_THRESHOLDS_RN : VOICE_NOISE_THRESHOLDS)[dfOn ? 1 : m];
+    // La porte de bruit suit l'intensité : à 0 % elle ne coupe plus rien
+    if (c.gate) c.gate.parameters.get('threshold').value =
+        (c.rn ? VOICE_NOISE_THRESHOLDS_RN : VOICE_NOISE_THRESHOLDS)[dfOn ? 1 : m] * wet;
     // Le filtre du navigateur fait double emploi avec RNNoise (et l'abîme) : on ne le garde qu'en repli
     c.raw.getAudioTracks().forEach(t => t.applyConstraints({ noiseSuppression: !c.rn && mode !== 0 }).catch(() => {}));
 }
@@ -193,6 +209,15 @@ async function _vBuildChain(ac, raw, mode) {
     const chain = { stream: dest.stream, gate, rn, raw, ac, slot, afterSlot: rn || gate || dest, df: null };
     _vApplyNoise(chain, mode);
     return chain;
+}
+
+function voiceSetNoiseLevel(level) {
+    level = Math.max(0, Math.min(100, Math.round(Number(level))));
+    if (isNaN(level)) level = 100;
+    try { localStorage.setItem('lmuVoiceNoiseLevel', String(level)); } catch (e) { /* stockage indisponible */ }
+    const val = document.getElementById('teamVoiceLevelVal');
+    if (val) val.textContent = level + ' %';
+    if (_vc) _vApplyNoise(_vc.chain, _vNoiseMode());
 }
 
 function voiceSetNoise(mode) {
@@ -334,6 +359,9 @@ function _vEnsureUI() {
         '<div id="teamVoiceNoiseRow"><label for="teamVoiceNoise">🔇 Réduction du bruit</label>' +
         '<select id="teamVoiceNoise"><option value="0">Désactivée</option><option value="1">Normale</option>' +
         '<option value="2">Forte</option><option value="3">Maximale (expérimental)</option></select></div>' +
+        '<div id="teamVoiceLevelRow"><label for="teamVoiceLevel">Intensité</label>' +
+        '<input type="range" id="teamVoiceLevel" min="0" max="100" step="5">' +
+        '<span id="teamVoiceLevelVal"></span></div>' +
         '<div id="teamVoiceNoiseMsg" style="display:none"></div>' +
         '<div id="teamVoiceAdmin" style="display:none">' +
         '<button type="button" id="teamVoiceAdminToggle">⚙️ Relais réseau (TURN)</button>' +
@@ -349,12 +377,23 @@ function _vEnsureUI() {
     document.getElementById('teamVoiceMute').addEventListener('click', voiceToggleMute);
     const noise = document.getElementById('teamVoiceNoise');
     noise.value = String(_vNoiseMode());
-    noise.addEventListener('change', () => voiceSetNoise(Number(noise.value)));
+    noise.addEventListener('change', () => { voiceSetNoise(Number(noise.value)); _vRefreshLevelUI(); });
+    const level = document.getElementById('teamVoiceLevel');
+    level.value = String(_vNoiseLevel());
+    level.addEventListener('input', () => voiceSetNoiseLevel(Number(level.value)));
+    document.getElementById('teamVoiceLevelVal').textContent = _vNoiseLevel() + ' %';
+    _vRefreshLevelUI();
     document.getElementById('teamVoiceAdminToggle').addEventListener('click', _vAdminOpen);
     document.getElementById('teamVoiceIceSave').addEventListener('click', _vAdminSave);
     // La liste des sessions se charge après coup : on redessine quand elle change
     const sel = document.getElementById('sessionSelect');
     if (sel) new MutationObserver(() => _vRender()).observe(sel, { childList: true });
+}
+
+// Le curseur n'a pas de sens quand la réduction est désactivée
+function _vRefreshLevelUI() {
+    const lv = document.getElementById('teamVoiceLevel');
+    if (lv) lv.disabled = _vNoiseMode() === 0;
 }
 
 async function _vAdminOpen() {
