@@ -1,0 +1,22 @@
+DeepFilterNet3 — réduction de bruit par réseau de neurones (mode « Maximale »)
+==============================================================================
+
+index.esm.js
+  Emballage JavaScript « deepfilternet3-noise-filter » version 1.3.0 (npm), licence
+  Apache-2.0 OU MIT (voir LICENSE-APACHE.txt / LICENSE-MIT.txt). Dépôt : mezonai/mezon-noise-suppression.
+  Utilisé tel quel. Relu : aucun accès réseau dans le code du worklet.
+
+v3/models/DeepFilterNet3_onnx.tar.gz
+  Modèle officiel DeepFilterNet3 (Hendrik Schröter, https://github.com/Rikorose/DeepFilterNet),
+  licence MIT OU Apache-2.0.
+  SHA-256 : c94d91f70911001c946e0fabb4aa9adc37045f45a03b56008cb0c8244cb63616
+  (identique à la copie du dépôt officiel et à celle du serveur de l'emballeur)
+
+v3/pkg/df_bg.wasm
+  Moteur de DeepFilterNet3 compilé en WebAssembly par l'auteur de l'emballage (non officiel),
+  téléchargé une seule fois depuis son serveur puis hébergé ici.
+  SHA-256 : 440b5d12b6ea7d95008736f844221d7874ee15de5cb10d3015002470fdba0432
+  Audit : le binaire n'importe que 4 fonctions de l'hôte (création d'un tableau d'octets,
+  nombres aléatoires, lever une erreur, table de références) : ni réseau, ni DOM, ni horloge.
+
+Le site vérifie ces deux empreintes avant d'utiliser les fichiers (voir js/team-voice.js).

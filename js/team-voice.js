@@ -20,7 +20,7 @@ const VOICE_ICE_SERVERS = [
 ];
 // Débit de la voix : généreux sur un lien direct (gratuit), serré sur un lien relayé par
 // le TURN (quota limité). Dans les deux cas, coupure des silences (DTX).
-const VOICE_DIRECT_BITRATE = 192000;
+const VOICE_DIRECT_BITRATE = 384000;
 const VOICE_RELAY_BITRATE  = 24000;
 const VOICE_BEAT_MS  = 60 * 1000;
 const VOICE_STALE_MS = 3 * 60 * 1000;
@@ -35,6 +35,15 @@ const VOICE_NOISE_THRESHOLDS_RN = [0, 0.002, 0.005];      // après RNNoise
 const VOICE_RNNOISE_VAD = [0, 0, 0.6];                    // seuil de probabilité de parole
 const VOICE_RNNOISE_URL = 'vendor/rnnoise/rnnoise-worklet.js?v=1';
 
+// Mode 3 « Maximale » : DeepFilterNet3 (plus précis que RNNoise, plus gourmand, ~24 Mo à
+// télécharger à la première utilisation). Fichiers hébergés ici (dossier vendor/deepfilternet3)
+// et vérifiés par empreinte SHA-256 avant usage : un fichier modifié est refusé.
+const VOICE_DF_BASE = 'vendor/deepfilternet3';
+const VOICE_DF_SHA256 = {
+    'v3/pkg/df_bg.wasm': '440b5d12b6ea7d95008736f844221d7874ee15de5cb10d3015002470fdba0432',
+    'v3/models/DeepFilterNet3_onnx.tar.gz': 'c94d91f70911001c946e0fabb4aa9adc37045f45a03b56008cb0c8244cb63616'
+};
+
 let _vWatchStop = null;      // écoute de tous les salons de l'équipe
 let _vData = {};             // session → uid → { name, ts, n, mu }
 let _vViewSid = null;        // session affichée dans l'appli
@@ -46,7 +55,7 @@ let _vJoinTok = 0;
 let _vc = null;              // { sid, team, nonce, ice, stream, raw, ac, gate, peers, stops, myRef, name, muted, seen, levels }
 
 function _vNoiseMode() {
-    try { const v = Number(localStorage.getItem('lmuVoiceNoise')); return v === 0 || v === 2 ? v : 1; } catch (e) { return 1; }
+    try { const v = Number(localStorage.getItem('lmuVoiceNoise')); return v === 0 || v === 2 || v === 3 ? v : 1; } catch (e) { return 1; }
 }
 
 /* ── Porte de bruit : s'exécute dans le fil audio (AudioWorklet), donc continue de
@@ -96,12 +105,64 @@ async function _vLoadRnnoise(ac) {
     }
 }
 
+async function _vSha256Hex(buf) {
+    const h = await crypto.subtle.digest('SHA-256', buf);
+    return Array.from(new Uint8Array(h)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Charge DeepFilterNet3 et l'insère dans la chaîne audio (à la place du passage direct)
+async function _vLoadDeepFilter(c) {
+    const base = new URL(VOICE_DF_BASE, document.baseURI).href.replace(/\/$/, '');
+    const mod = await import(base + '/index.esm.js?v=1');
+    const core = new mod.DeepFilterNet3Core({ sampleRate: 48000, noiseReductionLevel: 100, assetConfig: { cdnUrl: base } });
+    core.assetLoader.fetchAsset = async (url) => {
+        const expected = VOICE_DF_SHA256[url.slice(base.length + 1)];
+        if (!expected) throw new Error('fichier non prévu');
+        const r = await fetch(url);
+        if (!r.ok) throw new Error('téléchargement impossible (' + r.status + ')');
+        const buf = await r.arrayBuffer();
+        if (await _vSha256Hex(buf) !== expected) throw new Error('empreinte invalide, fichier refusé');
+        return buf;
+    };
+    await core.initialize();
+    const node = await core.createAudioWorkletNode(c.ac);
+    if (!_vc || _vc.chain !== c) { core.destroy(); return; }       // salon quitté pendant le chargement
+    c.slot.disconnect();
+    c.slot.connect(node);
+    node.connect(c.afterSlot);
+    c.df = { core, node };
+}
+
+function _vNoiseMsg(text) {
+    const el = document.getElementById('teamVoiceNoiseMsg');
+    if (el) { el.textContent = text || ''; el.style.display = text ? 'block' : 'none'; }
+}
+
 function _vApplyNoise(c, mode) {
-    if (c.rn) {
-        c.rn.parameters.get('bypass').value = mode === 0 ? 1 : 0;
-        c.rn.parameters.get('vad').value = VOICE_RNNOISE_VAD[mode];
+    if (mode === 3 && !c.df && !c.dfLoading && !c.dfFailed) {
+        c.dfLoading = true;
+        _vNoiseMsg('Chargement du mode Maximale… (24 Mo la première fois)');
+        _vLoadDeepFilter(c).then(() => {
+            c.dfLoading = false;
+            _vNoiseMsg('');
+            if (_vc && _vc.chain === c) _vApplyNoise(c, _vNoiseMode());
+        }).catch(e => {
+            c.dfLoading = false; c.dfFailed = true;
+            console.warn('Vocal : DeepFilterNet indisponible', e);
+            _vNoiseMsg('Mode Maximale indisponible (' + (e && e.message || 'erreur') + ') : retour au mode Forte.');
+            const sel = document.getElementById('teamVoiceNoise');
+            if (sel) sel.value = '2';
+            if (_vc && _vc.chain === c) voiceSetNoise(2);
+        });
     }
-    if (c.gate) c.gate.parameters.get('threshold').value = (c.rn ? VOICE_NOISE_THRESHOLDS_RN : VOICE_NOISE_THRESHOLDS)[mode];
+    const dfOn = mode === 3 && !!c.df;
+    if (c.df) c.df.core.setNoiseSuppressionEnabled(dfOn);
+    const m = Math.min(mode, 2);       // pendant le chargement du mode 3, on reste sur RNNoise « fort »
+    if (c.rn) {
+        c.rn.parameters.get('bypass').value = (mode === 0 || dfOn) ? 1 : 0;
+        c.rn.parameters.get('vad').value = VOICE_RNNOISE_VAD[m];
+    }
+    if (c.gate) c.gate.parameters.get('threshold').value = (c.rn ? VOICE_NOISE_THRESHOLDS_RN : VOICE_NOISE_THRESHOLDS)[dfOn ? 1 : m];
     // Le filtre du navigateur fait double emploi avec RNNoise (et l'abîme) : on ne le garde qu'en repli
     c.raw.getAudioTracks().forEach(t => t.applyConstraints({ noiseSuppression: !c.rn && mode !== 0 }).catch(() => {}));
 }
@@ -124,18 +185,20 @@ async function _vBuildChain(ac, raw, mode) {
         console.warn('Vocal : porte de bruit indisponible', e && e.message);
         gate = null;
     }
+    // « slot » : simple passage pour l'instant ; DeepFilterNet s'y insère s'il est demandé
+    const slot = ac.createGain();
     let last = src;
-    [hp, rn, gate].forEach(n => { if (n) { last.connect(n); last = n; } });
+    [hp, slot, rn, gate].forEach(n => { if (n) { last.connect(n); last = n; } });
     last.connect(dest);
-    const chain = { stream: dest.stream, gate, rn, raw };
+    const chain = { stream: dest.stream, gate, rn, raw, ac, slot, afterSlot: rn || gate || dest, df: null };
     _vApplyNoise(chain, mode);
     return chain;
 }
 
 function voiceSetNoise(mode) {
-    mode = mode === 0 || mode === 2 ? mode : 1;
+    mode = mode === 0 || mode === 2 || mode === 3 ? mode : 1;
     try { localStorage.setItem('lmuVoiceNoise', String(mode)); } catch (e) { /* stockage indisponible */ }
-    if (_vc) _vApplyNoise(_vc, mode);
+    if (_vc) _vApplyNoise(_vc.chain, mode);
 }
 
 /* ── Relais TURN : texte saisi par l'admin = adresse https d'une API d'identifiants
@@ -270,7 +333,8 @@ function _vEnsureUI() {
         '<div class="voice-actions"><button type="button" id="teamVoiceMute" style="display:none"></button></div>' +
         '<div id="teamVoiceNoiseRow"><label for="teamVoiceNoise">🔇 Réduction du bruit</label>' +
         '<select id="teamVoiceNoise"><option value="0">Désactivée</option><option value="1">Normale</option>' +
-        '<option value="2">Forte</option></select></div>' +
+        '<option value="2">Forte</option><option value="3">Maximale (expérimental)</option></select></div>' +
+        '<div id="teamVoiceNoiseMsg" style="display:none"></div>' +
         '<div id="teamVoiceAdmin" style="display:none">' +
         '<button type="button" id="teamVoiceAdminToggle">⚙️ Relais réseau (TURN)</button>' +
         '<div id="teamVoiceAdminBox" style="display:none">' +
@@ -640,7 +704,7 @@ async function voiceJoin(sid) {
     if (tok !== _vJoinTok || _vc) { abort(ac); return; }
     const nonce = Math.random().toString(36).slice(2, 12);
     const myRef = _vRef(`teams/${team}/voice/${sid}/${user.uid}`);
-    _vc = { sid, team, nonce, ice, stream: chain.stream, raw, ac, gate: chain.gate, rn: chain.rn, peers: {}, stops: [], myRef, name,
+    _vc = { sid, team, nonce, ice, stream: chain.stream, raw, ac, chain, peers: {}, stops: [], myRef, name,
             muted: false, seen: new Set(), levels: {} };
     _vWatchLevel(user.uid, chain.stream);
 
@@ -672,6 +736,7 @@ function voiceLeave() {
     ++_vJoinTok;
     c.stops.forEach(fn => { try { fn(); } catch (e) { /* sans conséquence */ } });
     Object.keys(c.peers).forEach(_vClosePeer);
+    if (c.chain.df) { try { c.chain.df.core.destroy(); } catch (e) { /* déjà détruit */ } }
     c.raw.getTracks().forEach(t => t.stop());
     c.stream.getTracks().forEach(t => t.stop());
     try { c.ac.close(); } catch (e) { /* déjà fermé */ }
