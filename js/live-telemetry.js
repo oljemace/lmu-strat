@@ -68,6 +68,14 @@ function _liveMapStart() {
     window._liveStats.pollTimer = setInterval(_liveStatsPollOnce, remote ? 250 : 20);
 }
 
+// Bouton « Lancer le connecteur » : le lien lmu-connecteur:// est déclaré par le connecteur à sa première ouverture.
+function onLaunchConnectorClick() {
+    const txt = document.getElementById('liveMapStatusText');
+    if (txt && !(window._liveMap && window._liveMap.active)) {
+        txt.textContent = "Ouverture du connecteur… (si rien ne s'ouvre, lancez-le une première fois à la main, puis réessayez)";
+    }
+}
+
 function _liveMapStop() {
     if (typeof remoteLiveStop === 'function') remoteLiveStop();
     window._liveMap.active = false;
