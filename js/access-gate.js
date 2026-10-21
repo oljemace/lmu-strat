@@ -202,6 +202,7 @@ async function _onAuthReady(user) {
 
     if (typeof loadCircuitsFromFirebase === 'function') loadCircuitsFromFirebase();
     if (typeof startTeamChat === 'function') startTeamChat();
+    if (typeof startTeamPresence === 'function') startTeamPresence();
 }
 
 function _attachAuthListener() {

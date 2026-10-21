@@ -57,6 +57,7 @@ function _chatEnsureUI() {
         '<div id="teamChatPanel" style="display:none">' +
         '<div class="chat-head"><span>💬 Chat de l\'équipe</span>' +
         '<button type="button" id="teamChatClose" aria-label="Fermer">✕</button></div>' +
+        '<div id="teamChatPresence" style="display:none"></div>' +
         '<div id="teamChatList"></div>' +
         '<div id="teamChatError" style="display:none"></div>' +
         '<form id="teamChatForm"><textarea id="teamChatInput" rows="2" maxlength="' + CHAT_MAX_LEN +

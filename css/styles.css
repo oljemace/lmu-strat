@@ -1139,6 +1139,13 @@ body.live-mode .plan-bar { display:none; }
 #teamChatPanel { position: fixed; right: 18px; bottom: 80px; z-index: 900; width: 340px; max-width: calc(100vw - 32px); height: 440px; max-height: calc(100vh - 110px); flex-direction: column; background: #101a22; border: 1px solid rgba(0,255,136,0.35); border-radius: 12px; box-shadow: 0 8px 28px rgba(0,0,0,0.6); overflow: hidden; }
 #teamChatPanel .chat-head { display: flex; justify-content: space-between; align-items: center; padding: 9px 12px; background: rgba(0,255,136,0.12); color: #00ff88; font-weight: 700; }
 #teamChatPanel .chat-head button { background: none; border: 0; color: #ccc; cursor: pointer; font-size: 1em; }
+#teamChatPresence { padding: 6px 12px; background: rgba(255,255,255,0.04); border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 0.78em; max-height: 96px; overflow-y: auto; }
+#teamChatPresence .presence-title { color: #8e9ac0; margin-bottom: 3px; }
+#teamChatPresence .presence-row { display: flex; justify-content: space-between; gap: 8px; line-height: 1.5; }
+#teamChatPresence .presence-row b { color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#teamChatPresence .presence-row.mine b { color: #00ff88; }
+#teamChatPresence .presence-row span { color: #9fd8ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#teamChatPresence .presence-row span.presence-none { color: #777; }
 #teamChatList { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
 #teamChatList .chat-empty { color: #888; text-align: center; margin-top: 20px; font-size: 0.9em; }
 #teamChatList .chat-msg { background: rgba(255,255,255,0.07); border-radius: 10px; padding: 6px 10px; max-width: 88%; align-self: flex-start; }
