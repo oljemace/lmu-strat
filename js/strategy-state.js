@@ -155,7 +155,10 @@
         if (window._applyingRemote) return;
         if (window._liveMode) return;
 
-            document.querySelectorAll('tr[data-stint-idx]').forEach(tr => {
+            // Table de planification uniquement : celle du Live a ses propres plans
+            const _planTb = document.getElementById('strategyTableBody');
+            if (!_planTb) return;
+            _planTb.querySelectorAll('tr[data-stint-idx]').forEach(tr => {
                 const idx = parseInt(tr.dataset.stintIdx);
                 if (!pitState[idx]) pitState[idx] = defaultState();
 

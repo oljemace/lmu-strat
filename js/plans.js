@@ -11,7 +11,7 @@
    Il vit dans pitState / _startTyres / _manualStintCount (comme avant : tout le
    reste de l'appli est inchangé).
    Le plan de RÉFÉRENCE de l'équipe (window._refPlanId, Firebase : activePlan)
-   est partagé : c'est celui du mode Live, que tout le monde suit alors.
+   est partagé. Le mode Live a ses propres plans, indépendants (voir live-plans.js).
 
    Firebase : plans/{id} = un enregistrement par plan, écrit seul (jamais tous
    les plans d'un coup, pour ne pas écraser le travail des autres sur un autre
@@ -43,7 +43,7 @@ function _plansStoredView() {
 /* Recopie l'état courant dans l'entrée du plan affiché */
 function plansSnapshot() {
     const p = _planActive();
-    if (!p) return;
+    if (!p || window._stateCtx !== 'planning') return;   // sinon pitState appartient au Live
     p.pitState    = _plansClone(pitState);
     p.startTyres  = Object.assign({ left: 'none', right: 'none' }, window._startTyres);
     p.manualCount = window._manualStintCount || 0;
@@ -78,6 +78,7 @@ function plansSwitch(id) {
     if (id === window._activePlanId || window._liveMode) return;
     const target = window._plans.find(p => p.id === id);
     if (!target) return;
+    _stateUse('planning');
     plansSnapshot();
     const old = _planActive();
     const hadEdits = (typeof _dirtyPitState !== 'undefined' && _dirtyPitState)
@@ -104,6 +105,7 @@ function _plansNextId() {
 
 function plansAdd(duplicate) {
     if (window._liveMode) return;
+    _stateUse('planning');
     plansSnapshot();
     const src = _planActive();
     const id = _plansNextId();
@@ -133,6 +135,7 @@ function plansDelete(confirmed) {
     if (window._plans.length <= 1 || window._liveMode) return;
     if (!confirmed) { window._planUi = 'delete'; plansRender(); return; }
     window._planUi = null;
+    _stateUse('planning');
     const p = _planActive();
     window._plans = window._plans.filter(x => x.id !== p.id);
     window._plansDirty.delete(p.id);
@@ -153,6 +156,7 @@ function plansDelete(confirmed) {
 /* Le plan affiché devient le plan de référence de l'équipe (celui du Live) */
 function plansSetReference() {
     if (window._liveMode || window._activePlanId === window._refPlanId) return;
+    _stateUse('planning');
     plansSnapshot();
     window._refPlanId = window._activePlanId;
     window._dirtyRefPlan = true;
@@ -215,7 +219,7 @@ function plansApplyRemote(data) {
         const stored = _plansStoredView();
         viewed = list.some(p => p.id === stored) ? stored : ref;
     }
-    if (data._liveModeActive || !list.some(p => p.id === viewed)) viewed = ref;
+    if (!list.some(p => p.id === viewed)) viewed = ref;
     const changed = freshJoin || viewed !== prevViewed;
 
     const i = list.findIndex(p => p.id === viewed);
@@ -248,6 +252,7 @@ function _plansRecord(p, i) {
 
 /* Session complète (création d'une session) */
 function plansCollect() {
+    _stateUse('planning');
     plansSnapshot();
     const out = {};
     window._plans.forEach((p, i) => { out[p.id] = _plansRecord(p, i); });
@@ -257,6 +262,7 @@ function plansCollect() {
 /* Mise à jour PARTIELLE pour Firebase : uniquement le plan affiché s'il a changé,
    les plans marqués (nouveau, renommé…), les suppressions et la référence. */
 function plansPartial(flags) {
+    _stateUse('planning');
     plansSnapshot();
     const ids = new Set(window._plansDirty);
     if (flags && (flags.pit || flags.tyres)) ids.add(window._activePlanId);

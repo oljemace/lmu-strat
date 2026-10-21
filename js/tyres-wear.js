@@ -459,6 +459,7 @@ function _getLiveCircuitDbWear(corners, compound) {
 ══════════════════════════════════════════════ */
 
 function buildTyreLifeBars(isLive) {
+    if (typeof _stateUse === 'function') _stateUse(isLive === undefined ? (window._liveMode ? 'live' : 'planning') : (isLive ? 'live' : 'planning'));
     const tbody = document.getElementById(_tid('strategyTableBody', isLive));
     if (!tbody) return;
 

@@ -76,6 +76,8 @@ function calculateFromButton() {
 
 /* ── Calcul principal ── */
 function calculate(overrides) {
+    // pitState doit contenir les plans du bon mode (planification ou live)
+    if (typeof _stateUse === 'function') _stateUse(window._liveMode ? 'live' : 'planning');
     savePitState();
 
     const ov = overrides || {};
@@ -805,7 +807,7 @@ stints.forEach((stint, idx) => {
     // Barres verticales durée de vie des gommes
     // On attend le layout pour avoir les hauteurs réelles des lignes
     requestAnimationFrame(() => {
-        requestAnimationFrame(() => buildTyreLifeBars(_isLiveCalc));
+        requestAnimationFrame(() => buildTyreLifeBars(_isLiveCalc));   // (change de contexte lui-même)
     });
 
     // Afficher les contrôles manuels une fois la table générée
@@ -1036,6 +1038,10 @@ stints.forEach((stint, idx) => {
         if (idx < stints.length - 1) totalPitSec += getPitDuration(idx);
     });
     if (!_isLiveCalc && typeof plansSetPitTotal === 'function') plansSetPitTotal(totalPitSec);
+    if (_isLiveCalc) {
+        if (typeof liveSetPitTotal === 'function') liveSetPitTotal(totalPitSec);
+        if (typeof livePlansPersistSoon === 'function') livePlansPersistSoon();
+    }
     const pitHeaderEl = document.getElementById(_tid('pitPlusHeader'));
     if (pitHeaderEl) {
         const pitMin = Math.floor(totalPitSec / 60);

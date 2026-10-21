@@ -1,5 +1,6 @@
 /* ── Pneus de départ : gestion du changement ── */
 function onStartTyreChange() {
+    if (typeof _stateUse === 'function') _stateUse('planning');   // ces sélecteurs sont ceux de la planification
     const left  = document.getElementById('startTyreLeft')?.value  || 'none';
     const right = document.getElementById('startTyreRight')?.value || 'none';
 
@@ -18,7 +19,7 @@ function onStartTyreChange() {
     // Reconstruire les barres de durée de vie
     requestAnimationFrame(() => requestAnimationFrame(() => buildTyreLifeBars()));
 
-    window._liveModeActive ? recalculateLive() : calculate();
+    calculate();
     _dirtyFields.add('_startTyres');
     pushToFirebase(true);
 }

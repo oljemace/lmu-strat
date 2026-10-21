@@ -39,6 +39,11 @@ function _laneReadOnly() { return window._teamRole === 'viewer'; }
 const _laneRemote = live => !!(live && typeof liveRemoteReadOnly === 'function' && liveRemoteReadOnly());
 
 function _lanesCommit(live) {
+    if (live) {   // plans Live : liste distincte de celle de la planification (voir live-plans.js)
+        liveMarkEdited();
+        try { pushToFirebase(true); } catch (e) { /* hors équipe / hors ligne */ }
+        return;
+    }
     // Live local : recalculateLive() pousse déjà pitState. Live à distance : il ne pousse rien,
     // on envoie donc la stratégie (pitState) ici, sans toucher à l'état live du pilote.
     if (live && !_laneRemote(live)) return;
@@ -47,6 +52,7 @@ function _lanesCommit(live) {
 }
 
 function _lanesApplyDrivers(newDrivers, live) {
+    _stateUse(live ? 'live' : 'planning');
     // newDrivers : { stintIdx: driverIdx }
     Object.keys(newDrivers).forEach(k => {
         const i = parseInt(k);
@@ -64,6 +70,7 @@ function _lanesApplyDrivers(newDrivers, live) {
 
 /* Gommes posées sur un côté : [{slot, compound}] (slot 0 = départ, slot j = arrêt après le stint j-1) */
 function _laneFitments(side, nSlots, live) {
+    _stateUse(live ? 'live' : 'planning');
     const out = [];
     let c0 = (window._startTyres || {})[side] || 'none';
     // Live : les gommes actuellement montées sont celles de la voiture
@@ -81,6 +88,7 @@ function _laneFitments(side, nSlots, live) {
 
 /* ops : [{side, slot, compound}] ; compound 'none' = retirer. Un seul recalcul à la fin. */
 function _tyresApply(ops, live) {
+    _stateUse(live ? 'live' : 'planning');
     let startChanged = false;
     ops.forEach(op => {
         const c = op.compound;
@@ -237,7 +245,7 @@ function renderDriverLanes(wrapper, stints, lapTime, realStart, totalRealSec, li
         cum += drive + pit;
         cumLaps += stint.tours;
     });
-    const driverOf = i => (pitState[i] || defaultState()).driver ?? -1;
+    const driverOf = i => { _stateUse(live ? 'live' : 'planning'); return (pitState[i] || defaultState()).driver ?? -1; };
 
     // Lignes : tous les pilotes déclarés + "Non assigné" si nécessaire.
     const lanes = [];
@@ -407,6 +415,7 @@ function renderDriverLanes(wrapper, stints, lapTime, realStart, totalRealSec, li
         return { min: Math.min(minT, maxT) * lapTime, max: maxT * lapTime };
     }
     function applyResize(idx, newDrive) {
+        _stateUse(live ? 'live' : 'planning');
         const lim = resizeLimits(idx);
         const T = Math.min(Math.max(newDrive, lim.min), lim.max) / lapTime;
         const newS = Math.min(evTank, Math.round(T * evLap * 10) / 10);   // VE au départ de ce stint

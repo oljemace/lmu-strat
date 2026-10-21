@@ -478,6 +478,7 @@ function buildTimeline(stints, lapTime, multiplier, realStart, gameStart, totalR
 
     /* ── Reset ── */
     function reset() {
+        if (typeof _stateUse === 'function') _stateUse('planning');
         pitState = {};
         if (typeof plansReset === 'function') plansReset();
         document.getElementById('realStartHours').value   = '18';

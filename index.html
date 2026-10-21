@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calculateur de Stratégie - Endurance LMU</title>
     <link rel="stylesheet" href="css/themes.css?v=20261029c">
-    <link rel="stylesheet" href="css/styles.css?v=20261029a">
+    <link rel="stylesheet" href="css/styles.css?v=20261030a">
     <script src="js/appearance.js?v=20261029c"></script>
 
 </head>
@@ -1221,7 +1221,7 @@
                     <div style="background:rgba(var(--fg-rgb),0.04);border:1px solid rgba(var(--fg-rgb),0.1);border-radius:10px;padding:10px 12px;">
                         <div style="color:#88ccff;font-weight:bold;font-size:0.8em;margin-bottom:6px;">⏱️ Temps au tour</div>
                         <div style="display:flex;justify-content:space-between;padding:2px 0;font-size:0.82em;"><span style="color:var(--text-3);">Dernier (vous)</span><span style="color:var(--text);font-weight:bold;" id="liveMapLastLapTime">—</span></div>
-                        <div style="display:flex;justify-content:space-between;padding:2px 0;font-size:0.82em;"><span style="color:var(--text-3);">Moy. 5t (grille)</span><span style="color:var(--text);font-weight:bold;" id="liveMapFieldAvgLap5">—</span></div>
+                        <div style="display:flex;justify-content:space-between;padding:2px 0;font-size:0.82em;"><span style="color:var(--text-3);">Moy. 5t (vous)</span><span style="color:var(--text);font-weight:bold;" id="liveMapFieldAvgLap5">—</span></div>
                     </div>
                     <div style="background:rgba(var(--fg-rgb),0.04);border:1px solid rgba(var(--fg-rgb),0.1);border-radius:10px;padding:10px 12px;">
                         <div style="color:var(--text-3);font-size:0.72em;text-transform:uppercase;letter-spacing:1px;">🕐 Heure ingame</div>
@@ -1256,6 +1256,7 @@
     </div>
 
     <!-- ── Stock de pneus live (glisser vers la timeline par pilote) ── -->
+    <div id="planBarLive" class="plan-bar"></div>
     <div id="liveTyreStockStrip" class="tyre-stock-strip">
         <span class="tyre-stock-title">🛞 Stock de pneus <small>glisser une gomme sur la ligne Pneus G ou D (arrêts futurs)</small></span>
         <div class="tyre-stock-icon" data-compound="soft" style="--tc:var(--text-2);" title="Soft — glisser sur la ligne Pneus G ou D">S</div>
@@ -1922,29 +1923,30 @@
 <script src="js/team-context.js?v=20261017a"></script>
 <script src="js/team-admin.js?v=20261015d"></script>
 <script src="js/access-gate.js?v=20261022a"></script>
-<script src="js/strategy-state.js?v=20261013d"></script>
-<script src="js/manual-stints.js?v=20261020a"></script>
-<script src="js/calculate.js?v=20261020f"></script>
-<script src="js/timeline.js?v=20261021b"></script>
-<script src="js/timeline-lanes.js?v=20261021h"></script>
-<script src="js/tyres-start.js?v=20261020b"></script>
-<script src="js/plans.js?v=20261021b"></script>
+<script src="js/strategy-state.js?v=20261030a"></script>
+<script src="js/manual-stints.js?v=20261030b"></script>
+<script src="js/calculate.js?v=20261030a"></script>
+<script src="js/timeline.js?v=20261030a"></script>
+<script src="js/timeline-lanes.js?v=20261030b"></script>
+<script src="js/tyres-start.js?v=20261030a"></script>
+<script src="js/plans.js?v=20261030a"></script>
+<script src="js/live-plans.js?v=20261030c"></script>
 <script src="js/drivers.js?v=20261013d"></script>
-<script src="js/live-mode.js?v=20261021a"></script>
+<script src="js/live-mode.js?v=20261030a"></script>
 <script src="js/session-presence.js?v=20261024a"></script>
 <script src="js/chat-files.js?v=20261026a"></script>
 <script src="js/chat-emoji.js?v=20261027d"></script>
 <script src="js/team-chat.js?v=20261028a"></script>
 <script src="js/team-voice.js?v=20261026j"></script>
-<script src="js/firebase-sync.js?v=20261022a"></script>
+<script src="js/firebase-sync.js?v=20261030b"></script>
 <script src="js/team-telemetry.js?v=20261020a"></script>
 <script src="js/remote-live.js?v=20261019b"></script>
 <script src="js/timeline-zoom.js?v=20261021a"></script>
-<script src="js/tyres-wear.js?v=20261021b"></script>
+<script src="js/tyres-wear.js?v=20261030a"></script>
 <script src="js/ui-tabs.js?v=20261013d"></script>
 <script src="js/circuits-ui.js?v=20261020a"></script>
 <script src="js/circuits-db.js?v=20261022a"></script>
-<script src="js/live-telemetry.js?v=20261021c"></script>
+<script src="js/live-telemetry.js?v=20261030a"></script>
 
 
 

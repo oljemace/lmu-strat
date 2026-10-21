@@ -46,6 +46,7 @@ function toggleLiveMap() {
 }
 
 function _liveMapStart() {
+    if (typeof livePlansOnConnect === 'function') livePlansOnConnect();   // copie des plans de la planification (1re connexion)
     const port = parseInt(document.getElementById('liveMapPort').value, 10) || 8777;
     window._liveMap.active = true;
     window._liveMap.url = `http://127.0.0.1:${port}/positions`;
@@ -660,14 +661,13 @@ function _updateLiveTelemetryExtras(data) {
     _setText('liveMapRainPct', data.rainingPct, '%');
     _setText('liveMapWetnessPct', data.trackWetnessPct, '%');
 
-    // Temps au tour : dernier tour bouclé par le joueur, et moyenne des 5
-    // derniers tours bouclés par N'IMPORTE QUEL pilote de la grille (voir
-    // fieldAvgLapTimeLast5 dans _handle_live()) — différent de
-    // avgLapTimeLast10 qui ne porte que sur les tours du joueur.
+    // Temps au tour : dernier tour bouclé par le joueur, et moyenne de SES 5
+    // derniers tours (recentLaps, déjà alimenté pour les autres moyennes
+    // glissantes du panneau live).
     const lastLapEl = document.getElementById('liveMapLastLapTime');
     if (lastLapEl) lastLapEl.textContent = _fmtSecondsShort(data.lastLapTime);
-    const fieldAvgEl = document.getElementById('liveMapFieldAvgLap5');
-    if (fieldAvgEl) fieldAvgEl.textContent = _fmtSecondsShort(data.fieldAvgLapTimeLast5);
+    const avgLap5El = document.getElementById('liveMapFieldAvgLap5');
+    if (avgLap5El) avgLap5El.textContent = _fmtSecondsShort(_windowedLapAvg(data.recentLaps, 5, 'lapTime'));
 
     // Heure ingame (secondes depuis minuit, heure du jeu)
     const clockEl = document.getElementById('liveMapGameClock');

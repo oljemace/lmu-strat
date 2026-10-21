@@ -1127,7 +1127,7 @@ tr[data-manual="true"] {
     background:transparent; color:var(--text-2); font-size:0.85em; cursor:pointer; }
 .plan-act:hover { background:rgba(var(--fg-rgb),0.1); }
 .plan-del:hover { background:rgba(255,60,60,0.25); }
-body.live-mode .plan-bar { display:none; }
+.plan-live-label { color:var(--text-3); font-size:0.85em; }
 .plan-input { padding:7px 10px; border-radius:8px; border:1px solid #c00; background:#1a1a22; color:var(--text); font-size:0.95em; min-width:200px; }
 .plan-confirm { color:#ffaa00; font-size:0.9em; }
 .plan-tab { display:inline-flex; flex-direction:column; align-items:flex-start; line-height:1.25; }

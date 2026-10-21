@@ -13,9 +13,11 @@ window._manualStintCount     = 0;
 window._manualStintCountLive = 0;
 
 function addManualStint(mode) {
+    _stateUse(mode === 'live' ? 'live' : 'planning');
     if (mode === 'live') {
         window._manualStintCountLive++;
         recalculateLive();
+        liveMarkEdited(); if (typeof pushToFirebase === 'function') pushToFirebase(true);
     } else {
         window._manualStintCount++;
         calculate();
@@ -25,6 +27,7 @@ function addManualStint(mode) {
 
 function removeLastManualStint(mode) {
     const isLive = mode === 'live';
+    _stateUse(isLive ? 'live' : 'planning');
     const count  = isLive ? window._manualStintCountLive : window._manualStintCount;
     if (count <= 0) return;
 
@@ -40,6 +43,7 @@ function removeLastManualStint(mode) {
     if (isLive) {
         window._manualStintCountLive = Math.max(0, window._manualStintCountLive - 1);
         recalculateLive();
+        liveMarkEdited(); if (typeof pushToFirebase === 'function') pushToFirebase(true);
     } else {
         window._manualStintCount = Math.max(0, window._manualStintCount - 1);
         calculate();

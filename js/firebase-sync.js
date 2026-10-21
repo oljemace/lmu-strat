@@ -336,6 +336,7 @@ function _discardPendingPushes() {
     if (window._plansDirty) window._plansDirty.clear();
     if (window._plansDeleted) window._plansDeleted.clear();
     window._dirtyRefPlan = false;
+    if (window._livePlansDirty) { window._livePlansDirty.clear(); window._livePlansDeleted.clear(); window._dirtyLiveActive = false; }
     _pendingPushAfterLock = false;
 }
 function _resetLocalSessionState() {
@@ -345,8 +346,10 @@ function _resetLocalSessionState() {
     _pendingPushAfterLock = false;
     _isSyncing = false;
     _lastLocalPushTime = 0;
+    window._stateCtx = 'planning';
     Object.keys(pitState).forEach(k => delete pitState[k]);
     if (typeof plansReset === 'function') plansReset();
+    if (typeof livePlansResetMemory === 'function') livePlansResetMemory();
     window._startTyres = { left: 'none', right: 'none' };
     window._manualStintCount = 0;
     window._manualStintCountLive = 0;
@@ -366,6 +369,7 @@ function _resetLocalSessionState() {
 			_resetLocalSessionState();
 			_sessionReady = false;
 			_sessionId = id;
+				if (typeof livePlansRestore === 'function') livePlansRestore();
 			setSyncStatus('🟡 Connexion…', '#ffaa00');
 
 			// L'accès est contrôlé côté serveur par les règles Firebase (appartenance
@@ -482,6 +486,12 @@ function _doFirebasePush() {
         delete partial.pitState; delete partial._startTyres;
         Object.assign(partial, plansPP.updates);
     }
+    // Plans du mode Live (liste partagée par la session)
+    let livePP = null;
+    if (typeof livePlansPartial === 'function') {
+        livePP = livePlansPartial();
+        Object.assign(partial, livePP.updates);
+    }
     if (_dirtyDrivers) {
         partial.drivers     = full.drivers;
         partial.driverCount = full.driverCount;
@@ -512,11 +522,13 @@ function _doFirebasePush() {
             if (tyreWearSnapshot) _dirtyTyreWear = false;
             if (driversSnapshot)  _dirtyDrivers  = false;
             if (plansPP) plansPushed(plansPP);
+            if (livePP) livePlansPushed(livePP);
         })
         .catch(() => setSyncStatus('🔴 Erreur sync', '#ff4444'));
 }            
 	/* ── Collecter toutes les valeurs du formulaire ── */
 	function collectFormData(includePitState = true) {
+        _stateUse('planning');   // pitState / pneus de départ envoyés = ceux de la planification
         const ids = [
             'realStartHours','realStartMinutes',
             'gameStartHours','gameStartMinutes',
@@ -594,6 +606,7 @@ function _doFirebasePush() {
             // ← Activer le verrou : empêche savePitState() et hookSyncToInputs
             //   d'écraser pitState ou de renvoyer vers Firebase pendant l'application
             window._applyingRemote = true;
+            _stateUse('planning');
 
                 const ids = [
                     'realStartHours','realStartMinutes',
@@ -665,6 +678,8 @@ function _doFirebasePush() {
 
             // Plans multiples : liste + plan actif (avant la fusion de pitState)
             if (typeof plansApplyRemote === 'function') plansApplyRemote(data);
+            // Plans du mode Live (si la session n'en a pas encore, ceux en mémoire lui sont envoyés)
+            if (typeof livePlansApplyRemote === 'function' && livePlansApplyRemote(data)) _pendingPushAfterLock = true;
 
             // pitState — ne pas écraser les stints dont un champ est en cours d'édition locale
             // Plan affiché par cet utilisateur : racine pour la référence, plans/{id} sinon
@@ -758,6 +773,11 @@ function _doFirebasePush() {
             if (fields)    fields.style.display    = 'flex';
             }
 
+            // La planification est recalculée quoi qu'il arrive (le Live a ses propres plans)
+            _calculatingFromRemote = true;
+            calculate();
+            _calculatingFromRemote = false;
+
             if (data._liveModeActive) {
                 setTimeout(() => {
                     _calculatingFromRemote = true;
@@ -766,9 +786,6 @@ function _doFirebasePush() {
                     window._applyingRemote = false;
                 }, 800);
             } else {
-                _calculatingFromRemote = true;
-                calculate();
-                _calculatingFromRemote = false;
                 window._applyingRemote = false;
             }                        
         }		
@@ -805,8 +822,12 @@ function _doFirebasePush() {
                     '.stop-dur-input, .refuel-pct-input, .driver-select, #refuelRate'
                 );
 
+                // Table de planification ou table Live : chacune a ses propres plans (live-plans.js)
+                const _ctx = (t.closest && t.closest('#liveModeSection')) ? 'live' : 'planning';
+
                 // Commit immédiat dans pitState AVANT le recalcul
                 if (isPit) {
+                    _stateUse(_ctx);
                     const tr = t.closest('tr[data-stint-idx]');
                     if (tr && tr.dataset.past !== 'true') {
                         const idx = parseInt(tr.dataset.stintIdx);
@@ -828,7 +849,7 @@ function _doFirebasePush() {
                             applyTyreSelectClass(t);
                             updateTyreGauge();
                             requestAnimationFrame(() => {
-                                requestAnimationFrame(() => buildTyreLifeBars());
+                                requestAnimationFrame(() => buildTyreLifeBars(_ctx === 'live'));
                             });                            
                         }
 
@@ -840,8 +861,10 @@ function _doFirebasePush() {
                     }
 
                     // Déclencher le recalcul APRÈS le commit dans pitState
-                    window._liveModeActive ? recalculateLive() : calculate();
-                    _dirtyPitState = true;
+                    if (t.id === 'refuelRate') { calculate(); if (window._liveModeActive) recalculateLive(true); }   // réglage commun aux deux modes
+                    else if (_ctx === 'live') recalculateLive();
+                    else calculate();
+                    if (_ctx === 'planning') _dirtyPitState = true; else liveMarkEdited();
                 } else if (t.id === 'driverCount' || t.id?.startsWith('driverColor_')
                            || t.id?.startsWith('driverName_')) {
                     _dirtyDrivers = true;
@@ -873,6 +896,8 @@ function _doFirebasePush() {
                 const isRefuelRate = t.matches('#refuelRate');
 
                 if (isPitNumeric && t.closest) {
+                    const _pitCtx = t.closest('#liveModeSection') ? 'live' : 'planning';
+                    _stateUse(_pitCtx);
                     const tr = t.closest('tr[data-stint-idx]');
                     if (tr && tr.dataset.past !== 'true') {
                         const idx = parseInt(tr.dataset.stintIdx);
@@ -884,7 +909,7 @@ function _doFirebasePush() {
                         if (t.classList.contains('refuel-pct-input'))
                             pitState[idx].refuelPct = parseFloat(t.value) || 0;
                         pitState[idx]._userSet = true;
-                        _dirtyPitState = true;
+                        if (_pitCtx === 'planning') _dirtyPitState = true; else liveMarkEdited();
 
                         // Bloquer l'écrasement par une mise à jour distante pendant la saisie :
                         // on marque le champ comme "en cours d'édition locale"
@@ -895,7 +920,8 @@ function _doFirebasePush() {
                         clearTimeout(_pitInputDebounce);
                         _pitInputDebounce = setTimeout(() => {
                             delete t.dataset.localEditing;
-                            window._liveModeActive ? recalculateLive() : calculate();
+                            if (_pitCtx === 'live') { recalculateLive(); pushToFirebase(true); return; }
+                            calculate();
                             pushToFirebase(true);
                         }, 1200);
 
@@ -909,7 +935,8 @@ function _doFirebasePush() {
                     clearTimeout(_pitInputDebounce);
                     _pitInputDebounce = setTimeout(() => {
                         delete t.dataset.localEditing;
-                        window._liveModeActive ? recalculateLive() : calculate();
+                        calculate();
+                        if (window._liveModeActive) recalculateLive(true);
                         pushToFirebase(true);
                     }, 1200);
                     return;
