@@ -747,12 +747,8 @@ function _updateLiveTyreWearLabels() {
         }
 
         const wearSide = side === 'Left' ? 'left' : 'right';
-        // Préfère le delta d'usure réellement MESURÉ en live (moyenne glissante
-        // calculée par _liveStatsPollOnce à partir de recentLaps) à la valeur
-        // théorique de la base circuits, quand elle est disponible — plus fiable
-        // puisqu'elle reflète la session en cours plutôt qu'un relevé antérieur.
-        const measured   = window._liveMeasuredWearPerLap?.[wearSide];
-        const wearPerLap = (measured != null && measured > 0) ? measured : getSideWear(wearSide, compound, -1);
+        // Même source que le calcul des stints (voir getLiveWearRate).
+        const wearPerLap = getLiveWearRate(wearSide, compound);
 
         if (wearPerLap <= 0) {
             const toursRest = Math.max(0, (pct - 40) / 1);
