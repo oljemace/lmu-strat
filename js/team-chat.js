@@ -122,17 +122,21 @@ function _chatSuggestUpdate() {
     if (!input || !el) return;
     const before = input.value.slice(0, input.selectionStart);
     const m = /(^|\s)([@#])([^\s@#]*)$/.exec(before);
-    if (!m) { _chatSuggestHide(); return; }
-    const frag = m[3].toLowerCase();
-    _chatSugg = _chatTargets().filter(t => t.sym === m[2] && t.label.toLowerCase().includes(frag))
-        .sort((a, b) => a.label.localeCompare(b.label)).slice(0, 6);
+    const em = !m && typeof _chatEmojiSuggest === 'function' ? /(^|\s):([^\s:]*)$/.exec(before) : null;
+    if (!m && !em) { _chatSuggestHide(); return; }
+    if (em) _chatSugg = _chatEmojiSuggest(em[2]);
+    else {
+        const frag = m[3].toLowerCase();
+        _chatSugg = _chatTargets().filter(t => t.sym === m[2] && t.label.toLowerCase().includes(frag))
+            .sort((a, b) => a.label.localeCompare(b.label)).slice(0, 6);
+    }
     if (!_chatSugg.length) { _chatSuggestHide(); return; }
     _chatSuggIdx = Math.min(_chatSuggIdx, _chatSugg.length - 1);
     el.textContent = '';
     _chatSugg.forEach((t, idx) => {
         const b = document.createElement('div');
         b.className = 'chat-sugg' + (idx === _chatSuggIdx ? ' active' : '');
-        b.textContent = (t.kind === 'user' ? '@ ' : '# 📋 ') + t.label;
+        b.textContent = t.kind === 'emoji' ? t.e + '  ' + t.n : (t.kind === 'user' ? '@ ' : '# 📋 ') + t.label;
         b.addEventListener('mousedown', e => { e.preventDefault(); _chatSuggestPick(idx); });
         el.appendChild(b);
     });
@@ -144,6 +148,15 @@ function _chatSuggestPick(idx) {
     const t = _chatSugg[idx];
     if (!input || !t) return;
     const pos = input.selectionStart;
+    if (t.kind === 'emoji') {
+        const head = input.value.slice(0, pos).replace(/:[^\s:]*$/, '');
+        input.value = head + t.e + input.value.slice(pos);
+        input.selectionStart = input.selectionEnd = head.length + t.e.length;
+        if (typeof _chatEmojiRemember === 'function') _chatEmojiRemember(t.e);
+        _chatSuggestHide();
+        input.focus();
+        return;
+    }
     const before = input.value.slice(0, pos).replace(/([@#])[^\s@#]*$/, '');
     const ins = t.sym + t.label + ' ';
     input.value = before + ins + input.value.slice(pos);
@@ -270,7 +283,10 @@ function _chatEnsureUI() {
     if (typeof _chatEmojiInit === 'function') _chatEmojiInit();
     _chatResizeInit();
     const inp = document.getElementById('teamChatInput');
-    inp.addEventListener('input', () => { _chatSuggIdx = 0; _chatSuggestUpdate(); });
+    inp.addEventListener('input', e => {
+        if (typeof _chatEmojiAuto === 'function') _chatEmojiAuto(e);
+        _chatSuggIdx = 0; _chatSuggestUpdate();
+    });
     inp.addEventListener('click', _chatSuggestUpdate);
     inp.addEventListener('blur', () => setTimeout(_chatSuggestHide, 120));
     inp.addEventListener('keydown', e => {
@@ -446,7 +462,8 @@ async function chatSend() {
     const input = document.getElementById('teamChatInput');
     const user = window._firebaseAuth?.currentUser;
     if (!input || !user || !window._teamId) return;
-    const text = input.value.trim().slice(0, CHAT_MAX_LEN);
+    const raw = input.value.trim();
+    const text = (typeof _chatEmojiAutoEnd === 'function' ? _chatEmojiAutoEnd(raw) : raw).slice(0, CHAT_MAX_LEN);
     const hasFile = typeof _chatPending !== 'undefined' && !!_chatPending;
     if (!text && !hasFile) return;
     if (_chatUploading) return;

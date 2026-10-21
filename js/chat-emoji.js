@@ -101,6 +101,58 @@ function _chatEmojiRemember(em) {
     } catch (e) { /* stockage indisponible : sans conséquence */ }
 }
 
+// Suggestions pendant la frappe de « :mot » : noms qui commencent par le fragment d'abord,
+// puis ceux qui le contiennent. Fragment vide : émojis récents (ou les premiers visages).
+function _chatEmojiSuggest(frag) {
+    const q = _chatEmojiNorm(frag);
+    let out;
+    if (!q) {
+        out = _chatEmojiRecent().map(e => ({ kind: 'emoji', e, n: CHAT_EMOJI_NAMES.get(e) || '' }));
+        if (!out.length) out = CHAT_EMOJI_CATS[0].list.slice(0, 8).map(x => ({ kind: 'emoji', e: x.e, n: x.n }));
+        return out.slice(0, 8);
+    }
+    const starts = [], contains = [], seen = new Set();
+    CHAT_EMOJI_CATS.forEach(c => c.list.forEach(x => {
+        if (seen.has(x.e)) return;
+        const n = _chatEmojiNorm(x.n);
+        const item = { kind: 'emoji', e: x.e, n: x.n };
+        if (n.split(' ').some(w => w.startsWith(q))) { seen.add(x.e); starts.push(item); }
+        else if (n.includes(q)) { seen.add(x.e); contains.push(item); }
+    }));
+    return starts.concat(contains).slice(0, 8);
+}
+
+// Smileys texte → émoji. La conversion se fait quand on tape l'espace qui suit le smiley
+// (ainsi « :p » ne gêne pas la suggestion « :pneu »), ou à l'envoi s'il termine le message.
+const CHAT_SMILEYS = {
+    ':)': '🙂', ':-)': '🙂', '(:': '🙂', ':]': '🙂', ':D': '😄', ':-D': '😄', ':d': '😄', 'xD': '😆', 'XD': '😆', 'xd': '😆',
+    ';)': '😉', ';-)': '😉', ':(': '🙁', ':-(': '🙁', ":'(": '😢', ':p': '😛', ':P': '😛', ':-P': '😛', ':-p': '😛',
+    ':o': '😮', ':O': '😮', ':-O': '😮', ':|': '😐', ':-|': '😐', ':/': '😕', ':-/': '😕', ':*': '😘', ':-*': '😘',
+    '8)': '😎', 'B)': '😎', '<3': '❤️', '</3': '💔', '(y)': '👍', '(Y)': '👍', '(n)': '👎', '+1': '👍', '-1': '👎',
+    ':3': '😺', '>:(': '😠', ':@': '😡', 'o_O': '😳', 'O_o': '😳', '^^': '😊', '-_-': '😑',
+};
+
+function _chatEmojiAuto(e) {
+    if (!e || e.inputType !== 'insertText' || e.data !== ' ') return;
+    const input = e.target;
+    const pos = input.selectionStart;
+    if (pos == null || pos < 2) return;
+    const head = input.value.slice(0, pos - 1);             // sans l'espace qui vient d'être tapé
+    const m = /(^|\s)(\S+)$/.exec(head);
+    const em = m && Object.prototype.hasOwnProperty.call(CHAT_SMILEYS, m[2]) ? CHAT_SMILEYS[m[2]] : null;
+    if (!em) return;
+    const start = head.length - m[2].length;
+    input.value = input.value.slice(0, start) + em + input.value.slice(pos - 1);
+    input.selectionStart = input.selectionEnd = start + em.length + 1;
+}
+
+// Convertit un smiley placé tout à la fin du texte (avant l'envoi)
+function _chatEmojiAutoEnd(text) {
+    const m = /(^|\s)(\S+)$/.exec(text);
+    if (!m || !Object.prototype.hasOwnProperty.call(CHAT_SMILEYS, m[2])) return text;
+    return text.slice(0, text.length - m[2].length) + CHAT_SMILEYS[m[2]];
+}
+
 function _chatEmojiInsert(em) {
     const input = document.getElementById('teamChatInput');
     if (!input) return;
