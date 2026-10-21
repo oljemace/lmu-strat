@@ -20,10 +20,150 @@ let _chatMyName = null;
 let _chatTeam = null;
 let _chatLastSend = 0;
 let _chatLastUnread = 0;
+let _chatLastUnreadTag = 0;
 let _chatBaseTitle = null;
 let _chatReady = false;          // faux jusqu'au premier chargement (pas de son pour l'historique)
 let _chatLastOtherTs = 0;
 let _chatAudio = null;
+
+/* ── Tags : @membre et #session écrits dans le texte du message ──
+   Aucun champ supplémentaire n'est stocké : le texte est analysé à l'affichage avec la
+   liste des membres et des sessions. Un message est « pour moi » s'il cite mon nom ou
+   la session dans laquelle je me trouve ; il déclenche alors une notification distincte. */
+let _chatMembers = {};           // uid → nom
+let _chatMembersStop = null;
+let _chatSugg = [];              // suggestions affichées
+let _chatSuggIdx = 0;
+
+function _chatSessions() {
+    return Array.from(document.getElementById('sessionSelect')?.options || [])
+        .filter(o => o.value)
+        .map(o => ({ id: o.value, label: o.textContent.replace(/^\s*[^\p{L}\p{N}]+/u, '').trim() }))
+        .filter(s => s.label);
+}
+
+function _chatTargets() {
+    const t = [];
+    Object.keys(_chatMembers).forEach(uid => t.push({ kind: 'user', uid, label: _chatMembers[uid], sym: '@' }));
+    _chatSessions().forEach(s => t.push({ kind: 'session', id: s.id, label: s.label, sym: '#' }));
+    return t.sort((a, b) => b.label.length - a.label.length);   // le plus long d'abord
+}
+
+// Découpe un texte en segments { text } / { text, tag }
+function _chatSegments(text) {
+    const targets = _chatTargets();
+    const isWord = c => !!c && /[\p{L}\p{N}_]/u.test(c);
+    const low = text.toLowerCase();
+    const out = [];
+    let buf = '', i = 0;
+    while (i < text.length) {
+        const c = text[i];
+        let hit = null;
+        if ((c === '@' || c === '#') && !isWord(text[i - 1])) {
+            hit = targets.find(t => t.sym === c &&
+                low.startsWith(t.label.toLowerCase(), i + 1) &&
+                !isWord(text[i + 1 + t.label.length]));
+        }
+        if (hit) {
+            if (buf) { out.push({ text: buf }); buf = ''; }
+            const len = 1 + hit.label.length;
+            out.push({ text: text.substr(i, len), tag: hit });
+            i += len;
+        } else { buf += c; i++; }
+    }
+    if (buf) out.push({ text: buf });
+    return out;
+}
+
+// Ce message me concerne-t-il (autre auteur que moi) ?
+function _chatIsForMe(m, me) {
+    if (m.uid === me) return false;
+    return _chatSegments(m.text).some(s => s.tag &&
+        ((s.tag.kind === 'user' && s.tag.uid === me) ||
+         (s.tag.kind === 'session' && s.tag.id === window._presenceSession)));
+}
+
+function _chatFillBody(body, m, me) {
+    _chatSegments(m.text).forEach(s => {
+        if (!s.tag) { body.appendChild(document.createTextNode(s.text)); return; }
+        if (s.tag.kind === 'user') {
+            const el = document.createElement('span');
+            el.className = 'chat-tag chat-tag-user' + (s.tag.uid === me ? ' me' : '');
+            el.textContent = s.text;
+            body.appendChild(el);
+        } else {
+            const el = document.createElement('button');
+            el.type = 'button';
+            el.className = 'chat-tag chat-tag-session';
+            el.title = 'Ouvrir cette session';
+            el.textContent = s.text;
+            el.addEventListener('click', () => {
+                const sel = document.getElementById('sessionSelect');
+                if (sel && sel.value !== s.tag.id) {
+                    sel.value = s.tag.id;
+                    sel.dispatchEvent(new Event('change'));
+                }
+            });
+            body.appendChild(el);
+        }
+    });
+}
+
+// ── Complétion pendant la frappe : @ → membres, # → sessions ──
+function _chatSuggestHide() {
+    _chatSugg = [];
+    const el = document.getElementById('teamChatSuggest');
+    if (el) el.style.display = 'none';
+}
+
+function _chatSuggestUpdate() {
+    const input = document.getElementById('teamChatInput');
+    const el = document.getElementById('teamChatSuggest');
+    if (!input || !el) return;
+    const before = input.value.slice(0, input.selectionStart);
+    const m = /(^|\s)([@#])([^\s@#]*)$/.exec(before);
+    if (!m) { _chatSuggestHide(); return; }
+    const frag = m[3].toLowerCase();
+    _chatSugg = _chatTargets().filter(t => t.sym === m[2] && t.label.toLowerCase().includes(frag))
+        .sort((a, b) => a.label.localeCompare(b.label)).slice(0, 6);
+    if (!_chatSugg.length) { _chatSuggestHide(); return; }
+    _chatSuggIdx = Math.min(_chatSuggIdx, _chatSugg.length - 1);
+    el.textContent = '';
+    _chatSugg.forEach((t, idx) => {
+        const b = document.createElement('div');
+        b.className = 'chat-sugg' + (idx === _chatSuggIdx ? ' active' : '');
+        b.textContent = (t.kind === 'user' ? '@ ' : '# 📋 ') + t.label;
+        b.addEventListener('mousedown', e => { e.preventDefault(); _chatSuggestPick(idx); });
+        el.appendChild(b);
+    });
+    el.style.display = 'block';
+}
+
+function _chatSuggestPick(idx) {
+    const input = document.getElementById('teamChatInput');
+    const t = _chatSugg[idx];
+    if (!input || !t) return;
+    const pos = input.selectionStart;
+    const before = input.value.slice(0, pos).replace(/([@#])[^\s@#]*$/, '');
+    const ins = t.sym + t.label + ' ';
+    input.value = before + ins + input.value.slice(pos);
+    input.selectionStart = input.selectionEnd = before.length + ins.length;
+    _chatSuggestHide();
+    input.focus();
+}
+
+function _chatWatchMembers() {
+    if (_chatMembersStop) { try { _chatMembersStop(); } catch (e) { /* sans conséquence */ } }
+    _chatMembersStop = window._firebaseOnValue(window._firebaseRef(window._firebaseDb, teamPath('members')), snap => {
+        const v = snap.val() || {};
+        _chatMembers = {};
+        Object.keys(v).forEach(uid => {
+            const n = (v[uid] && (v[uid].name || String(v[uid].email || '').split('@')[0])) || '';
+            if (n) _chatMembers[uid] = String(n).slice(0, 60);
+        });
+        _chatRender();
+    }, () => { _chatMembers = {}; });
+}
 
 function _chatSoundOn() {
     try { return localStorage.getItem('lmuChatSound') !== '0'; } catch (e) { return true; }
@@ -35,21 +175,24 @@ function _chatSoundSet(on) {
 }
 // Petit « ding » à deux notes. Le navigateur n'autorise le son qu'après une première
 // interaction avec la page ; sinon l'appel échoue en silence.
-function _chatBeep() {
+function _chatBeep(tagged) {
     try {
         const AC = window.AudioContext || window.webkitAudioContext;
         if (!AC) return;
         if (!_chatAudio) _chatAudio = new AC();
         if (_chatAudio.state === 'suspended') _chatAudio.resume();
         const t0 = _chatAudio.currentTime;
-        [[880, 0], [1175, 0.14]].forEach(([f, dt]) => {
+        // Message ordinaire : « ding » doux à deux notes. Message qui me cite : quatre notes
+        // montantes, plus aiguës et plus longues, impossibles à confondre.
+        const notes = tagged ? [[784, 0], [988, 0.15], [1319, 0.30], [1568, 0.45]] : [[880, 0], [1175, 0.14]];
+        notes.forEach(([f, dt]) => {
             const o = _chatAudio.createOscillator(), g = _chatAudio.createGain();
-            o.type = 'sine'; o.frequency.value = f;
+            o.type = tagged ? 'triangle' : 'sine'; o.frequency.value = f;
             g.gain.setValueAtTime(0.0001, t0 + dt);
-            g.gain.exponentialRampToValueAtTime(0.18, t0 + dt + 0.02);
-            g.gain.exponentialRampToValueAtTime(0.0001, t0 + dt + 0.22);
+            g.gain.exponentialRampToValueAtTime(tagged ? 0.28 : 0.18, t0 + dt + 0.02);
+            g.gain.exponentialRampToValueAtTime(0.0001, t0 + dt + (tagged ? 0.32 : 0.22));
             o.connect(g); g.connect(_chatAudio.destination);
-            o.start(t0 + dt); o.stop(t0 + dt + 0.25);
+            o.start(t0 + dt); o.stop(t0 + dt + (tagged ? 0.35 : 0.25));
         });
     } catch (e) { /* son indisponible */ }
 }
@@ -95,8 +238,9 @@ function _chatEnsureUI() {
         '<div id="teamChatPresence" style="display:none"></div>' +
         '<div id="teamChatList"></div>' +
         '<div id="teamChatError" style="display:none"></div>' +
+        '<div id="teamChatSuggest" style="display:none"></div>' +
         '<form id="teamChatForm"><textarea id="teamChatInput" rows="2" maxlength="' + CHAT_MAX_LEN +
-        '" placeholder="Message… (Entrée pour envoyer)"></textarea>' +
+        '" placeholder="Message… (@membre, #session — Entrée pour envoyer)"></textarea>' +
         '<button type="submit">Envoyer</button></form></div>';
     document.body.appendChild(wrap);
 
@@ -118,7 +262,21 @@ function _chatEnsureUI() {
         } catch (e) { /* sans conséquence */ }
     });
     document.getElementById('teamChatForm').addEventListener('submit', e => { e.preventDefault(); chatSend(); });
-    document.getElementById('teamChatInput').addEventListener('keydown', e => {
+    const inp = document.getElementById('teamChatInput');
+    inp.addEventListener('input', () => { _chatSuggIdx = 0; _chatSuggestUpdate(); });
+    inp.addEventListener('click', _chatSuggestUpdate);
+    inp.addEventListener('blur', () => setTimeout(_chatSuggestHide, 120));
+    inp.addEventListener('keydown', e => {
+        if (_chatSugg.length) {
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                _chatSuggIdx = (_chatSuggIdx + (e.key === 'ArrowDown' ? 1 : _chatSugg.length - 1)) % _chatSugg.length;
+                _chatSuggestUpdate();
+                return;
+            }
+            if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); _chatSuggestPick(_chatSuggIdx); return; }
+            if (e.key === 'Escape') { e.preventDefault(); _chatSuggestHide(); return; }
+        }
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); chatSend(); }
     });
 }
@@ -152,26 +310,34 @@ function _chatRender() {
         if (last > seen) _chatSeenSet(last);
     }
     const unread = _chatOpen ? 0 : msgs.filter(m => m.t > seen && m.uid !== me).length;
+    const unreadTag = _chatOpen ? 0 : msgs.filter(m => m.t > seen && _chatIsForMe(m, me)).length;
     const badge = document.getElementById('teamChatBadge');
     if (badge) {
-        badge.textContent = unread > 99 ? '99+' : String(unread);
+        const n = unread > 99 ? '99+' : String(unread);
+        badge.textContent = unreadTag ? '@' + n : n;
+        badge.classList.toggle('tagged', unreadTag > 0);
         badge.style.display = unread ? 'inline-block' : 'none';
     }
     // Compteur dans le titre de l'onglet + animation quand un nouveau message arrive
     if (_chatBaseTitle === null) _chatBaseTitle = document.title.replace(/^\(\d+\+?\) /, '');
-    document.title = (unread ? `(${unread > 99 ? '99+' : unread}) ` : '') + _chatBaseTitle;
-    if (unread > _chatLastUnread) {
+    document.title = (unread ? `(${unreadTag ? '@' : ''}${unread > 99 ? '99+' : unread}) ` : '') + _chatBaseTitle;
+    if (unread > _chatLastUnread || unreadTag > _chatLastUnreadTag) {
         const t = document.getElementById('teamChatToggle');
-        if (t) { t.classList.remove('chat-ping'); void t.offsetWidth; t.classList.add('chat-ping'); }
+        if (t) {
+            t.classList.remove('chat-ping', 'chat-ping-tag'); void t.offsetWidth;
+            t.classList.add(unreadTag > _chatLastUnreadTag ? 'chat-ping-tag' : 'chat-ping');
+        }
     }
     _chatLastUnread = unread;
+    _chatLastUnreadTag = unreadTag;
 
     // Son : un message d'un autre membre plus récent que tous ceux déjà vus
     const others = msgs.filter(m => m.uid !== me);
     const newest = others.length ? others[others.length - 1].t : 0;
-    if (_chatReady && newest > _chatLastOtherTs && _chatSoundOn()) _chatBeep();
+    if (_chatReady && newest > _chatLastOtherTs && _chatSoundOn()) {
+        _chatBeep(others.some(m => m.t > _chatLastOtherTs && _chatIsForMe(m, me)));
+    }
     if (newest > _chatLastOtherTs) _chatLastOtherTs = newest;
-    _chatReady = true;
     if (!_chatOpen) return;
 
     const nearBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 60;
@@ -185,7 +351,7 @@ function _chatRender() {
     const isAdmin = window._teamRole === 'admin';
     msgs.forEach(m => {
         const row = document.createElement('div');
-        row.className = 'chat-msg' + (m.uid === me ? ' mine' : '');
+        row.className = 'chat-msg' + (m.uid === me ? ' mine' : '') + (_chatIsForMe(m, me) ? ' tagged' : '');
         const head = document.createElement('div');
         head.className = 'chat-meta';
         const who = document.createElement('b');
@@ -205,7 +371,7 @@ function _chatRender() {
         }
         const body = document.createElement('div');
         body.className = 'chat-text';
-        body.textContent = m.text;
+        _chatFillBody(body, m, me);
         row.appendChild(head);
         row.appendChild(body);
         list.appendChild(row);
@@ -273,7 +439,9 @@ function stopTeamChat() {
     if (_chatStop) { try { _chatStop(); } catch (e) { /* sans conséquence */ } }
     _chatStop = null;
     _chatMsgs = {};
-    _chatReady = false; _chatLastOtherTs = 0; _chatLastUnread = 0;
+    _chatReady = false; _chatLastOtherTs = 0; _chatLastUnread = 0; _chatLastUnreadTag = 0;
+    if (_chatMembersStop) { try { _chatMembersStop(); } catch (e) { /* sans conséquence */ } }
+    _chatMembersStop = null; _chatMembers = {};
     document.getElementById('teamChatRoot')?.remove();
     _chatOpen = false;
 }
@@ -285,9 +453,11 @@ function startTeamChat() {
     _chatTeam = window._teamId;
     _chatMyName = null;
     _chatEnsureUI();
+    _chatWatchMembers();
     const r = window._firebaseRef(window._firebaseDb, teamPath('chat/m'));
     _chatStop = window._firebaseOnValue(r, snap => {
         _chatMsgs = snap.val() || {};
         _chatRender();
+        _chatReady = true;   // à partir d'ici, un message plus récent déclenche le son
     }, err => console.warn('Chat : lecture impossible', err && err.code));
 }
