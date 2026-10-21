@@ -4,18 +4,22 @@
      bypass : 1 = le son passe sans traitement
      vad    : 0 = désactivé ; sinon seuil de probabilité de parole (0..1) en dessous duquel
               le son est coupé (réduction « forte »)
+     wet    : intensité (0..1) = part du son traité dans la sortie ; le reste est le son
+              d'origine, retardé du même temps que RNNoise (960 échantillons) pour rester en phase
    Le module envoie {ready:true} quand RNNoise est chargé, ou {error:…} s'il échoue. */
 import createRNNWasmModuleSync from './rnnoise-sync.js';
 
 const FRAME = 480;
 const RING = 4096, MASK = RING - 1;
+const RNNOISE_DELAY = 960;      // retard propre à RNNoise (mesuré : deux trames)
 const PREFILL_BLOCKS = 6;      // tampon de départ : évite les coupures dues au découpage 128 → 480
 
 class LmuRnnoise extends AudioWorkletProcessor {
     static get parameterDescriptors() {
         return [
             { name: 'bypass', defaultValue: 0, minValue: 0, maxValue: 1 },
-            { name: 'vad', defaultValue: 0, minValue: 0, maxValue: 1 }
+            { name: 'vad', defaultValue: 0, minValue: 0, maxValue: 1 },
+            { name: 'wet', defaultValue: 1, minValue: 0, maxValue: 1 }
         ];
     }
 
@@ -25,6 +29,7 @@ class LmuRnnoise extends AudioWorkletProcessor {
         this.inR = new Float32Array(RING); this.outR = new Float32Array(RING);
         this.inW = 0; this.inRd = 0; this.inN = 0;
         this.outW = 0; this.outRd = 0; this.outN = 0;
+        this.dry = new Float32Array(RING); this.inAbs = 0; this.outAbs = 0;
         this.blocks = 0; this.gain = 1; this.hold = 0;
         try {
             const m = createRNNWasmModuleSync();
@@ -49,12 +54,16 @@ class LmuRnnoise extends AudioWorkletProcessor {
 
         if (params.bypass[0] >= 0.5) {
             for (let c = 0; c < out.length; c++) out[c].set(inp[c] || x);
-            this.inN = this.outN = this.blocks = 0;
+            this.inN = this.outN = this.blocks = this.inAbs = this.outAbs = 0;
             return true;
         }
         if (!this.mod) { for (let c = 0; c < out.length; c++) out[c].fill(0); return true; }
 
-        for (let i = 0; i < n; i++) this.inR[(this.inW + i) & MASK] = x[i];
+        for (let i = 0; i < n; i++) {
+            this.inR[(this.inW + i) & MASK] = x[i];
+            this.dry[(this.inAbs + i) & MASK] = x[i];
+        }
+        this.inAbs += n;
         this.inW = (this.inW + n) & MASK;
         this.inN += n;
         this.blocks++;
@@ -82,7 +91,14 @@ class LmuRnnoise extends AudioWorkletProcessor {
         }
 
         if (this.blocks >= PREFILL_BLOCKS && this.outN >= n) {
-            for (let i = 0; i < n; i++) out[0][i] = this.outR[(this.outRd + i) & MASK];
+            const wet = params.wet[0];
+            for (let i = 0; i < n; i++) {
+                const proc = this.outR[(this.outRd + i) & MASK];
+                if (wet >= 1) { out[0][i] = proc; continue; }
+                const d = this.outAbs + i - RNNOISE_DELAY;
+                out[0][i] = wet * proc + (1 - wet) * (d >= 0 ? this.dry[d & MASK] : 0);
+            }
+            this.outAbs += n;
             this.outRd = (this.outRd + n) & MASK;
             this.outN -= n;
             for (let c = 1; c < out.length; c++) out[c].set(out[0]);
