@@ -18,6 +18,9 @@ const VOICE_ICE_SERVERS = [
 ];
 // Le relais TURN (identifiants) n'est PAS dans le code, qui est public : un admin le saisit
 // dans le panneau vocal et il est stocké dans teams/{équipe}/voiceIce (lisible par les membres).
+// Débit de la voix : plafonné et avec coupure pendant les silences (DTX) pour limiter
+// le volume passant par le relais TURN (quota limité).
+const VOICE_MAX_BITRATE = 24000;
 const VOICE_BEAT_MS  = 60 * 1000;
 const VOICE_STALE_MS = 3 * 60 * 1000;
 
@@ -60,6 +63,46 @@ async function _vLoadIce() {
         }
     } catch (e) { console.warn('Vocal : relais TURN non chargé', e && e.message); }
     return { servers: VOICE_ICE_SERVERS.concat(extra), hasTurn: extra.some(s => [].concat(s.urls).some(u => /^turns?:/i.test(u))) };
+}
+
+// Ajoute au codec Opus de la description SDP : coupure des silences + débit maximal
+function _vTuneSdp(sdp) {
+    const m = /a=rtpmap:(\d+) opus\/48000\/2/i.exec(sdp || '');
+    if (!m) return sdp;
+    const extra = 'usedtx=1;maxaveragebitrate=' + VOICE_MAX_BITRATE;
+    const re = new RegExp('a=fmtp:' + m[1] + ' ([^\r\n]*)');
+    if (re.test(sdp)) {
+        return sdp.replace(re, (all, params) => {
+            const keep = params.split(';').filter(x => x && !/^(usedtx|maxaveragebitrate)=/.test(x));
+            return 'a=fmtp:' + m[1] + ' ' + keep.concat(extra).join(';');
+        });
+    }
+    return sdp.replace(m[0], m[0] + '\r\na=fmtp:' + m[1] + ' ' + extra);
+}
+
+// Le lien avec ce participant est-il direct ou relayé par le serveur TURN ?
+async function _vRoute(peer) {
+    try {
+        const stats = await peer.pc.getStats();
+        const by = {};
+        let pair = null;
+        stats.forEach(r => { by[r.id] = r; });
+        stats.forEach(r => { if (r.type === 'transport' && r.selectedCandidatePairId) pair = by[r.selectedCandidatePairId]; });
+        if (!pair) stats.forEach(r => { if (r.type === 'candidate-pair' && r.nominated && r.state === 'succeeded') pair = r; });
+        if (!pair) return null;
+        const l = by[pair.localCandidateId], r = by[pair.remoteCandidateId];
+        return ((l && l.candidateType === 'relay') || (r && r.candidateType === 'relay')) ? 'relay' : 'direct';
+    } catch (e) { return null; }
+}
+async function _vPollRoutes() {
+    if (!_vc) return;
+    let changed = false;
+    for (const uid of Object.keys(_vc.peers)) {
+        const peer = _vc.peers[uid];
+        const route = await _vRoute(peer);
+        if (route && route !== peer.route) { peer.route = route; changed = true; }
+    }
+    if (changed) _vRender();
 }
 
 function _vUid() { return window._firebaseAuth?.currentUser?.uid; }
@@ -194,8 +237,12 @@ function _vRender() {
         st.className = 'voice-state';
         const peer = _vc && _vc.peers[p.uid];
         const bad = peer && (peer.pc.connectionState === 'failed' || peer.pc.iceConnectionState === 'failed');
-        st.textContent = (p.mu ? '🔇' : '') + (bad ? ' ⚠️' : '');
-        if (bad) st.title = 'Connexion directe impossible avec cette personne (réseau)';
+        const route = peer && peer.route;
+        st.textContent = (p.mu ? '🔇' : '') + (bad ? ' ⚠️' : '') +
+            (!bad && route ? (route === 'relay' ? ' 🛰️' : ' 🔗') : '');
+        if (bad) st.title = 'Connexion impossible avec cette personne (réseau)';
+        else if (route === 'relay') st.title = 'Lien relayé par le serveur TURN (consomme le quota du relais)';
+        else if (route === 'direct') st.title = 'Lien direct (aucun quota consommé)';
         row.appendChild(dot); row.appendChild(who); row.appendChild(st);
         list.appendChild(row);
     });
@@ -290,7 +337,7 @@ async function _vOffer(uid, n) {
     const peer = _vMakePeer(uid, n);
     try {
         const offer = await peer.pc.createOffer();
-        await peer.pc.setLocalDescription(offer);
+        await peer.pc.setLocalDescription({ type: offer.type, sdp: _vTuneSdp(offer.sdp) });
         _vSend(uid, 'offer', JSON.stringify(peer.pc.localDescription));
     } catch (e) { console.warn('Vocal : offre impossible', e); _vClosePeer(uid); }
 }
@@ -337,7 +384,7 @@ function _vHandle(from, m) {
             if (m.t === 'offer') {
                 await p.pc.setRemoteDescription(JSON.parse(m.d));
                 const ans = await p.pc.createAnswer();
-                await p.pc.setLocalDescription(ans);
+                await p.pc.setLocalDescription({ type: ans.type, sdp: _vTuneSdp(ans.sdp) });
                 _vSend(from, 'answer', JSON.stringify(p.pc.localDescription));
                 p.queue.splice(0).forEach(c => p.pc.addIceCandidate(c).catch(() => {}));
             } else if (m.t === 'answer') {
@@ -438,7 +485,8 @@ async function voiceJoin() {
     }));
     const timer = setInterval(() => { beat(); _vSync(); _vRender(); }, VOICE_BEAT_MS);
     const poll = setInterval(_vPoll, 200);
-    _vc.stops.push(() => clearInterval(timer), () => clearInterval(poll),
+    const routes = setInterval(_vPollRoutes, 5000);
+    _vc.stops.push(() => clearInterval(timer), () => clearInterval(poll), () => clearInterval(routes),
         () => { window._firebaseOnDisconnect(myRef).cancel().catch(() => {}); });
     _vRender();
 }
