@@ -1163,6 +1163,10 @@ body.live-mode .plan-bar { display:none; }
 #teamVoicePanel .voice-actions button.leave { border-color: #ff6b6b; background: rgba(255,107,107,0.12); color: #ff6b6b; }
 #teamVoicePanel .voice-actions button:disabled { opacity: 0.4; cursor: default; }
 #teamVoiceNoiseRow { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 0.8em; color: #bbb; }
+#teamVoiceLevelRow { display: flex; align-items: center; gap: 8px; padding: 0 12px 8px; font-size: 0.8em; color: #bbb; }
+#teamVoiceLevelRow input[type=range] { flex: 1; accent-color: #00ff88; }
+#teamVoiceLevelRow input[type=range]:disabled { opacity: 0.4; }
+#teamVoiceLevelVal { min-width: 3.2em; text-align: right; color: #fff; }
 #teamVoiceNoiseMsg { padding: 0 12px 8px; font-size: 0.75em; color: #9fd8ff; }
 #teamVoiceNoiseRow select { background: #0b1319; color: #ddd; border: 1px solid #334; border-radius: 6px; padding: 3px 6px; }
 #teamVoiceAdmin { padding: 6px 12px 10px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 0.8em; }
