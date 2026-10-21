@@ -435,7 +435,11 @@ function calculate(overrides) {
         // Stints pleins (plafonnés par l'EV) ; seul le tout dernier stint (auto ou
         // manuel) absorbe exactement le roulage restant.
         let toursStint;
-        if (idx === stintsCibleTotal - 1) {
+        if (window._manualStintCount > 0 && idx >= Math.max(1, stintsNaturels) - 1) {
+            // Stints manuels : le groupe final (dernier stint naturel + stints manuels)
+            // se partage à parts égales le roulage restant (même règle qu'en Live).
+            toursStint = Math.min(toursEV, roulageRest / lapTime / (stintsCibleTotal - idx));
+        } else if (idx === stintsCibleTotal - 1) {
             toursStint = Math.min(toursEV, roulageRest / lapTime);
         } else {
             toursStint = Math.min(toursEV, toursParStint);
