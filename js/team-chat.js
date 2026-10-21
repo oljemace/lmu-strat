@@ -232,6 +232,7 @@ function _chatEnsureUI() {
         '<button id="teamChatToggle" type="button" title="Chat de l\'équipe" aria-label="Ouvrir le chat de l\'équipe">💬' +
         '<span id="teamChatBadge" style="display:none"></span></button>' +
         '<div id="teamChatPanel" style="display:none">' +
+        '<div id="teamChatResize" title="Glisser pour redimensionner (double-clic : taille initiale)"></div>' +
         '<div class="chat-head"><span>💬 Chat de l\'équipe</span>' +
         '<span><button type="button" id="teamChatSound" aria-label="Son des notifications">🔔</button>' +
         '<button type="button" id="teamChatClose" aria-label="Fermer">✕</button></span></div>' +
@@ -240,8 +241,9 @@ function _chatEnsureUI() {
         '<div id="teamChatError" style="display:none"></div>' +
         '<div id="teamChatSuggest" style="display:none"></div>' +
         '<div id="teamChatAttach" style="display:none"></div>' +
+        '<div id="teamChatEmoji" style="display:none"></div>' +
         '<form id="teamChatForm"><button type="button" id="teamChatClip" title="Joindre un fichier (ou coller / glisser une image) — 50 Mo max">📎</button>' +
-        '<input type="file" id="teamChatFile" hidden><textarea id="teamChatInput" rows="2" maxlength="' + CHAT_MAX_LEN +
+        '<input type="file" id="teamChatFile" hidden><button type="button" id="teamChatEmojiBtn" title="Émoticônes">😀</button><textarea id="teamChatInput" rows="2" maxlength="' + CHAT_MAX_LEN +
         '" placeholder="Message… (@membre, #session — Entrée pour envoyer)"></textarea>' +
         '<button type="submit">Envoyer</button></form></div>';
     document.body.appendChild(wrap);
@@ -265,6 +267,8 @@ function _chatEnsureUI() {
     });
     document.getElementById('teamChatForm').addEventListener('submit', e => { e.preventDefault(); chatSend(); });
     if (typeof _chatAttachInit === 'function') _chatAttachInit();
+    if (typeof _chatEmojiInit === 'function') _chatEmojiInit();
+    _chatResizeInit();
     const inp = document.getElementById('teamChatInput');
     inp.addEventListener('input', () => { _chatSuggIdx = 0; _chatSuggestUpdate(); });
     inp.addEventListener('click', _chatSuggestUpdate);
@@ -281,6 +285,45 @@ function _chatEnsureUI() {
             if (e.key === 'Escape') { e.preventDefault(); _chatSuggestHide(); return; }
         }
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); chatSend(); }
+    });
+}
+
+// Redimensionnement : la poignée est en haut à gauche car le panneau est ancré en bas à droite
+const CHAT_SIZE_KEY = 'lmuChatSize';
+function _chatApplySize(w, h) {
+    const panel = document.getElementById('teamChatPanel');
+    if (!panel) return;
+    if (!w || !h) { panel.style.width = ''; panel.style.height = ''; return; }
+    panel.style.width = Math.max(280, Math.min(w, window.innerWidth - 32)) + 'px';
+    panel.style.height = Math.max(300, Math.min(h, window.innerHeight - 110)) + 'px';
+}
+function _chatResizeInit() {
+    const panel = document.getElementById('teamChatPanel');
+    const grip = document.getElementById('teamChatResize');
+    if (!panel || !grip) return;
+    try {
+        const s = JSON.parse(localStorage.getItem(CHAT_SIZE_KEY) || 'null');
+        if (s && s.w && s.h) _chatApplySize(s.w, s.h);
+    } catch (e) { /* taille par défaut */ }
+    grip.addEventListener('pointerdown', e => {
+        e.preventDefault();
+        const x0 = e.clientX, y0 = e.clientY;
+        const w0 = panel.offsetWidth, h0 = panel.offsetHeight;
+        grip.setPointerCapture(e.pointerId);
+        const move = ev => _chatApplySize(w0 + (x0 - ev.clientX), h0 + (y0 - ev.clientY));
+        const up = () => {
+            grip.removeEventListener('pointermove', move);
+            grip.removeEventListener('pointerup', up);
+            grip.removeEventListener('pointercancel', up);
+            try { localStorage.setItem(CHAT_SIZE_KEY, JSON.stringify({ w: panel.offsetWidth, h: panel.offsetHeight })); } catch (err) { /* sans conséquence */ }
+        };
+        grip.addEventListener('pointermove', move);
+        grip.addEventListener('pointerup', up);
+        grip.addEventListener('pointercancel', up);
+    });
+    grip.addEventListener('dblclick', () => {
+        _chatApplySize(0, 0);
+        try { localStorage.removeItem(CHAT_SIZE_KEY); } catch (e) { /* sans conséquence */ }
     });
 }
 

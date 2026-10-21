@@ -1163,6 +1163,13 @@ body.live-mode .plan-bar { display:none; }
 #teamVoicePanel .voice-actions button.leave { border-color: #ff6b6b; background: rgba(255,107,107,0.12); color: #ff6b6b; }
 #teamVoicePanel .voice-actions button:disabled { opacity: 0.4; cursor: default; }
 #teamVoiceNoiseRow { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 0.8em; color: #bbb; }
+#teamVoiceKeyRow, #teamVoiceSndRow { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 0 12px 8px; font-size: 0.8em; color: #bbb; }
+#teamVoiceSndRow { gap: 14px; }
+#teamVoiceSndRow label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+#teamVoiceKeyLabel { flex: 1; min-width: 6em; color: #fff; }
+#teamVoiceKeyRow button { background: #2a2f3a; color: #fff; border: 1px solid #444; border-radius: 6px; padding: 3px 8px; cursor: pointer; font-size: inherit; }
+#teamVoiceKeyRow button.listening { outline: 2px solid #00ff88; }
+#teamVoiceKeyMsg { padding: 0 12px 8px; font-size: 0.75em; color: #9fd8ff; }
 #teamVoiceLevelRow { display: flex; align-items: center; gap: 8px; padding: 0 12px 8px; font-size: 0.8em; color: #bbb; }
 #teamVoiceLevelRow input[type=range] { flex: 1; accent-color: #00ff88; }
 #teamVoiceLevelRow input[type=range]:disabled { opacity: 0.4; }
@@ -1190,6 +1197,7 @@ button.chat-tag-session { border: 0; background: rgba(0,255,136,0.18); color: #0
 #teamChatToggle.chat-ping { animation: chatPing 0.9s ease-out 3; }
 @keyframes chatPing { 0% { box-shadow: 0 0 0 0 rgba(255,45,85,0.8); transform: scale(1.15); } 70% { box-shadow: 0 0 0 16px rgba(255,45,85,0); transform: scale(1); } 100% { box-shadow: 0 0 0 0 rgba(255,45,85,0); transform: scale(1); } }
 #teamChatPanel { position: fixed; right: 18px; bottom: 80px; z-index: 900; width: 340px; max-width: calc(100vw - 32px); height: 440px; max-height: calc(100vh - 110px); flex-direction: column; background: #101a22; border: 1px solid rgba(0,255,136,0.35); border-radius: 12px; box-shadow: 0 8px 28px rgba(0,0,0,0.6); overflow: hidden; }
+#teamChatResize { position: absolute; top: 0; left: 0; width: 22px; height: 22px; z-index: 2; cursor: nwse-resize; touch-action: none; background: linear-gradient(135deg, rgba(0,255,136,0.7) 0 2px, transparent 2px 5px, rgba(0,255,136,0.7) 5px 7px, transparent 7px); border-top-left-radius: 12px; }
 #teamChatPanel .chat-head { display: flex; justify-content: space-between; align-items: center; padding: 9px 12px; background: rgba(0,255,136,0.12); color: #00ff88; font-weight: 700; }
 #teamChatPanel .chat-head button { background: none; border: 0; color: #ccc; cursor: pointer; font-size: 1em; }
 #teamChatPresence { padding: 6px 12px; background: rgba(255,255,255,0.04); border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 0.78em; max-height: 96px; overflow-y: auto; }
@@ -1222,6 +1230,14 @@ button.chat-file { display: flex; flex-direction: column; align-items: flex-star
 button.chat-file b { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 button.chat-file span { font-size: 0.8em; color: #8e9ac0; }
 .chat-file-missing { color: #888; font-style: italic; }
+#teamChatEmoji { border-top: 1px solid rgba(255,255,255,0.1); background: #16232d; }
+#teamChatEmoji .emo-tabs { display: flex; border-bottom: 1px solid rgba(255,255,255,0.08); }
+#teamChatEmoji .emo-tabs button { flex: 1; padding: 4px 0; background: none; border: 0; border-bottom: 2px solid transparent; cursor: pointer; font-size: 1.1em; }
+#teamChatEmoji .emo-tabs button.active { border-bottom-color: #00ff88; background: rgba(0,255,136,0.1); }
+#teamChatEmoji .emo-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px; max-height: 150px; overflow-y: auto; padding: 4px; }
+#teamChatEmoji .emo-grid button { padding: 3px 0; background: none; border: 0; border-radius: 6px; cursor: pointer; font-size: 1.3em; line-height: 1.2; }
+#teamChatEmoji .emo-grid button:hover { background: rgba(255,255,255,0.15); }
+#teamChatForm #teamChatEmojiBtn { padding: 0 8px; background: none; border: 1px solid rgba(255,255,255,0.2); color: #fff; font-size: 1.1em; }
 #teamChatForm { display: flex; gap: 6px; padding: 8px; border-top: 1px solid rgba(255,255,255,0.1); }
 #teamChatForm textarea { flex: 1; resize: none; padding: 6px 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.08); color: #fff; font: inherit; }
 #teamChatForm button { padding: 0 12px; border-radius: 8px; border: 1px solid #00ff88; background: rgba(0,255,136,0.15); color: #00ff88; font-weight: 700; cursor: pointer; }

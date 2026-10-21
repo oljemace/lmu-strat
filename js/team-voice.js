@@ -363,6 +363,14 @@ function _vEnsureUI() {
         '<input type="range" id="teamVoiceLevel" min="0" max="100" step="5">' +
         '<span id="teamVoiceLevelVal"></span></div>' +
         '<div id="teamVoiceNoiseMsg" style="display:none"></div>' +
+        '<div id="teamVoiceKeyRow"><label>⌨️ Raccourci micro</label><span id="teamVoiceKeyLabel"></span>' +
+        '<button type="button" id="teamVoiceKeySet">Définir</button>' +
+        '<button type="button" id="teamVoiceKeyClear" title="Effacer le raccourci" aria-label="Effacer le raccourci">✕</button>' +
+        '<button type="button" id="teamVoiceHidAdd" title="Autoriser un volant, une manette ou un boîtier à boutons" ' +
+        'aria-label="Autoriser un périphérique">🎮</button></div>' +
+        '<div id="teamVoiceKeyMsg" style="display:none"></div>' +
+        '<div id="teamVoiceSndRow"><label><input type="checkbox" id="teamVoiceSndMic"> Sons du micro</label>' +
+        '<label><input type="checkbox" id="teamVoiceSndRoom"> Sons du salon</label></div>' +
         '<div id="teamVoiceAdmin" style="display:none">' +
         '<button type="button" id="teamVoiceAdminToggle">⚙️ Relais réseau (TURN)</button>' +
         '<div id="teamVoiceAdminBox" style="display:none">' +
@@ -383,6 +391,18 @@ function _vEnsureUI() {
     level.addEventListener('input', () => voiceSetNoiseLevel(Number(level.value)));
     document.getElementById('teamVoiceLevelVal').textContent = _vNoiseLevel() + ' %';
     _vRefreshLevelUI();
+    document.getElementById('teamVoiceKeySet').addEventListener('click', _vHotStartLearn);
+    document.getElementById('teamVoiceKeyClear').addEventListener('click', _vHotClear);
+    const hidBtn = document.getElementById('teamVoiceHidAdd');
+    hidBtn.addEventListener('click', _vHidAsk);
+    if (!navigator.hid) hidBtn.style.display = 'none';
+    [['Mic', 'teamVoiceSndMic'], ['Room', 'teamVoiceSndRoom']].forEach(([kind, id]) => {
+        const cb = document.getElementById(id);
+        cb.checked = _vSndOn(kind);
+        cb.addEventListener('change', () => {
+            try { localStorage.setItem('lmuVoiceSnd' + kind, cb.checked ? '1' : '0'); } catch (e) { /* stockage indisponible */ }
+        });
+    });
     document.getElementById('teamVoiceAdminToggle').addEventListener('click', _vAdminOpen);
     document.getElementById('teamVoiceIceSave').addEventListener('click', _vAdminSave);
     // La liste des sessions se charge après coup : on redessine quand elle change
@@ -555,6 +575,13 @@ function _vSync() {
         const p = room[uid];
         if (uid !== me && p && typeof p.ts === 'number' && now - p.ts < VOICE_STALE_MS) live[uid] = p;
     });
+    // Sons d'arrivée / de départ des autres participants (rien au premier passage)
+    const ids = Object.keys(live);
+    if (_vc.known) {
+        if (ids.some(u => !_vc.known.has(u))) _vPlay('Room', 'peerJoin');
+        else if ([..._vc.known].some(u => !live[u])) _vPlay('Room', 'peerLeave');
+    }
+    _vc.known = new Set(ids);
     // Départs ou reconnexion (nouveau jeton) : on referme
     Object.keys(_vc.peers).forEach(uid => {
         if (!live[uid] || live[uid].n !== _vc.peers[uid].n) _vClosePeer(uid);
@@ -702,6 +729,238 @@ function _vPoll() {
     });
 }
 
+/* ── Sons de notification (micro coupé/ouvert, entrée/sortie du salon) ── */
+const VOICE_SOUNDS = {
+    mute: [[520, 0.09], [390, 0.14]],
+    unmute: [[390, 0.09], [520, 0.14]],
+    join: [[440, 0.08], [587, 0.08], [740, 0.15]],
+    leave: [[740, 0.08], [587, 0.08], [440, 0.15]],
+    peerJoin: [[660, 0.07], [880, 0.11]],
+    peerLeave: [[880, 0.07], [660, 0.11]]
+};
+let _vSndAc = null;
+
+// kind : 'Mic' (coupure/ouverture du micro) ou 'Room' (arrivées/départs) ; actifs par défaut
+function _vSndOn(kind) {
+    try { return localStorage.getItem('lmuVoiceSnd' + kind) !== '0'; } catch (e) { return true; }
+}
+
+function _vSndCtx() {
+    if (!_vSndAc || _vSndAc.state === 'closed') {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return null;
+        try { _vSndAc = new AC(); } catch (e) { return null; }
+    }
+    return _vSndAc;
+}
+
+function _vPlay(kind, name) {
+    if (!_vSndOn(kind)) return;
+    const ac = _vSndCtx();
+    if (!ac) return;
+    if (ac.state === 'suspended') ac.resume().catch(() => {});
+    let t = ac.currentTime + 0.01;
+    VOICE_SOUNDS[name].forEach(([freq, dur]) => {
+        const o = ac.createOscillator(), g = ac.createGain();
+        o.type = 'sine';
+        o.frequency.value = freq;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.14, t + 0.015);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.connect(g); g.connect(ac.destination);
+        o.start(t); o.stop(t + dur + 0.02);
+        t += dur * 0.9;
+    });
+}
+
+/* ── Raccourci pour couper / rouvrir le micro ──
+   Trois sources : une touche du clavier, un bouton de manette/volant (API Gamepad) ou un bouton
+   d'un périphérique HID autorisé (volant, boîtier à boutons…). Le navigateur ne reçoit ces
+   événements que si la page est active, sauf pour les périphériques HID. */
+const VOICE_HOTKEY_LS = 'lmuVoiceHotkey';
+let _vHot = null;            // raccourci enregistré {k:'key'|'pad'|'hid', label, …}
+let _vLearn = false;         // en attente d'une touche à enregistrer
+let _vLearnTimer = null;
+let _vHotLast = 0;
+let _vPadDown = {};
+let _vPadTimer = null;
+const _vHidOpen = new Map(); // périphérique HID → écouteur
+
+function _vHotLoad() {
+    try {
+        const o = JSON.parse(localStorage.getItem(VOICE_HOTKEY_LS));
+        return o && ['key', 'pad', 'hid'].includes(o.k) ? o : null;
+    } catch (e) { return null; }
+}
+
+function _vHotMsg(text) {
+    const el = document.getElementById('teamVoiceKeyMsg');
+    if (el) { el.textContent = text || ''; el.style.display = text ? 'block' : 'none'; }
+}
+
+function _vHotRefresh() {
+    const l = document.getElementById('teamVoiceKeyLabel');
+    if (l) l.textContent = _vHot ? _vHot.label : 'Aucun';
+    const b = document.getElementById('teamVoiceKeySet');
+    if (b) { b.classList.toggle('listening', _vLearn); b.textContent = _vLearn ? 'Appuyez…' : 'Définir'; }
+}
+
+function _vHotStopLearn() {
+    _vLearn = false;
+    clearTimeout(_vLearnTimer);
+    _vHotRefresh();
+}
+
+function _vHotStartLearn() {
+    if (_vLearn) { _vHotStopLearn(); _vHotMsg(''); return; }
+    _vLearn = true;
+    _vHotMsg("Appuyez sur la touche ou le bouton à utiliser (Échap pour annuler)." +
+        (navigator.hid ? " Volant ou boîtier : autorisez-le d'abord avec 🎮." : ''));
+    clearTimeout(_vLearnTimer);
+    _vLearnTimer = setTimeout(() => {
+        if (_vLearn) { _vHotStopLearn(); _vHotMsg("Rien détecté : réessayez, ou autorisez le périphérique avec 🎮."); }
+    }, 12000);
+    _vHotRefresh();
+}
+
+function _vHotBind(h) {
+    _vHot = h;
+    try { localStorage.setItem(VOICE_HOTKEY_LS, JSON.stringify(h)); } catch (e) { /* stockage indisponible */ }
+    _vHotStopLearn();
+    _vHotMsg('✔ Raccourci enregistré : ' + h.label);
+}
+
+function _vHotClear() {
+    _vHot = null;
+    try { localStorage.removeItem(VOICE_HOTKEY_LS); } catch (e) { /* stockage indisponible */ }
+    _vHotStopLearn();
+    _vHotMsg('');
+}
+
+// Appui sur le raccourci : on coupe / rouvre le micro (seulement connecté à un salon)
+function _vHotFire() {
+    const now = Date.now();
+    if (!_vc || now - _vHotLast < 300) return;
+    _vHotLast = now;
+    voiceToggleMute();
+}
+
+function _vKeyName(e) {
+    const c = e.code || '';
+    if (/^Key[A-Z]$/.test(c)) return c.slice(3);
+    if (/^Digit\d$/.test(c)) return c.slice(5);
+    return (e.key && e.key.length === 1 ? e.key.toUpperCase() : c) || 'Touche';
+}
+
+function _vOnKey(e) {
+    if (['Control', 'Shift', 'Alt', 'Meta', 'AltGraph'].includes(e.key)) return;
+    if (_vLearn) {
+        e.preventDefault(); e.stopPropagation();
+        if (e.key === 'Escape') { _vHotStopLearn(); _vHotMsg(''); return; }
+        const mods = (e.ctrlKey ? 'Ctrl + ' : '') + (e.altKey ? 'Alt + ' : '') + (e.shiftKey ? 'Maj + ' : '') + (e.metaKey ? 'Méta + ' : '');
+        _vHotBind({ k: 'key', code: e.code, ctrl: e.ctrlKey, alt: e.altKey, shift: e.shiftKey, meta: e.metaKey,
+                    label: '⌨️ ' + mods + _vKeyName(e) });
+        return;
+    }
+    const h = _vHot;
+    if (!h || h.k !== 'key' || e.repeat || e.code !== h.code) return;
+    if (!!h.ctrl !== e.ctrlKey || !!h.alt !== e.altKey || !!h.shift !== e.shiftKey || !!h.meta !== e.metaKey) return;
+    // Sans modificateur, une touche ne doit pas se déclencher pendant qu'on écrit un message
+    const t = e.target;
+    const typing = t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
+    if (typing && !(h.ctrl || h.alt || h.meta)) return;
+    e.preventDefault();
+    _vHotFire();
+}
+
+function _vPadPoll() {
+    const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+    const now = {};
+    for (const gp of pads) {
+        if (!gp) continue;
+        gp.buttons.forEach((b, i) => {
+            const key = gp.id + '#' + i;
+            now[key] = b.pressed;
+            if (!b.pressed || _vPadDown[key]) return;            // on ne réagit qu'à l'appui
+            if (_vLearn) {
+                _vHotBind({ k: 'pad', id: gp.id, b: i,
+                            label: '🎮 ' + gp.id.replace(/\(.*?\)/g, '').trim().slice(0, 30) + ' · bouton ' + (i + 1) });
+            } else if (_vHot && _vHot.k === 'pad' && _vHot.id === gp.id && _vHot.b === i) {
+                _vHotFire();
+            }
+        });
+    }
+    _vPadDown = now;
+}
+
+function _vBits(n) { let c = 0; for (; n; n &= n - 1) c++; return c; }
+
+function _vHidReport(dev, st, ev) {
+    const d = new Uint8Array(ev.data.buffer, ev.data.byteOffset, ev.data.byteLength);
+    const prev = st[ev.reportId];
+    st[ev.reportId] = d.slice();
+    if (!prev || prev.length !== d.length) return;
+    if (_vLearn) {
+        // On retient un bouton quand un seul bit du rapport change, de 0 vers 1
+        let changed = 0, pick = null;
+        for (let i = 0; i < d.length; i++) {
+            const x = prev[i] ^ d[i];
+            if (!x) continue;
+            changed += _vBits(x);
+            if (_vBits(x) === 1 && (x & d[i])) pick = { byte: i, mask: x };
+        }
+        if (changed === 1 && pick) {
+            _vHotBind({ k: 'hid', vid: dev.vendorId, pid: dev.productId, rid: ev.reportId, byte: pick.byte, mask: pick.mask,
+                        label: '🕹️ ' + (dev.productName || 'Périphérique').slice(0, 30) + ' · bouton ' + (pick.byte * 8 + Math.log2(pick.mask) + 1) });
+        }
+        return;
+    }
+    const h = _vHot;
+    if (!h || h.k !== 'hid' || h.vid !== dev.vendorId || h.pid !== dev.productId || h.rid !== ev.reportId) return;
+    if (h.byte < d.length && (d[h.byte] & h.mask) && !(prev[h.byte] & h.mask)) _vHotFire();
+}
+
+async function _vHidAttach(dev) {
+    if (_vHidOpen.has(dev)) return;
+    try { if (!dev.opened) await dev.open(); }
+    catch (e) { _vHotMsg('Impossible d\'ouvrir « ' + (dev.productName || 'périphérique') + ' » (utilisé par un autre programme ?).'); return; }
+    const st = {};
+    const fn = ev => _vHidReport(dev, st, ev);
+    dev.addEventListener('inputreport', fn);
+    _vHidOpen.set(dev, fn);
+}
+
+async function _vHidAsk() {
+    if (!navigator.hid) { _vHotMsg("Ce navigateur ne gère pas les périphériques HID (utilisez Chrome ou Edge)."); return; }
+    try {
+        const devs = await navigator.hid.requestDevice({ filters: [] });
+        for (const d of devs) await _vHidAttach(d);
+        if (devs.length) _vHotMsg('Périphérique autorisé : cliquez sur « Définir » puis appuyez sur son bouton.');
+    } catch (e) { _vHotMsg("Autorisation du périphérique refusée ou impossible."); }
+}
+
+function _vHidOnConnect(ev) { if (ev.device) _vHidAttach(ev.device); }
+
+function _vHotStart() {
+    _vHot = _vHotLoad();
+    document.addEventListener('keydown', _vOnKey, true);
+    _vPadTimer = setInterval(_vPadPoll, 50);
+    if (navigator.hid) {
+        navigator.hid.addEventListener('connect', _vHidOnConnect);
+        navigator.hid.getDevices().then(ds => ds.forEach(_vHidAttach)).catch(() => {});
+    }
+    _vHotRefresh();
+}
+
+function _vHotStop() {
+    document.removeEventListener('keydown', _vOnKey, true);
+    clearInterval(_vPadTimer); _vPadTimer = null;
+    clearTimeout(_vLearnTimer); _vLearn = false;
+    if (navigator.hid) navigator.hid.removeEventListener('connect', _vHidOnConnect);
+    _vHidOpen.forEach((fn, dev) => { try { dev.removeEventListener('inputreport', fn); } catch (e) { /* déjà retiré */ } });
+    _vHidOpen.clear();
+}
+
 /* ── Rejoindre / quitter ── */
 async function voiceJoin(sid) {
     sid = sid || _vViewSid;
@@ -712,6 +971,7 @@ async function voiceJoin(sid) {
         _vSetError("Ce navigateur ne permet pas le vocal (HTTPS et micro requis).");
         return;
     }
+    _vSndCtx();                                 // créé pendant le clic : les sons pourront jouer ensuite
     if (_vc) voiceLeave();                      // changement de salon : on quitte l'ancien
     const tok = ++_vJoinTok;
     _vSetError('');
@@ -766,13 +1026,15 @@ async function voiceJoin(sid) {
     const routes = setInterval(_vPollRoutes, 5000);
     _vc.stops.push(() => clearInterval(timer), () => clearInterval(poll), () => clearInterval(routes),
         () => { window._firebaseOnDisconnect(myRef).cancel().catch(() => {}); });
+    _vPlay('Room', 'join');
     _vRender();
 }
 
-function voiceLeave() {
+function voiceLeave(silent) {
     const c = _vc;
     if (!c) return;
     ++_vJoinTok;
+    if (!silent) _vPlay('Room', 'leave');
     c.stops.forEach(fn => { try { fn(); } catch (e) { /* sans conséquence */ } });
     Object.keys(c.peers).forEach(_vClosePeer);
     if (c.chain.df) { try { c.chain.df.core.destroy(); } catch (e) { /* déjà détruit */ } }
@@ -790,11 +1052,13 @@ function voiceToggleMute() {
     _vc.muted = !_vc.muted;
     _vc.stream.getAudioTracks().forEach(t => { t.enabled = !_vc.muted; });
     if (_vc.beat) _vc.beat();
+    _vPlay('Mic', _vc.muted ? 'mute' : 'unmute');
     _vRender();
 }
 
 function stopTeamVoice() {
-    voiceLeave();
+    voiceLeave(true);
+    _vHotStop();
     if (_vWatchStop) { try { _vWatchStop(); } catch (e) { /* sans conséquence */ } }
     _vWatchStop = null; _vData = {};
     document.getElementById('teamVoiceRoot')?.remove();
@@ -806,6 +1070,7 @@ function startTeamVoice() {
     stopTeamVoice();
     _vTeam = window._teamId;
     _vEnsureUI();
+    _vHotStart();
     _vViewSid = window._presenceSession || null;
     _vWatch();
     _vRender();
