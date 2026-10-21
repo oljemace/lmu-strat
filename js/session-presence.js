@@ -115,4 +115,5 @@ async function startTeamPresence() {
 function presenceSwitchTo(sessionId) {
     window._presenceSession = sessionId || null;
     if (_presenceBeat) _presenceBeat();
+    if (typeof voiceViewSession === 'function') voiceViewSession(window._presenceSession);
 }

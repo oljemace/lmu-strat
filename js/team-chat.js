@@ -286,6 +286,7 @@ function _chatSetOpen(open) {
     const panel = document.getElementById('teamChatPanel');
     if (panel) panel.style.display = open ? 'flex' : 'none';
     if (open) {
+        if (typeof _vSetOpen === 'function') _vSetOpen(false);   // un seul panneau à la fois
         _chatRender();
         document.getElementById('teamChatInput')?.focus();
     }
