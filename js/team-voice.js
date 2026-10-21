@@ -355,7 +355,8 @@ function _vEnsureUI() {
         '<button type="button" id="teamVoiceClose" aria-label="Fermer">✕</button></div>' +
         '<div id="teamVoiceList"></div>' +
         '<div id="teamVoiceError" style="display:none"></div>' +
-        '<div class="voice-actions"><button type="button" id="teamVoiceMute" style="display:none"></button></div>' +
+        '<div class="voice-actions"><button type="button" id="teamVoiceMute" style="display:none"></button>' +
+        '<button type="button" id="teamVoiceDeaf" style="display:none"></button></div>' +
         '<div id="teamVoiceNoiseRow"><label for="teamVoiceNoise">🔇 Réduction du bruit</label>' +
         '<select id="teamVoiceNoise"><option value="0">Désactivée</option><option value="1">Normale</option>' +
         '<option value="2">Forte</option><option value="3">Maximale (expérimental)</option></select></div>' +
@@ -366,6 +367,9 @@ function _vEnsureUI() {
         '<div id="teamVoiceKeyRow"><label>⌨️ Raccourci micro</label><span id="teamVoiceKeyLabel"></span>' +
         '<button type="button" id="teamVoiceKeySet">Définir</button>' +
         '<button type="button" id="teamVoiceKeyClear" title="Effacer le raccourci" aria-label="Effacer le raccourci">✕</button>' +
+        '</div><div id="teamVoiceDeafRow"><label>🎧 Couper le son des autres</label><span id="teamVoiceDeafKeyLabel"></span>' +
+        '<button type="button" id="teamVoiceDeafKeySet">Définir</button>' +
+        '<button type="button" id="teamVoiceDeafKeyClear" title="Effacer le raccourci" aria-label="Effacer le raccourci">✕</button>' +
         '<button type="button" id="teamVoiceHidAdd" title="Autoriser un volant, une manette ou un boîtier à boutons" ' +
         'aria-label="Autoriser un périphérique">🎮</button></div>' +
         '<div id="teamVoiceKeyMsg" style="display:none"></div>' +
@@ -391,8 +395,11 @@ function _vEnsureUI() {
     level.addEventListener('input', () => voiceSetNoiseLevel(Number(level.value)));
     document.getElementById('teamVoiceLevelVal').textContent = _vNoiseLevel() + ' %';
     _vRefreshLevelUI();
-    document.getElementById('teamVoiceKeySet').addEventListener('click', _vHotStartLearn);
-    document.getElementById('teamVoiceKeyClear').addEventListener('click', _vHotClear);
+    document.getElementById('teamVoiceKeySet').addEventListener('click', () => _vHotStartLearn('mute'));
+    document.getElementById('teamVoiceKeyClear').addEventListener('click', () => _vHotClear('mute'));
+    document.getElementById('teamVoiceDeafKeySet').addEventListener('click', () => _vHotStartLearn('deaf'));
+    document.getElementById('teamVoiceDeafKeyClear').addEventListener('click', () => _vHotClear('deaf'));
+    document.getElementById('teamVoiceDeaf').addEventListener('click', voiceToggleDeaf);
     const hidBtn = document.getElementById('teamVoiceHidAdd');
     hidBtn.addEventListener('click', _vHidAsk);
     if (!navigator.hid) hidBtn.style.display = 'none';
@@ -545,6 +552,9 @@ function _vRender() {
     const mute = document.getElementById('teamVoiceMute');
     mute.style.display = _vc ? '' : 'none';
     if (_vc) mute.textContent = _vc.muted ? '🔇 Micro coupé (cliquer pour réactiver)' : '🎙️ Micro actif (cliquer pour couper)';
+    const deaf = document.getElementById('teamVoiceDeaf');
+    deaf.style.display = _vc ? '' : 'none';
+    if (_vc) deaf.textContent = _vc.deaf ? '🔕 Son coupé (réactiver)' : '🎧 Son actif (couper)';
 }
 
 /* ── Écoute de tous les salons ── */
@@ -604,6 +614,7 @@ function _vMakePeer(uid, n) {
             document.getElementById('teamVoiceAudio')?.appendChild(peer.audio);
         }
         peer.audio.srcObject = e.streams[0];
+        peer.audio.muted = !!_vc.deaf;
         peer.audio.play().catch(() => {});
         _vWatchLevel(uid, e.streams[0]);
     };
@@ -733,6 +744,8 @@ function _vPoll() {
 const VOICE_SOUNDS = {
     mute: [[520, 0.09], [390, 0.14]],
     unmute: [[390, 0.09], [520, 0.14]],
+    deaf: [[600, 0.07], [450, 0.07], [330, 0.14]],
+    undeaf: [[330, 0.07], [450, 0.07], [600, 0.14]],
     join: [[440, 0.08], [587, 0.08], [740, 0.15]],
     leave: [[740, 0.08], [587, 0.08], [440, 0.15]],
     peerJoin: [[660, 0.07], [880, 0.11]],
@@ -777,18 +790,18 @@ function _vPlay(kind, name) {
    Trois sources : une touche du clavier, un bouton de manette/volant (API Gamepad) ou un bouton
    d'un périphérique HID autorisé (volant, boîtier à boutons…). Le navigateur ne reçoit ces
    événements que si la page est active, sauf pour les périphériques HID. */
-const VOICE_HOTKEY_LS = 'lmuVoiceHotkey';
-let _vHot = null;            // raccourci enregistré {k:'key'|'pad'|'hid', label, …}
-let _vLearn = false;         // en attente d'une touche à enregistrer
+const VOICE_HOTKEY_ACTIONS = { mute: 'lmuVoiceHotkey', deaf: 'lmuVoiceHotkeyDeaf' };
+const _vHots = { mute: null, deaf: null };   // raccourcis enregistrés {k:'key'|'pad'|'hid', label, …}
+let _vLearn = null;          // action dont on attend la touche ('mute' | 'deaf'), sinon null
 let _vLearnTimer = null;
 let _vHotLast = 0;
 let _vPadDown = {};
 let _vPadTimer = null;
 const _vHidOpen = new Map(); // périphérique HID → écouteur
 
-function _vHotLoad() {
+function _vHotLoad(action) {
     try {
-        const o = JSON.parse(localStorage.getItem(VOICE_HOTKEY_LS));
+        const o = JSON.parse(localStorage.getItem(VOICE_HOTKEY_ACTIONS[action]));
         return o && ['key', 'pad', 'hid'].includes(o.k) ? o : null;
     } catch (e) { return null; }
 }
@@ -798,22 +811,26 @@ function _vHotMsg(text) {
     if (el) { el.textContent = text || ''; el.style.display = text ? 'block' : 'none'; }
 }
 
+const _vHotIds = { mute: ['teamVoiceKeyLabel', 'teamVoiceKeySet'], deaf: ['teamVoiceDeafKeyLabel', 'teamVoiceDeafKeySet'] };
+
 function _vHotRefresh() {
-    const l = document.getElementById('teamVoiceKeyLabel');
-    if (l) l.textContent = _vHot ? _vHot.label : 'Aucun';
-    const b = document.getElementById('teamVoiceKeySet');
-    if (b) { b.classList.toggle('listening', _vLearn); b.textContent = _vLearn ? 'Appuyez…' : 'Définir'; }
+    Object.keys(_vHotIds).forEach(a => {
+        const l = document.getElementById(_vHotIds[a][0]);
+        if (l) l.textContent = _vHots[a] ? _vHots[a].label : 'Aucun';
+        const b = document.getElementById(_vHotIds[a][1]);
+        if (b) { b.classList.toggle('listening', _vLearn === a); b.textContent = _vLearn === a ? 'Appuyez…' : 'Définir'; }
+    });
 }
 
 function _vHotStopLearn() {
-    _vLearn = false;
+    _vLearn = null;
     clearTimeout(_vLearnTimer);
     _vHotRefresh();
 }
 
-function _vHotStartLearn() {
-    if (_vLearn) { _vHotStopLearn(); _vHotMsg(''); return; }
-    _vLearn = true;
+function _vHotStartLearn(action) {
+    if (_vLearn === action) { _vHotStopLearn(); _vHotMsg(''); return; }
+    _vLearn = action;
     _vHotMsg("Appuyez sur la touche ou le bouton à utiliser (Échap pour annuler)." +
         (navigator.hid ? " Volant ou boîtier : autorisez-le d'abord avec 🎮." : ''));
     clearTimeout(_vLearnTimer);
@@ -824,25 +841,32 @@ function _vHotStartLearn() {
 }
 
 function _vHotBind(h) {
-    _vHot = h;
-    try { localStorage.setItem(VOICE_HOTKEY_LS, JSON.stringify(h)); } catch (e) { /* stockage indisponible */ }
+    const action = _vLearn;
+    if (!action) return;
+    _vHots[action] = h;
+    try { localStorage.setItem(VOICE_HOTKEY_ACTIONS[action], JSON.stringify(h)); } catch (e) { /* stockage indisponible */ }
     _vHotStopLearn();
     _vHotMsg('✔ Raccourci enregistré : ' + h.label);
 }
 
-function _vHotClear() {
-    _vHot = null;
-    try { localStorage.removeItem(VOICE_HOTKEY_LS); } catch (e) { /* stockage indisponible */ }
+function _vHotClear(action) {
+    _vHots[action] = null;
+    try { localStorage.removeItem(VOICE_HOTKEY_ACTIONS[action]); } catch (e) { /* stockage indisponible */ }
     _vHotStopLearn();
     _vHotMsg('');
 }
 
-// Appui sur le raccourci : on coupe / rouvre le micro (seulement connecté à un salon)
-function _vHotFire() {
+// Appui sur un raccourci : coupe / rouvre le micro ou le son des autres (seulement connecté à un salon)
+function _vHotFire(action) {
     const now = Date.now();
     if (!_vc || now - _vHotLast < 300) return;
     _vHotLast = now;
-    voiceToggleMute();
+    if (action === 'deaf') voiceToggleDeaf(); else voiceToggleMute();
+}
+
+// Déclenche les actions dont le raccourci correspond à l'événement
+function _vHotMatch(pred) {
+    Object.keys(_vHots).forEach(a => { if (_vHots[a] && pred(_vHots[a])) _vHotFire(a); });
 }
 
 function _vKeyName(e) {
@@ -862,15 +886,18 @@ function _vOnKey(e) {
                     label: '⌨️ ' + mods + _vKeyName(e) });
         return;
     }
-    const h = _vHot;
-    if (!h || h.k !== 'key' || e.repeat || e.code !== h.code) return;
-    if (!!h.ctrl !== e.ctrlKey || !!h.alt !== e.altKey || !!h.shift !== e.shiftKey || !!h.meta !== e.metaKey) return;
+    if (e.repeat) return;
     // Sans modificateur, une touche ne doit pas se déclencher pendant qu'on écrit un message
     const t = e.target;
     const typing = t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
-    if (typing && !(h.ctrl || h.alt || h.meta)) return;
-    e.preventDefault();
-    _vHotFire();
+    let hit = false;
+    _vHotMatch(h => {
+        const ok = h.k === 'key' && e.code === h.code && !!h.ctrl === e.ctrlKey && !!h.alt === e.altKey &&
+            !!h.shift === e.shiftKey && !!h.meta === e.metaKey && !(typing && !(h.ctrl || h.alt || h.meta));
+        if (ok) hit = true;
+        return ok;
+    });
+    if (hit) e.preventDefault();
 }
 
 function _vPadPoll() {
@@ -885,8 +912,8 @@ function _vPadPoll() {
             if (_vLearn) {
                 _vHotBind({ k: 'pad', id: gp.id, b: i,
                             label: '🎮 ' + gp.id.replace(/\(.*?\)/g, '').trim().slice(0, 30) + ' · bouton ' + (i + 1) });
-            } else if (_vHot && _vHot.k === 'pad' && _vHot.id === gp.id && _vHot.b === i) {
-                _vHotFire();
+            } else {
+                _vHotMatch(h => h.k === 'pad' && h.id === gp.id && h.b === i);
             }
         });
     }
@@ -915,9 +942,8 @@ function _vHidReport(dev, st, ev) {
         }
         return;
     }
-    const h = _vHot;
-    if (!h || h.k !== 'hid' || h.vid !== dev.vendorId || h.pid !== dev.productId || h.rid !== ev.reportId) return;
-    if (h.byte < d.length && (d[h.byte] & h.mask) && !(prev[h.byte] & h.mask)) _vHotFire();
+    _vHotMatch(h => h.k === 'hid' && h.vid === dev.vendorId && h.pid === dev.productId && h.rid === ev.reportId &&
+        h.byte < d.length && (d[h.byte] & h.mask) && !(prev[h.byte] & h.mask));
 }
 
 async function _vHidAttach(dev) {
@@ -942,7 +968,7 @@ async function _vHidAsk() {
 function _vHidOnConnect(ev) { if (ev.device) _vHidAttach(ev.device); }
 
 function _vHotStart() {
-    _vHot = _vHotLoad();
+    Object.keys(_vHots).forEach(a => { _vHots[a] = _vHotLoad(a); });
     document.addEventListener('keydown', _vOnKey, true);
     _vPadTimer = setInterval(_vPadPoll, 50);
     if (navigator.hid) {
@@ -955,7 +981,7 @@ function _vHotStart() {
 function _vHotStop() {
     document.removeEventListener('keydown', _vOnKey, true);
     clearInterval(_vPadTimer); _vPadTimer = null;
-    clearTimeout(_vLearnTimer); _vLearn = false;
+    clearTimeout(_vLearnTimer); _vLearn = null;
     if (navigator.hid) navigator.hid.removeEventListener('connect', _vHidOnConnect);
     _vHidOpen.forEach((fn, dev) => { try { dev.removeEventListener('inputreport', fn); } catch (e) { /* déjà retiré */ } });
     _vHidOpen.clear();
@@ -1004,7 +1030,7 @@ async function voiceJoin(sid) {
     const nonce = Math.random().toString(36).slice(2, 12);
     const myRef = _vRef(`teams/${team}/voice/${sid}/${user.uid}`);
     _vc = { sid, team, nonce, ice, stream: chain.stream, raw, ac, chain, peers: {}, stops: [], myRef, name,
-            muted: false, seen: new Set(), levels: {} };
+            muted: false, deaf: false, seen: new Set(), levels: {} };
     _vWatchLevel(user.uid, chain.stream);
 
     const beat = () => window._firebaseSet(myRef, { name, ts: Date.now(), n: nonce, mu: _vc ? _vc.muted : false }).catch(() => {});
@@ -1053,6 +1079,15 @@ function voiceToggleMute() {
     _vc.stream.getAudioTracks().forEach(t => { t.enabled = !_vc.muted; });
     if (_vc.beat) _vc.beat();
     _vPlay('Mic', _vc.muted ? 'mute' : 'unmute');
+    _vRender();
+}
+
+// « Sourd » : on n'entend plus les autres (le micro n'est pas touché)
+function voiceToggleDeaf() {
+    if (!_vc) return;
+    _vc.deaf = !_vc.deaf;
+    Object.keys(_vc.peers).forEach(u => { if (_vc.peers[u].audio) _vc.peers[u].audio.muted = _vc.deaf; });
+    _vPlay('Mic', _vc.deaf ? 'deaf' : 'undeaf');
     _vRender();
 }
 
