@@ -483,6 +483,7 @@ function _vPinSet(on) {
    pour lui laisser la place. Ancrés tous les deux, ils s'empilent (vocal en haut, chat en bas).
    Sur un écran étroit (moins de 720 px), l'ancrage est suspendu : les panneaux restent flottants. */
 const DOCK_W_KEY = 'lmuDockWidth';
+let _dockBarWatch = null;
 function _dockWidth() {
     try { const v = Number(localStorage.getItem(DOCK_W_KEY)); if (v >= 280 && v <= 900) return v; } catch (e) { /* largeur par défaut */ }
     return 360;
@@ -495,11 +496,62 @@ function _dockOn(which) {
     return !!pinned && window.innerWidth >= 720 && !!el && el.style.display !== 'none';
 }
 
+const DOCK_SPLIT_KEY = 'lmuDockSplit';
+function _dockSplit() {
+    try { const v = Number(localStorage.getItem(DOCK_SPLIT_KEY)); if (v >= 0.15 && v <= 0.85) return v; } catch (e) { /* moitié par défaut */ }
+    return 0.5;
+}
+
+// La barre de session (fixe, en haut) recouvre le haut de la colonne : on démarre sous elle
+function _dockTop() {
+    const bar = document.getElementById('sessionBar');
+    if (!bar) return 0;
+    const r = bar.getBoundingClientRect();
+    return r.width > window.innerWidth * 0.5 ? Math.max(0, Math.round(r.bottom)) : 0;
+}
+
 function _dockLayout() {
     const c = document.getElementById('teamChatPanel'), v = document.getElementById('teamVoicePanel');
     const dc = _dockOn('chat'), dv = _dockOn('voice'), any = dc || dv;
     const w = Math.min(_dockWidth(), Math.max(280, window.innerWidth - 320));
-    document.documentElement.style.setProperty('--dock-w', w + 'px');
+    const top = _dockTop();
+    const root = document.documentElement.style;
+    root.setProperty('--dock-w', w + 'px');
+    root.setProperty('--dock-top', top + 'px');
+    root.setProperty('--dock-mid', Math.round(top + _dockSplit() * (window.innerHeight - top)) + 'px');
+    document.body.classList.toggle('dock-both', dc && dv);
+    if (any && !_dockBarWatch && window.ResizeObserver && document.getElementById('sessionBar')) {
+        _dockBarWatch = new ResizeObserver(() => _dockLayout());
+        _dockBarWatch.observe(document.getElementById('sessionBar'));
+    }
+    if (!document.getElementById('teamDockSplit') && dc && dv) {
+        const sp = document.createElement('div');
+        sp.id = 'teamDockSplit';
+        sp.title = 'Glisser pour répartir la hauteur (double-clic : moitié/moitié)';
+        document.body.appendChild(sp);
+        sp.addEventListener('pointerdown', e => {
+            e.preventDefault();
+            sp.setPointerCapture(e.pointerId);
+            const move = ev => {
+                const t = _dockTop(), area = Math.max(1, window.innerHeight - t);
+                const ratio = Math.max(0.15, Math.min(0.85, (ev.clientY - t) / area));
+                try { localStorage.setItem(DOCK_SPLIT_KEY, ratio.toFixed(3)); } catch (err) { /* sans conséquence */ }
+                _dockLayout();
+            };
+            const up = () => {
+                sp.removeEventListener('pointermove', move);
+                sp.removeEventListener('pointerup', up);
+                sp.removeEventListener('pointercancel', up);
+            };
+            sp.addEventListener('pointermove', move);
+            sp.addEventListener('pointerup', up);
+            sp.addEventListener('pointercancel', up);
+        });
+        sp.addEventListener('dblclick', () => {
+            try { localStorage.removeItem(DOCK_SPLIT_KEY); } catch (err) { /* sans conséquence */ }
+            _dockLayout();
+        });
+    }
     if (c) { c.classList.toggle('docked', dc); c.classList.toggle('dock-bottom', dc && dv); }
     if (v) { v.classList.toggle('docked', dv); v.classList.toggle('dock-top', dv && dc); }
     document.body.classList.toggle('has-dock', any);

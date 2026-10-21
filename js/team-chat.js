@@ -15,6 +15,7 @@ const CHAT_MAX_LEN = 500;
 
 let _chatStop = null;
 let _chatMsgs = {};          // slot → message
+let _chatReplyTo = null;     // message auquel on répond : { uid, name, text, ts }
 let _chatOpen = false;
 let _chatMyName = null;
 let _chatTeam = null;
@@ -78,6 +79,7 @@ function _chatSegments(text) {
 // Ce message me concerne-t-il (autre auteur que moi) ?
 function _chatIsForMe(m, me) {
     if (m.uid === me) return false;
+    if (m.reply && m.reply.uid === me) return true;   // une réponse à mon message me concerne
     return _chatSegments(m.text).some(s => s.tag &&
         ((s.tag.kind === 'user' && s.tag.uid === me) ||
          (s.tag.kind === 'session' && s.tag.id === window._presenceSession)));
@@ -229,6 +231,53 @@ function _chatSorted() {
         .sort((a, b) => a.t - b.t);
 }
 
+// ── Réponse à un message ──
+function _chatReplySet(m) {
+    if (typeof m.ts !== 'number') return;
+    const snippet = String(m.text || '').replace(/\s+/g, ' ').trim() || (m.file ? '📎 ' + String(m.file.name || 'fichier') : '');
+    _chatReplyTo = { uid: m.uid, name: String(m.name || 'Membre').slice(0, 60), text: snippet.slice(0, 120), ts: m.ts };
+    _chatReplyRender();
+    document.getElementById('teamChatInput')?.focus();
+}
+
+function _chatReplyClear() {
+    _chatReplyTo = null;
+    _chatReplyRender();
+}
+
+function _chatReplyRender() {
+    const el = document.getElementById('teamChatReply');
+    if (!el) return;
+    el.textContent = '';
+    if (!_chatReplyTo) { el.style.display = 'none'; return; }
+    el.style.display = 'flex';
+    const info = document.createElement('div');
+    info.className = 'reply-info';
+    const nm = document.createElement('b');
+    nm.textContent = '↩ Réponse à ' + _chatReplyTo.name;
+    const tx = document.createElement('span');
+    tx.textContent = _chatReplyTo.text;
+    info.appendChild(nm);
+    info.appendChild(tx);
+    const x = document.createElement('button');
+    x.type = 'button';
+    x.title = 'Annuler la réponse (Échap)';
+    x.textContent = '✕';
+    x.addEventListener('click', _chatReplyClear);
+    el.appendChild(info);
+    el.appendChild(x);
+}
+
+// Va au message cité s'il est encore dans le tampon des 500 derniers messages
+function _chatReplyGoto(r) {
+    const key = r.uid + ':' + r.ts;
+    const row = Array.from(document.querySelectorAll('#teamChatList .chat-msg')).find(x => x.dataset.k === key);
+    if (!row) { _chatError("Le message d'origine n'est plus disponible."); setTimeout(() => _chatError(''), 2500); return; }
+    row.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    row.classList.remove('flash'); void row.offsetWidth;
+    row.classList.add('flash');
+}
+
 function _chatFmtTime(t) {
     const d = new Date(t), now = new Date();
     const hm = d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
@@ -254,6 +303,7 @@ function _chatEnsureUI() {
         '<div id="teamChatList"></div>' +
         '<div id="teamChatError" style="display:none"></div>' +
         '<div id="teamChatSuggest" style="display:none"></div>' +
+        '<div id="teamChatReply" style="display:none"></div>' +
         '<div id="teamChatAttach" style="display:none"></div>' +
         '<div id="teamChatEmoji" style="display:none"></div>' +
         '<form id="teamChatForm"><button type="button" id="teamChatClip" title="Joindre un fichier (ou coller / glisser une image) — 50 Mo max">📎</button>' +
@@ -311,6 +361,7 @@ function _chatEnsureUI() {
             if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); _chatSuggestPick(_chatSuggIdx); return; }
             if (e.key === 'Escape') { e.preventDefault(); _chatSuggestHide(); return; }
         }
+        if (e.key === 'Escape' && _chatReplyTo) { e.preventDefault(); _chatReplyClear(); return; }
         if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); chatSend(); }
     });
 }
@@ -450,6 +501,7 @@ function _chatRender() {
     msgs.forEach(m => {
         const row = document.createElement('div');
         row.className = 'chat-msg' + (m.uid === me ? ' mine' : '') + (_chatIsForMe(m, me) ? ' tagged' : '');
+        row.dataset.k = m.uid + ':' + m.t;
         const head = document.createElement('div');
         head.className = 'chat-meta';
         const who = document.createElement('b');
@@ -458,6 +510,13 @@ function _chatRender() {
         when.textContent = ' · ' + _chatFmtTime(m.t);
         head.appendChild(who);
         head.appendChild(when);
+        const rep = document.createElement('button');
+        rep.type = 'button';
+        rep.className = 'chat-reply';
+        rep.title = 'Répondre à ce message';
+        rep.textContent = '↩';
+        rep.addEventListener('click', () => _chatReplySet(m));
+        head.appendChild(rep);
         if (isAdmin) {
             const del = document.createElement('button');
             del.type = 'button';
@@ -472,6 +531,19 @@ function _chatRender() {
         _chatFillBody(body, m, me);
         if (m.file && typeof _chatFillFile === 'function') _chatFillFile(body, m);
         row.appendChild(head);
+        if (m.reply && typeof m.reply.text === 'string') {
+            const q = document.createElement('div');
+            q.className = 'chat-quote';
+            q.title = 'Aller au message cité';
+            const qn = document.createElement('b');
+            qn.textContent = String(m.reply.name || 'Membre');
+            const qt = document.createElement('span');
+            qt.textContent = m.reply.text;
+            q.appendChild(qn);
+            q.appendChild(qt);
+            q.addEventListener('click', () => _chatReplyGoto(m.reply));
+            row.appendChild(q);
+        }
         row.appendChild(body);
         list.appendChild(row);
     });
@@ -530,8 +602,10 @@ async function chatSend() {
         const replaced = _chatMsgs[slot];   // message qui quitte le tampon circulaire
         const msg = { uid: user.uid, name, text, ts: window._firebaseServerTimestamp() };
         if (fileMeta) msg.file = fileMeta;
+        if (_chatReplyTo) msg.reply = _chatReplyTo;
         await window._firebaseSet(ref(db, teamPath(`chat/m/${slot}`)), msg);
         input.value = '';
+        _chatReplyClear();
         if (hasFile) _chatAttachClear();
         if (replaced && replaced.file && typeof _chatDeleteFile === 'function') _chatDeleteFile(replaced.file.path);
     } catch (e) {
@@ -561,6 +635,7 @@ function stopTeamChat() {
     if (_chatMembersStop) { try { _chatMembersStop(); } catch (e) { /* sans conséquence */ } }
     _chatMembersStop = null; _chatMembers = {};
     if (typeof _chatAttachClear === 'function') _chatAttachClear();
+    _chatReplyTo = null;
     document.getElementById('teamChatRoot')?.remove();
     _chatOpen = false;
 }

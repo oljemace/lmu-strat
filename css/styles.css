@@ -1145,12 +1145,15 @@ body.live-mode .plan-bar { display:none; }
 body.has-dock #teamChatToggle { right: calc(18px + var(--dock-w)); }
 body.has-dock #teamVoiceToggle { right: calc(80px + var(--dock-w)); }
 body.has-dock #teamChatPanel:not(.docked), body.has-dock #teamVoicePanel:not(.docked) { right: calc(18px + var(--dock-w)); }
-#teamChatPanel.docked, #teamVoicePanel.docked { right: 0; top: 0; bottom: 0; z-index: 880; width: var(--dock-w) !important; max-width: none; height: auto !important; max-height: none; border-radius: 0; border-width: 0 0 0 1px; box-shadow: -4px 0 18px rgba(0,0,0,0.45); }
+#teamChatPanel.docked, #teamVoicePanel.docked { right: 0; top: var(--dock-top, 0px); bottom: 0; z-index: 880; width: var(--dock-w) !important; max-width: none; height: auto !important; max-height: none; border-radius: 0; border-width: 0 0 0 1px; box-shadow: -4px 0 18px rgba(0,0,0,0.45); }
 #teamVoicePanel.docked { overflow-y: auto; }
-#teamVoicePanel.dock-top { bottom: 50%; border-bottom: 1px solid rgba(255,255,255,0.15); }
-#teamChatPanel.dock-bottom { top: 50%; }
+#teamVoicePanel.dock-top { bottom: calc(100% - var(--dock-mid)); border-bottom: 1px solid rgba(255,255,255,0.15); }
+#teamChatPanel.dock-bottom { top: var(--dock-mid); }
+#teamDockSplit { position: fixed; right: 0; width: var(--dock-w); top: calc(var(--dock-mid) - 4px); height: 8px; z-index: 891; cursor: ns-resize; touch-action: none; display: none; }
+#teamDockSplit:hover { background: rgba(0,255,136,0.35); }
+body.dock-both #teamDockSplit { display: block; }
 #teamChatPanel.docked #teamChatResize { display: none; }
-#teamDockGrip { position: fixed; top: 0; bottom: 0; right: calc(var(--dock-w) - 3px); width: 7px; z-index: 890; cursor: ew-resize; touch-action: none; display: none; }
+#teamDockGrip { position: fixed; top: var(--dock-top, 0px); bottom: 0; right: calc(var(--dock-w) - 3px); width: 7px; z-index: 890; cursor: ew-resize; touch-action: none; display: none; }
 #teamDockGrip:hover { background: rgba(0,255,136,0.35); }
 body.has-dock #teamDockGrip { display: block; }
 #teamVoicePin, #teamChatPin { opacity: 0.5; border-radius: 6px !important; }
@@ -1232,6 +1235,19 @@ button.chat-tag-session { border: 0; background: rgba(0,255,136,0.18); color: #0
 #teamChatList .chat-del:hover { opacity: 1; }
 #teamChatList .chat-text { white-space: pre-wrap; overflow-wrap: anywhere; color: #fff; font-size: 0.92em; }
 #teamChatError { color: #ff8899; font-size: 0.8em; padding: 4px 10px; }
+#teamChatReply { align-items: center; gap: 8px; padding: 6px 10px; border-top: 1px solid rgba(255,255,255,0.1); background: #16232d; font-size: 0.85em; border-left: 3px solid #00aaff; }
+#teamChatReply .reply-info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+#teamChatReply .reply-info b { color: #9fd8ff; }
+#teamChatReply .reply-info span { color: #8e9ac0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#teamChatReply button { background: none; border: 0; color: #ccc; cursor: pointer; font-size: 1em; }
+#teamChatList .chat-reply { margin-left: auto; background: none; border: 0; cursor: pointer; opacity: 0; color: #cfeaff; font-size: 1em; }
+#teamChatList .chat-msg:hover .chat-reply, #teamChatList .chat-reply:focus { opacity: 0.9; }
+#teamChatList .chat-reply + .chat-del { margin-left: 0; }
+#teamChatList .chat-quote { display: flex; flex-direction: column; margin: 3px 0; padding: 3px 8px; border-left: 3px solid #00aaff; background: rgba(0,0,0,0.25); border-radius: 4px; cursor: pointer; font-size: 0.82em; }
+#teamChatList .chat-quote b { color: #9fd8ff; }
+#teamChatList .chat-quote span { color: #aab; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+#teamChatList .chat-msg.flash { animation: chatFlash 1.4s ease-out; }
+@keyframes chatFlash { 0%, 40% { box-shadow: 0 0 0 2px #00aaff; background: rgba(0,170,255,0.3); } 100% { box-shadow: none; } }
 #teamChatPanel.dragover { outline: 2px dashed #00ff88; outline-offset: -6px; }
 #teamChatAttach { align-items: center; gap: 8px; padding: 6px 10px; border-top: 1px solid rgba(255,255,255,0.1); background: #16232d; font-size: 0.85em; }
 #teamChatAttach img { width: 40px; height: 40px; object-fit: cover; border-radius: 6px; }
