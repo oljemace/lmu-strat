@@ -1,6 +1,8 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getDatabase, ref, onValue, set, update, get, remove, onDisconnect, runTransaction, serverTimestamp }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  import { getStorage, ref as sRef, uploadBytesResumable, getDownloadURL, deleteObject }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
   import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword, sendPasswordResetEmail, connectAuthEmulator }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
@@ -44,6 +46,16 @@ const firebaseConfig = {
   window._firebaseOnDisconnect = onDisconnect;
   window._firebaseRunTransaction = runTransaction;
   window._firebaseServerTimestamp = serverTimestamp;
+
+  // Stockage de fichiers (pièces jointes du chat) — voir storage/storage.rules.
+  // Pas d'émulateur Storage : en mode émulateur local les pièces jointes sont masquées.
+  if (!_useEmulator) {
+    window._fbStorage = getStorage(app);
+    window._fbStorageRef = sRef;
+    window._fbUploadBytesResumable = uploadBytesResumable;
+    window._fbGetDownloadURL = getDownloadURL;
+    window._fbDeleteObject = deleteObject;
+  }
 
   // ── Authentification (remplace l'ancien gate par mot de passe client) ──
   // L'autorisation réelle est appliquée par les règles de sécurité (voir

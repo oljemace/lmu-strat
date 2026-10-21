@@ -25,9 +25,15 @@ const VOICE_RELAY_BITRATE  = 24000;
 const VOICE_BEAT_MS  = 60 * 1000;
 const VOICE_STALE_MS = 3 * 60 * 1000;
 
-// Réduction du bruit : 0 = aucune, 1 = normale, 2 = forte. Seuil (volume RMS, 0..1) sous
-// lequel la porte de bruit coupe le micro.
-const VOICE_NOISE_THRESHOLDS = [0, 0.006, 0.015];
+// Réduction du bruit : 0 = aucune, 1 = normale, 2 = forte.
+// Avec RNNoise (réseau de neurones, dossier vendor/rnnoise) : « forte » coupe aussi les
+// moments où la parole est improbable. Sans RNNoise (chargement impossible), repli sur le
+// filtre du navigateur + une porte de bruit simple. Seuils = volume RMS (0..1) sous lequel
+// la porte de bruit coupe le micro.
+const VOICE_NOISE_THRESHOLDS = [0, 0.006, 0.015];         // repli, sans RNNoise
+const VOICE_NOISE_THRESHOLDS_RN = [0, 0.002, 0.005];      // après RNNoise
+const VOICE_RNNOISE_VAD = [0, 0, 0.6];                    // seuil de probabilité de parole
+const VOICE_RNNOISE_URL = 'vendor/rnnoise/rnnoise-worklet.js?v=1';
 
 let _vWatchStop = null;      // écoute de tous les salons de l'équipe
 let _vData = {};             // session → uid → { name, ts, n, mu }
@@ -72,37 +78,64 @@ class LmuGate extends AudioWorkletProcessor {
 registerProcessor('lmu-gate', LmuGate);
 `;
 
-// Micro → filtre passe-haut (grondements) → porte de bruit → flux envoyé aux autres
+// Charge RNNoise (AudioWorklet) ; renvoie le nœud, ou null si le chargement échoue
+async function _vLoadRnnoise(ac) {
+    try {
+        if (!ac.audioWorklet) return null;
+        await ac.audioWorklet.addModule(new URL(VOICE_RNNOISE_URL, document.baseURI).href);
+        const node = new AudioWorkletNode(ac, 'lmu-rnnoise', { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [1] });
+        const ok = await new Promise(res => {
+            const t = setTimeout(() => res(false), 6000);
+            node.port.onmessage = e => { clearTimeout(t); res(!!(e.data && e.data.ready)); };
+        });
+        if (!ok) { node.disconnect(); return null; }
+        return node;
+    } catch (e) {
+        console.warn('Vocal : RNNoise indisponible, filtre simple utilisé', e && e.message);
+        return null;
+    }
+}
+
+function _vApplyNoise(c, mode) {
+    if (c.rn) {
+        c.rn.parameters.get('bypass').value = mode === 0 ? 1 : 0;
+        c.rn.parameters.get('vad').value = VOICE_RNNOISE_VAD[mode];
+    }
+    if (c.gate) c.gate.parameters.get('threshold').value = (c.rn ? VOICE_NOISE_THRESHOLDS_RN : VOICE_NOISE_THRESHOLDS)[mode];
+    // Le filtre du navigateur fait double emploi avec RNNoise (et l'abîme) : on ne le garde qu'en repli
+    c.raw.getAudioTracks().forEach(t => t.applyConstraints({ noiseSuppression: !c.rn && mode !== 0 }).catch(() => {}));
+}
+
+// Micro → filtre passe-haut (grondements) → RNNoise → porte de bruit → flux envoyé aux autres
 async function _vBuildChain(ac, raw, mode) {
     const src = ac.createMediaStreamSource(raw);
     const hp = ac.createBiquadFilter();
     hp.type = 'highpass'; hp.frequency.value = 100; hp.Q.value = 0.7;
     const dest = ac.createMediaStreamDestination();
     dest.channelCount = 1;
+    const rn = await _vLoadRnnoise(ac);
     let gate = null;
     try {
         if (!ac.audioWorklet) throw new Error('AudioWorklet indisponible');
         const url = URL.createObjectURL(new Blob([VOICE_GATE_SRC], { type: 'application/javascript' }));
         try { await ac.audioWorklet.addModule(url); } finally { URL.revokeObjectURL(url); }
         gate = new AudioWorkletNode(ac, 'lmu-gate', { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [1] });
-        gate.parameters.get('threshold').value = VOICE_NOISE_THRESHOLDS[mode];
-        src.connect(hp); hp.connect(gate); gate.connect(dest);
     } catch (e) {
-        console.warn('Vocal : porte de bruit indisponible, filtre simple utilisé', e && e.message);
+        console.warn('Vocal : porte de bruit indisponible', e && e.message);
         gate = null;
-        try { src.disconnect(); hp.disconnect(); } catch (e2) { /* rien à détacher */ }
-        src.connect(hp); hp.connect(dest);
     }
-    return { stream: dest.stream, gate };
+    let last = src;
+    [hp, rn, gate].forEach(n => { if (n) { last.connect(n); last = n; } });
+    last.connect(dest);
+    const chain = { stream: dest.stream, gate, rn, raw };
+    _vApplyNoise(chain, mode);
+    return chain;
 }
 
 function voiceSetNoise(mode) {
     mode = mode === 0 || mode === 2 ? mode : 1;
     try { localStorage.setItem('lmuVoiceNoise', String(mode)); } catch (e) { /* stockage indisponible */ }
-    if (_vc) {
-        if (_vc.gate) _vc.gate.parameters.get('threshold').value = VOICE_NOISE_THRESHOLDS[mode];
-        _vc.raw.getAudioTracks().forEach(t => t.applyConstraints({ noiseSuppression: mode !== 0 }).catch(() => {}));
-    }
+    if (_vc) _vApplyNoise(_vc, mode);
 }
 
 /* ── Relais TURN : texte saisi par l'admin = adresse https d'une API d'identifiants
@@ -595,7 +628,7 @@ async function voiceJoin(sid) {
     if (tok !== _vJoinTok || _vc) { abort(); return; }
 
     const AC = window.AudioContext || window.webkitAudioContext;
-    const ac = new AC();
+    const ac = new AC({ sampleRate: 48000 });     // RNNoise travaille à 48 kHz
     const chain = await _vBuildChain(ac, raw, mode);
     const ice = await _vLoadIce();
     if (tok !== _vJoinTok || _vc) { abort(ac); return; }
@@ -607,7 +640,7 @@ async function voiceJoin(sid) {
     if (tok !== _vJoinTok || _vc) { abort(ac); return; }
     const nonce = Math.random().toString(36).slice(2, 12);
     const myRef = _vRef(`teams/${team}/voice/${sid}/${user.uid}`);
-    _vc = { sid, team, nonce, ice, stream: chain.stream, raw, ac, gate: chain.gate, peers: {}, stops: [], myRef, name,
+    _vc = { sid, team, nonce, ice, stream: chain.stream, raw, ac, gate: chain.gate, rn: chain.rn, peers: {}, stops: [], myRef, name,
             muted: false, seen: new Set(), levels: {} };
     _vWatchLevel(user.uid, chain.stream);
 

@@ -1,0 +1,14 @@
+rnnoise-sync.js
+===============
+Build WebAssembly de RNNoise (réduction de bruit par réseau de neurones), publiée par
+l'équipe Jitsi : paquet npm « @jitsi/rnnoise-wasm » version 0.2.1
+(https://github.com/jitsi/rnnoise-wasm), licence Apache-2.0 (voir LICENSE-Apache-2.0.txt).
+Fichier utilisé tel quel (dist/rnnoise-sync.js, binaire WebAssembly intégré en base64).
+
+RNNoise : Copyright (c) 2017, Mozilla / Xiph.Org Foundation / Jean-Marc Valin,
+licence BSD à 3 clauses (https://github.com/xiph/rnnoise).
+
+rnnoise-worklet.js
+==================
+Code propre à ce projet : traitement audio (AudioWorklet) qui découpe le flux en blocs
+de 480 échantillons (10 ms à 48 kHz) pour RNNoise.

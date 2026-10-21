@@ -239,7 +239,9 @@ function _chatEnsureUI() {
         '<div id="teamChatList"></div>' +
         '<div id="teamChatError" style="display:none"></div>' +
         '<div id="teamChatSuggest" style="display:none"></div>' +
-        '<form id="teamChatForm"><textarea id="teamChatInput" rows="2" maxlength="' + CHAT_MAX_LEN +
+        '<div id="teamChatAttach" style="display:none"></div>' +
+        '<form id="teamChatForm"><button type="button" id="teamChatClip" title="Joindre un fichier (ou coller / glisser une image) — 50 Mo max">📎</button>' +
+        '<input type="file" id="teamChatFile" hidden><textarea id="teamChatInput" rows="2" maxlength="' + CHAT_MAX_LEN +
         '" placeholder="Message… (@membre, #session — Entrée pour envoyer)"></textarea>' +
         '<button type="submit">Envoyer</button></form></div>';
     document.body.appendChild(wrap);
@@ -262,6 +264,7 @@ function _chatEnsureUI() {
         } catch (e) { /* sans conséquence */ }
     });
     document.getElementById('teamChatForm').addEventListener('submit', e => { e.preventDefault(); chatSend(); });
+    if (typeof _chatAttachInit === 'function') _chatAttachInit();
     const inp = document.getElementById('teamChatInput');
     inp.addEventListener('input', () => { _chatSuggIdx = 0; _chatSuggestUpdate(); });
     inp.addEventListener('click', _chatSuggestUpdate);
@@ -373,6 +376,7 @@ function _chatRender() {
         const body = document.createElement('div');
         body.className = 'chat-text';
         _chatFillBody(body, m, me);
+        if (m.file && typeof _chatFillFile === 'function') _chatFillFile(body, m);
         row.appendChild(head);
         row.appendChild(body);
         list.appendChild(row);
@@ -400,14 +404,25 @@ async function chatSend() {
     const user = window._firebaseAuth?.currentUser;
     if (!input || !user || !window._teamId) return;
     const text = input.value.trim().slice(0, CHAT_MAX_LEN);
-    if (!text) return;
+    const hasFile = typeof _chatPending !== 'undefined' && !!_chatPending;
+    if (!text && !hasFile) return;
+    if (_chatUploading) return;
     if (Date.now() - _chatLastSend < 800) return;   // anti-rafale
     _chatLastSend = Date.now();
     _chatError('');
     input.disabled = true;
+    let fileMeta = null;
     try {
         const db = window._firebaseDb, ref = window._firebaseRef;
         const name = await _chatName(user);
+        if (hasFile) {
+            try { fileMeta = await _chatUploadPending(user); }
+            catch (e) {
+                console.error('Chat : envoi du fichier impossible', e);
+                _chatError("Fichier non envoyé (connexion, taille ≤ 50 Mo, ou stockage non activé). Réessayez.");
+                return;
+            }
+        }
         // Réserve l'emplacement : le compteur avance de façon atomique (deux envois
         // simultanés n'obtiennent pas le même emplacement).
         let slot = 0;
@@ -417,13 +432,18 @@ async function chatSend() {
             return (n + 1) % CHAT_SLOTS;
         });
         if (!res.committed) throw new Error('compteur non validé');
-        await window._firebaseSet(ref(db, teamPath(`chat/m/${slot}`)), {
-            uid: user.uid, name, text, ts: window._firebaseServerTimestamp()
-        });
+        const replaced = _chatMsgs[slot];   // message qui quitte le tampon circulaire
+        const msg = { uid: user.uid, name, text, ts: window._firebaseServerTimestamp() };
+        if (fileMeta) msg.file = fileMeta;
+        await window._firebaseSet(ref(db, teamPath(`chat/m/${slot}`)), msg);
         input.value = '';
+        if (hasFile) _chatAttachClear();
+        if (replaced && replaced.file && typeof _chatDeleteFile === 'function') _chatDeleteFile(replaced.file.path);
     } catch (e) {
         console.error('Chat : envoi impossible', e);
         _chatError("Message non envoyé (connexion ou droits). Réessayez.");
+        // Le message n'a pas été publié : on ne laisse pas un fichier orphelin dans le stockage
+        if (fileMeta && typeof _chatDeleteFile === 'function') { _chatDeleteFile(fileMeta.path); fileMeta = null; _chatAttachRender(); }
     } finally {
         input.disabled = false;
         input.focus();
@@ -432,6 +452,8 @@ async function chatSend() {
 
 function chatDelete(slot) {
     if (window._teamRole !== 'admin') return;
+    const f = _chatMsgs[slot] && _chatMsgs[slot].file;
+    if (f && typeof _chatDeleteFile === 'function') _chatDeleteFile(f.path);
     window._firebaseRemove(window._firebaseRef(window._firebaseDb, teamPath(`chat/m/${slot}`)))
         .catch(e => { console.error('Chat : suppression impossible', e); _chatError('Suppression refusée.'); });
 }
@@ -443,6 +465,7 @@ function stopTeamChat() {
     _chatReady = false; _chatLastOtherTs = 0; _chatLastUnread = 0; _chatLastUnreadTag = 0;
     if (_chatMembersStop) { try { _chatMembersStop(); } catch (e) { /* sans conséquence */ } }
     _chatMembersStop = null; _chatMembers = {};
+    if (typeof _chatAttachClear === 'function') _chatAttachClear();
     document.getElementById('teamChatRoot')?.remove();
     _chatOpen = false;
 }
