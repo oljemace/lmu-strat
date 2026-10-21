@@ -145,7 +145,7 @@ function refreshCircuitSelects() {
     const sel2 = document.getElementById('circuitEditSelect');   // page éditeur
 
     if (sel1) {
-        const cur = sel1.value;
+        const cur = sel1.value || window._wantCircuit || '';
         sel1.innerHTML = '<option value="">— Aucun circuit —</option>';
         Object.entries(_circuits).forEach(([id, c]) => {
             const opt = document.createElement('option');
@@ -155,6 +155,7 @@ function refreshCircuitSelects() {
             sel1.appendChild(opt);
         });
     }
+    updateRaceContextBadge();
 
     if (sel2) {
         const cur = sel2.value;
@@ -211,6 +212,29 @@ function buildStratCarSelector() {
         });
         select.appendChild(optgroup);
     }
+    updateRaceContextBadge();
+}
+
+/* ── Bandeau « circuit + voiture » du mode planification ── */
+function updateRaceContextBadge() {
+    const el = document.getElementById('raceContextBadge');
+    if (!el) return;
+    const cId = document.getElementById('circuitSelect')?.value || '';
+    const carId = document.getElementById('stratCarSelect')?.value || '';
+    const circuit = cId ? (_circuits[cId]?.name || cId) : '';
+    const car = carId ? (LMU_HYPERCARS.find(c => c.id === carId)?.label || carId) : '';
+    el.innerHTML = '';
+    if (circuit) {
+        const s = document.createElement('span');
+        s.textContent = '🏁 ' + circuit;
+        el.appendChild(s);
+    }
+    if (car) {
+        const s = document.createElement('span');
+        s.textContent = '🏎️ ' + car;
+        el.appendChild(s);
+    }
+    el.style.display = (circuit || car) ? 'flex' : 'none';
 }
 
 /* ══════════════════════════════════════════════
@@ -222,6 +246,7 @@ function loadCircuitData() {
     const carId = document.getElementById('stratCarSelect').value;
     const info  = document.getElementById('circuitLoadInfo');
 
+    updateRaceContextBadge();
     if (!id || !_circuits[id]) {
         if (info) info.textContent = '';
         return;

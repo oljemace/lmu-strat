@@ -189,6 +189,8 @@
         .race-setup #driverInputsContainer { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px 20px; margin-bottom: 4px; }
         .race-setup #driverInputsContainer .driver-input-row { margin: 0; }
 
+        #raceContextBadge span { background: rgba(0,170,255,0.15); border: 1px solid rgba(0,170,255,0.4); color: #cfeaff; padding: 5px 12px; border-radius: 999px; font-size: 0.95em; }
+
         /* ── Résultats ── */
         .result-section {
             background: linear-gradient(135deg, rgba(0,255,136,0.1) 0%, rgba(0,255,136,0.2) 100%);

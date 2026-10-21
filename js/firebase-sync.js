@@ -527,7 +527,8 @@ function _doFirebasePush() {
             'evCurrent','evPerLapReal',
             'livelapMinutes','livelapSeconds','livelapMillis',
             'liveLapsCompleted',
-            'tyreBudget'
+            'tyreBudget',
+            'circuitSelect','stratCarSelect'
         ];
 
 		const form = {};
@@ -604,8 +605,14 @@ function _doFirebasePush() {
                     'evCurrent','evPerLapReal',
                     'livelapMinutes','livelapSeconds','livelapMillis',
                     'liveLapsCompleted',
-                    'tyreBudget'
+                    'tyreBudget',
+                    'circuitSelect','stratCarSelect'
                 ];
+
+            // Circuit / voiture : sélection partagée par la session (sans recharger les
+            // temps/usures, déjà présents dans les autres champs). Le circuit peut arriver
+            // avant la liste des circuits : on le garde en attente pour refreshCircuitSelects.
+            if (data.circuitSelect !== undefined) window._wantCircuit = data.circuitSelect;
 
             ids.forEach(id => {
                 const el = document.getElementById(id);
@@ -615,6 +622,8 @@ function _doFirebasePush() {
                 if (el.dataset.localEditing === 'true' || document.activeElement === el) return;
                 el.value = data[id];
             });
+
+            if (typeof updateRaceContextBadge === 'function') updateRaceContextBadge();
 
             // Checkbox "hier"
             const ydEl = document.getElementById('realStartYesterday');
