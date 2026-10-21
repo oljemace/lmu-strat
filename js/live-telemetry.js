@@ -31,23 +31,6 @@ function _liveMapColorFor(id) {
     return c;
 }
 
-// Couleur par catégorie (classement multi-catégories endurance) — priorité sur
-// la couleur « stable » ci-dessus dès que la classe de la voiture est connue.
-// Les libellés de classe LMU varient selon le nom exact du BOP/plugin ; on
-// matche donc par sous-chaîne insensible à la casse plutôt que par égalité
-// stricte.
-function _liveClassColorFor(vclass) {
-    const c = (vclass || '').toLowerCase();
-    if (c.includes('hypercar') || c.includes('lmh') || c.includes('gtp')) return '#ff3344';
-    if (c.includes('gt3')) return '#33cc55';
-    if (c.includes('lmp2')) {
-        if (c.includes('elms')) return '#ff9900';
-        if (c.includes('wec')) return '#3388ff';
-        return '#3388ff'; // LMP2 par défaut (WEC) si la ligue n'est pas précisée dans le libellé
-    }
-    return null;
-}
-
 function resetLiveMapTrail() {
     window._liveMap.trail = [];
     window._liveMap.bounds = null;
@@ -188,12 +171,11 @@ function _liveMapDraw(data) {
     const spanX = Math.max(1, b.maxX - b.minX);
     const spanZ = Math.max(1, b.maxZ - b.minZ);
     const scale = Math.min((W - 2*pad) / spanX, (H - 2*pad) / spanZ);
-    // Axe X inversé (b.maxX - x au lieu de x - b.minX) : la carte apparaissait
-    // en miroir horizontal par rapport au circuit réel (repère monde LMU vu
-    // depuis le dessus vs. vue habituelle des cartes de circuit).
+    // Carte tournée à 180° (X et Z tous deux inversés) par rapport au repère
+    // monde brut, pour matcher l'orientation du circuit vue en jeu.
     const toPx = (x, z) => {
-        const px = pad + (b.maxX - x) * scale;
-        const py = pad + (z - b.minZ) * scale;
+        const px = pad + (x - b.minX) * scale;
+        const py = pad + (b.maxZ - z) * scale;
         return [px, py];
     };
 
@@ -217,7 +199,7 @@ function _liveMapDraw(data) {
     const legendItems = [];
     (data.cars || []).forEach(car => {
         const [px, py] = toPx(car.x, car.z);
-        const color = _liveClassColorFor(car.vclass) || _liveMapColorFor(car.id);
+        const color = _liveClassColor(car.vclass) || _liveMapColorFor(car.id);
         ctx.beginPath();
         ctx.arc(px, py, car.isPlayer ? 8 : 6, 0, Math.PI * 2);
         ctx.fillStyle = color;
@@ -675,6 +657,22 @@ function _updateLiveTelemetryExtras(data) {
     _setText('liveMapTrackTemp', data.trackTemp, ' °C');
     _setText('liveRainingPct', data.rainingPct, '%');
     _setText('liveTrackWetnessPct', data.trackWetnessPct, '%');
+    _setText('liveMapRainPct', data.rainingPct, '%');
+    _setText('liveMapWetnessPct', data.trackWetnessPct, '%');
+
+    // Temps au tour : dernier tour bouclé par le joueur, et moyenne des 5
+    // derniers tours bouclés par N'IMPORTE QUEL pilote de la grille (voir
+    // fieldAvgLapTimeLast5 dans _handle_live()) — différent de
+    // avgLapTimeLast10 qui ne porte que sur les tours du joueur.
+    const lastLapEl = document.getElementById('liveMapLastLapTime');
+    if (lastLapEl) lastLapEl.textContent = _fmtSecondsShort(data.lastLapTime);
+    const fieldAvgEl = document.getElementById('liveMapFieldAvgLap5');
+    if (fieldAvgEl) fieldAvgEl.textContent = _fmtSecondsShort(data.fieldAvgLapTimeLast5);
+
+    // Heure ingame (secondes depuis minuit, heure du jeu)
+    const clockEl = document.getElementById('liveMapGameClock');
+    if (clockEl) clockEl.textContent = data.gameClockSec != null && typeof formatClock === 'function'
+        ? formatClock(data.gameClockSec) : '—';
 
     // Pneus / freins / pressions par coin
     ['FL', 'FR', 'RL', 'RR'].forEach(c => {
@@ -740,10 +738,17 @@ function _liveCompoundBadge(compound) {
 }
 
 /* Couleur stable par catégorie (classe de véhicule), pour les en-têtes de
-   groupe en "Grille complète" et le badge de catégorie en "Proches". */
+   groupe en "Grille complète", le badge de catégorie en "Proches" ET les
+   marqueurs de la carte live (_liveMapDraw) — une seule source de vérité pour
+   que les deux panneaux restent cohérents. L'Hypercar est toujours rouge ;
+   les autres catégories reçoivent une couleur stable dans l'ordre où elles
+   apparaissent dans les données (1er classe vue = 1re couleur de la palette).
+*/
 function _liveClassColor(vclass) {
+    const c = (vclass || '').toLowerCase();
+    if (c.includes('hypercar') || c.includes('lmh') || c.includes('gtp')) return '#ff3344';
     if (!window._liveClassColors) window._liveClassColors = {};
-    const palette = ['#ff8800', '#00aaff', '#00ff88', '#ff4466', '#aa00ff', '#ffee00'];
+    const palette = ['#00aaff', '#00ff88', '#ffaa00', '#aa00ff', '#ffee00', '#ff66cc'];
     const map = window._liveClassColors;
     if (!map[vclass]) map[vclass] = palette[Object.keys(map).length % palette.length];
     return map[vclass];
