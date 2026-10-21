@@ -1210,14 +1210,22 @@
             <summary style="color:#88ccff;cursor:pointer;font-size:0.85em;">🗺️ Carte live (position des voitures)</summary>
             <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start;margin-top:10px;">
                 <canvas id="liveMapCanvas" width="900" height="500" style="width:100%;max-width:900px;flex:1 1 500px;height:auto;aspect-ratio:9/5;background:rgba(0,0,0,0.35);border-radius:10px;border:1px solid rgba(var(--fg-rgb),0.1);display:block;"></canvas>
-                <div style="flex:0 0 140px;display:flex;flex-direction:column;gap:8px;">
-                    <div style="background:rgba(var(--fg-rgb),0.04);border:1px solid rgba(var(--fg-rgb),0.1);border-radius:10px;padding:10px;">
-                        <div style="color:var(--text-3);font-size:0.72em;text-transform:uppercase;letter-spacing:1px;">🌡️ Air</div>
-                        <div id="liveMapAmbientTemp" style="color:var(--text);font-size:1.15em;font-weight:bold;">— °C</div>
+                <div style="flex:0 0 190px;display:flex;flex-direction:column;gap:8px;">
+                    <div style="background:rgba(var(--fg-rgb),0.04);border:1px solid rgba(255,136,0,0.25);border-radius:10px;padding:10px 12px;">
+                        <div style="color:#ff8800;font-weight:bold;font-size:0.8em;margin-bottom:6px;">🌦️ Piste &amp; météo</div>
+                        <div style="display:flex;justify-content:space-between;padding:2px 0;font-size:0.82em;"><span style="color:var(--text-3);">Température air</span><span style="color:var(--text);font-weight:bold;" id="liveMapAmbientTemp">— °C</span></div>
+                        <div style="display:flex;justify-content:space-between;padding:2px 0;font-size:0.82em;"><span style="color:var(--text-3);">Température piste</span><span style="color:var(--text);font-weight:bold;" id="liveMapTrackTemp">— °C</span></div>
+                        <div style="display:flex;justify-content:space-between;padding:2px 0;font-size:0.82em;"><span style="color:var(--text-3);">Pluie</span><span style="color:var(--text);font-weight:bold;" id="liveMapRainPct">—%</span></div>
+                        <div style="display:flex;justify-content:space-between;padding:2px 0;font-size:0.82em;"><span style="color:var(--text-3);">Piste mouillée</span><span style="color:var(--text);font-weight:bold;" id="liveMapWetnessPct">—%</span></div>
                     </div>
-                    <div style="background:rgba(var(--fg-rgb),0.04);border:1px solid rgba(var(--fg-rgb),0.1);border-radius:10px;padding:10px;">
-                        <div style="color:var(--text-3);font-size:0.72em;text-transform:uppercase;letter-spacing:1px;">🛣️ Piste</div>
-                        <div id="liveMapTrackTemp" style="color:var(--text);font-size:1.15em;font-weight:bold;">— °C</div>
+                    <div style="background:rgba(var(--fg-rgb),0.04);border:1px solid rgba(var(--fg-rgb),0.1);border-radius:10px;padding:10px 12px;">
+                        <div style="color:#88ccff;font-weight:bold;font-size:0.8em;margin-bottom:6px;">⏱️ Temps au tour</div>
+                        <div style="display:flex;justify-content:space-between;padding:2px 0;font-size:0.82em;"><span style="color:var(--text-3);">Dernier (vous)</span><span style="color:var(--text);font-weight:bold;" id="liveMapLastLapTime">—</span></div>
+                        <div style="display:flex;justify-content:space-between;padding:2px 0;font-size:0.82em;"><span style="color:var(--text-3);">Moy. 5t (grille)</span><span style="color:var(--text);font-weight:bold;" id="liveMapFieldAvgLap5">—</span></div>
+                    </div>
+                    <div style="background:rgba(var(--fg-rgb),0.04);border:1px solid rgba(var(--fg-rgb),0.1);border-radius:10px;padding:10px 12px;">
+                        <div style="color:var(--text-3);font-size:0.72em;text-transform:uppercase;letter-spacing:1px;">🕐 Heure ingame</div>
+                        <div id="liveMapGameClock" style="color:var(--text);font-size:1.15em;font-weight:bold;">—</div>
                     </div>
                 </div>
             </div>
