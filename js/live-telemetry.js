@@ -7,20 +7,31 @@
 window._liveMap = {
     active: false,
     pollTimer: null,
-    trail: [],          // [{x,z}] positions successives de la voiture du joueur -> dessine le circuit
-    bounds: null,        // {minX,maxX,minZ,maxZ} recalculé au fil de l'eau
+    trail: [],          // [{x,z}] UN tour propre de la voiture du joueur -> dessine le circuit
+    bounds: null,        // {minX,maxX,minZ,maxZ} du tracé
     trackName: null,     // nom du circuit du tracé en cours (pour invalider le cache si on change de circuit)
     carColors: {},       // id voiture -> couleur stable
     lastError: null,
+    // Enregistrement du tracé : on garde le dernier tour PROPRE (sans passage aux stands,
+    // vu depuis la ligne) et, après LIVE_MAP_TRAIL_LAPS tours propres, on fige le dessin
+    // définitivement — plus aucune ré-écriture de la carte aux tours suivants.
+    frozen: false,       // tracé figé : plus d'enregistrement
+    complete: false,     // `trail` est un tour complet (et non plus un tour en cours de dessin)
+    cleanLaps: 0,        // nb de tours propres bouclés depuis le début de l'enregistrement
+    lapPts: [],          // points du tour en cours d'enregistrement
+    lapNum: null,        // numéro de tour du joueur au dernier poll
+    lapSeen: false,      // le début du tour en cours a été vu (sinon tour partiel : ignoré)
+    lapPit: false,       // le tour en cours est passé par les stands : ignoré
 };
+const LIVE_MAP_TRAIL_LAPS = 3;
 
-/* Le tracé accumulé est sauvegardé dans localStorage (par navigateur) pour qu'un
+/* Le tracé figé est sauvegardé dans localStorage (par navigateur) pour qu'un
    rechargement de page ou une reconnexion (local OU à distance) retrouve
    immédiatement le circuit déjà dessiné, au lieu de repartir d'une carte vide en
-   attendant d'avoir re-roulé un tour. Pas de dépendance réseau ni de session
-   partagée : juste la mémoire du dernier circuit vu dans CE navigateur. */
-const _LIVE_MAP_TRAIL_STORAGE_KEY = 'lmuLiveMapTrailCache';
-let _liveMapTrailSaveTick = 0;
+   attendant d'avoir re-roulé des tours. Pas de dépendance réseau ni de session
+   partagée : juste la mémoire du dernier circuit vu dans CE navigateur.
+   v2 : l'ancien format (tracé cumulé sur tous les tours) est volontairement ignoré. */
+const _LIVE_MAP_TRAIL_STORAGE_KEY = 'lmuLiveMapTrailCacheV2';
 
 function _liveMapLoadTrailCache() {
     try {
@@ -28,25 +39,37 @@ function _liveMapLoadTrailCache() {
         if (!raw) return;
         const cached = JSON.parse(raw);
         if (!cached || !Array.isArray(cached.trail) || cached.trail.length < 20 || !cached.bounds) return;
-        window._liveMap.trail = cached.trail;
-        window._liveMap.bounds = cached.bounds;
-        window._liveMap.trackName = cached.track || null;
+        const M = window._liveMap;
+        M.trail = cached.trail;
+        M.bounds = cached.bounds;
+        M.trackName = cached.track || null;
+        M.frozen = true;
+        M.complete = true;
     } catch (e) { /* stockage indisponible (navigation privée, quota…) : on repart à vide, sans importance */ }
 }
 
 function _liveMapSaveTrailCache() {
-    // Écriture throttlée (~1 fois toutes les 5s au rythme de poll de 500ms) : le
-    // tracé peut grossir jusqu'à 20000 points sur une longue course, inutile de
-    // le resérialiser à chaque poll.
-    if (++_liveMapTrailSaveTick % 10 !== 0) return;
     try {
-        if (window._liveMap.trail.length < 20 || !window._liveMap.bounds) return;
+        const M = window._liveMap;
+        if (M.trail.length < 20 || !M.bounds) return;
         localStorage.setItem(_LIVE_MAP_TRAIL_STORAGE_KEY, JSON.stringify({
-            track: window._liveMap.trackName || null,
-            trail: window._liveMap.trail,
-            bounds: window._liveMap.bounds,
+            track: M.trackName || null, trail: M.trail, bounds: M.bounds,
         }));
     } catch (e) { /* stockage indisponible : sans importance, juste pas de cache cette fois */ }
+}
+
+/** Repart d'un tracé vide (changement de circuit / de pilote suivi). */
+function _liveMapResetTrailState() {
+    const M = window._liveMap;
+    M.trail = []; M.bounds = null; M.frozen = false; M.complete = false;
+    M.cleanLaps = 0; M.lapPts = []; M.lapNum = null; M.lapSeen = false; M.lapPit = false;
+}
+
+function _liveMapBoundsOf(pts) {
+    return {
+        minX: Math.min(...pts.map(q => q.x)), maxX: Math.max(...pts.map(q => q.x)),
+        minZ: Math.min(...pts.map(q => q.z)), maxZ: Math.max(...pts.map(q => q.z)),
+    };
 }
 
 window._liveStats = {
@@ -68,8 +91,7 @@ function _liveMapColorFor(id) {
 }
 
 function resetLiveMapTrail() {
-    window._liveMap.trail = [];
-    window._liveMap.bounds = null;
+    _liveMapResetTrailState();
     window._liveMap.trackName = null;
     _liveMapDraw({connected: false});
 }
@@ -180,24 +202,110 @@ function _liveMapAccumulateTrail(data) {
     // Le tracé en mémoire/cache venait peut-être d'un autre circuit (cache d'une
     // session précédente, ou changement de pilote suivi à distance) : on repart
     // de zéro plutôt que de mélanger deux circuits dans le même dessin.
-    if (data.track && window._liveMap.trackName && data.track !== window._liveMap.trackName) {
-        window._liveMap.trail = [];
-        window._liveMap.bounds = null;
+    const M = window._liveMap;
+    if (data.track && M.trackName && data.track !== M.trackName) _liveMapResetTrailState();
+    if (data.track) M.trackName = data.track;
+    if (M.frozen) return;   // tracé définitif : on n'y touche plus
+
+    // Passage de ligne : le tour qui vient de finir, s'il est propre (début vu, aucun
+    // passage aux stands), devient LE tracé affiché ; après LIVE_MAP_TRAIL_LAPS tours
+    // propres on fige et on mémorise.
+    if (M.lapNum !== null && player.lap !== M.lapNum) {
+        if (M.lapSeen && !M.lapPit && M.lapPts.length >= 20) {
+            M.cleanLaps++;
+            M.trail = M.lapPts;
+            M.bounds = _liveMapBoundsOf(M.trail);
+            M.complete = true;
+            if (M.cleanLaps >= LIVE_MAP_TRAIL_LAPS) {
+                M.frozen = true;
+                _liveMapSaveTrailCache();
+                return;
+            }
+        }
+        M.lapPts = [];
+        M.lapSeen = true;
+        M.lapPit = !!player.inPits;   // un tour qui démarre aux stands est un tour de sortie
     }
-    if (data.track) window._liveMap.trackName = data.track;
-    const trail = window._liveMap.trail;
-    const last = trail[trail.length - 1];
+    M.lapNum = player.lap;
+    if (player.inPits) M.lapPit = true;
+
+    const pts = M.lapPts;
+    const last = pts[pts.length - 1];
     // n'ajouter un point que si la voiture a réellement bougé (évite d'accumuler à l'arrêt/pit)
     if (!last || Math.hypot(player.x - last.x, player.z - last.z) > 1.0) {
-        trail.push({x: player.x, z: player.z});
-        if (trail.length > 20000) trail.shift(); // sécurité mémoire sur une très longue course
-        let b = window._liveMap.bounds;
-        if (!b) { b = {minX: player.x, maxX: player.x, minZ: player.z, maxZ: player.z}; }
-        b.minX = Math.min(b.minX, player.x); b.maxX = Math.max(b.maxX, player.x);
-        b.minZ = Math.min(b.minZ, player.z); b.maxZ = Math.max(b.maxZ, player.z);
-        window._liveMap.bounds = b;
+        pts.push({x: player.x, z: player.z});
+        if (!M.complete) {   // tant qu'aucun tour propre n'est bouclé : aperçu du tour en cours
+            M.trail = pts;
+            let b = M.bounds;
+            if (!b) { b = {minX: player.x, maxX: player.x, minZ: player.z, maxZ: player.z}; }
+            b.minX = Math.min(b.minX, player.x); b.maxX = Math.max(b.maxX, player.x);
+            b.minZ = Math.min(b.minZ, player.z); b.maxZ = Math.max(b.maxZ, player.z);
+            M.bounds = b;
+        }
     }
-    _liveMapSaveTrailCache();
+}
+
+/** Trace une polyligne lissée (courbes passant par les milieux des segments). */
+function _liveMapStrokeSmooth(ctx, pts) {
+    if (pts.length < 2) return;
+    ctx.beginPath();
+    ctx.moveTo(pts[0][0], pts[0][1]);
+    for (let i = 1; i < pts.length - 1; i++) {
+        const mx = (pts[i][0] + pts[i + 1][0]) / 2, my = (pts[i][1] + pts[i + 1][1]) / 2;
+        ctx.quadraticCurveTo(pts[i][0], pts[i][1], mx, my);
+    }
+    ctx.lineTo(pts[pts.length - 1][0], pts[pts.length - 1][1]);
+    ctx.stroke();
+}
+
+const _LIVE_SECTOR_COLORS = {purple: '#b44dff', green: '#00e676', yellow: '#ffd600'};
+
+/** Indice du point du tracé le plus proche de (x, z). */
+function _liveMapNearestIdx(trail, x, z) {
+    let best = 0, bd = Infinity;
+    for (let i = 0; i < trail.length; i++) {
+        const d = (trail[i].x - x) ** 2 + (trail[i].z - z) ** 2;
+        if (d < bd) { bd = d; best = i; }
+    }
+    return best;
+}
+
+/** Délimitations des 3 secteurs + tronçons colorés selon les chronos (violet/vert/jaune). */
+function _liveMapDrawSectors(ctx, trail, toPx, sectors) {
+    if (!sectors || !Array.isArray(sectors.marks) || trail.length < 20) return;
+    const marks = sectors.marks;
+    if (marks.length !== 3 || marks.some(m => !Array.isArray(m))) return;
+    const idx = marks.map(m => _liveMapNearestIdx(trail, m[0], m[1]));
+    const px = trail.map(p => toPx(p.x, p.z));
+    ctx.lineJoin = 'round'; ctx.lineCap = 'butt';
+    for (let s = 0; s < 3; s++) {
+        const color = _LIVE_SECTOR_COLORS[(sectors.colors || [])[s]];
+        if (!color) continue;
+        const a = idx[s], b = idx[(s + 1) % 3];
+        const seg = b >= a ? px.slice(a, b + 1) : px.slice(a).concat(px.slice(0, b + 1));
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 6;
+        _liveMapStrokeSmooth(ctx, seg);
+    }
+    // Traits de délimitation, perpendiculaires au tracé (ligne d'arrivée + 2 intermédiaires)
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2.5;
+    marks.forEach((m, s) => {
+        const i = idx[s];
+        const p0 = px[(i - 2 + px.length) % px.length], p1 = px[(i + 2) % px.length];
+        let dx = p1[0] - p0[0], dy = p1[1] - p0[1];
+        const len = Math.hypot(dx, dy) || 1;
+        dx /= len; dy /= len;
+        const [cx, cy] = px[i], nx = -dy * 11, ny = dx * 11;
+        ctx.beginPath();
+        ctx.moveTo(cx - nx, cy - ny);
+        ctx.lineTo(cx + nx, cy + ny);
+        ctx.stroke();
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 10px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(s === 0 ? 'S/F' : 'S' + (s + 1), cx + nx * 1.9, cy + ny * 1.9 + 3);
+    });
 }
 
 function _liveMapDraw(data) {
@@ -212,7 +320,7 @@ function _liveMapDraw(data) {
         ctx.fillStyle = '#888';
         ctx.font = '14px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('En attente de données de position… (roulez un tour pour dessiner le circuit)', W/2, H/2);
+        ctx.fillText('En attente de données de position… (roulez 3 tours propres pour dessiner le circuit)', W/2, H/2);
         document.getElementById('liveMapLegend').innerHTML = '';
         return;
     }
@@ -220,34 +328,34 @@ function _liveMapDraw(data) {
     const pad = 30;
     const spanX = Math.max(1, b.maxX - b.minX);
     const spanZ = Math.max(1, b.maxZ - b.minZ);
-    // Échelle indépendante par axe (plutôt qu'un facteur unique min(X,Z)) pour que
-    // le tracé remplisse tout le canvas même quand le circuit est très étroit dans
-    // un sens — carte schématique, pas à l'échelle réelle, donc la légère
-    // déformation de forme est un compromis acceptable contre l'espace perdu.
-    const scaleX = (W - 2*pad) / spanX;
-    const scaleZ = (H - 2*pad) / spanZ;
+    // Échelle UNIFORME (la forme du circuit n'est jamais déformée). Pour ne pas
+    // gaspiller de place, c'est la hauteur du canvas qui s'adapte à la forme du
+    // circuit (par pas de 20 px, pour ne pas « respirer » pendant le dessin).
+    const wantH = Math.max(320, Math.min(800, Math.round(((W - 2*pad) * spanZ / spanX + 2*pad) / 20) * 20));
+    if (canvas.height !== wantH && window._liveMap.complete) {
+        canvas.height = wantH;
+        canvas.style.aspectRatio = `${W}/${wantH}`;
+        return _liveMapDraw(data);
+    }
+    const scale = Math.min((W - 2*pad) / spanX, (H - 2*pad) / spanZ);
+    const offX = pad + ((W - 2*pad) - spanX * scale) / 2;
+    const offY = pad + ((H - 2*pad) - spanZ * scale) / 2;
     // Carte tournée à 180° (X et Z tous deux inversés) par rapport au repère
     // monde brut, pour matcher l'orientation du circuit vue en jeu.
     const toPx = (x, z) => {
-        const px = pad + (x - b.minX) * scaleX;
-        const py = pad + (b.maxZ - z) * scaleZ;
+        const px = offX + (x - b.minX) * scale;
+        const py = offY + (b.maxZ - z) * scale;
         return [px, py];
     };
 
-    // Tracé du circuit (trajectoire accumulée du joueur)
+    // Tracé du circuit (un tour propre du joueur)
     const trail = window._liveMap.trail;
     if (trail.length > 1) {
         ctx.strokeStyle = 'rgba(255,255,255,0.35)';
         ctx.lineWidth = 6;
         ctx.lineJoin = 'round';
-        ctx.beginPath();
-        let [sx, sy] = toPx(trail[0].x, trail[0].z);
-        ctx.moveTo(sx, sy);
-        for (let i = 1; i < trail.length; i++) {
-            const [px, py] = toPx(trail[i].x, trail[i].z);
-            ctx.lineTo(px, py);
-        }
-        ctx.stroke();
+        _liveMapStrokeSmooth(ctx, trail.map(p => toPx(p.x, p.z)));
+        if (window._liveMap.complete) _liveMapDrawSectors(ctx, trail, toPx, data.sectors);
     }
 
     // Voitures

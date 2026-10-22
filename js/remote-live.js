@@ -137,7 +137,7 @@ function _remoteRebuild() {
         const pos = p.positions.obj;
         R.map = {
             connected: true, track: pos.track, session: pos.session, trackLength: pos.trackLength,
-            numVehicles: pos.numVehicles, t: p.positions.ts / 1000,
+            numVehicles: pos.numVehicles, t: p.positions.ts / 1000, sectors: pos.sectors || null,
             cars: (pos.rows || []).map(r => {
                 const c = {};
                 REMOTE_POSITION_FIELDS.forEach((f, i) => { c[f] = r[i]; });
@@ -148,23 +148,27 @@ function _remoteRebuild() {
             }),
         };
     }
-    _remoteSeedTrail(laps.trail);
+    _remoteSeedTrail(laps.trail, !!laps.trailFrozen);
 }
 
-/** Un spectateur qui arrive en cours de course reçoit le dernier tour complet : le circuit se dessine tout de suite. */
-function _remoteSeedTrail(trail) {
+/** Un spectateur qui arrive en cours de course reçoit le tour propre mémorisé par le programme du pilote :
+ *  le circuit se dessine tout de suite. `frozen` = le programme a fini d'enregistrer (3 tours propres). */
+function _remoteSeedTrail(trail, frozen) {
     const R = window._liveRemote;
-    if (!Array.isArray(trail) || trail.length < 20 || !window._liveMap) return;
-    const key = trail.length + ':' + trail[0] + ':' + trail[trail.length - 1];
+    const M = window._liveMap;
+    if (!Array.isArray(trail) || trail.length < 20 || !M) return;
+    const key = trail.length + ':' + trail[0] + ':' + trail[trail.length - 1] + ':' + frozen;
     if (R.seededTrailKey === key) return;
     R.seededTrailKey = key;
-    if (window._liveMap.trail.length >= trail.length) return;   // déjà un tracé plus complet
-    const pts = trail.map(([x, z]) => ({ x, z }));
-    window._liveMap.trail = pts;
-    window._liveMap.bounds = {
-        minX: Math.min(...pts.map(q => q.x)), maxX: Math.max(...pts.map(q => q.x)),
-        minZ: Math.min(...pts.map(q => q.z)), maxZ: Math.max(...pts.map(q => q.z)),
-    };
+    if (M.frozen && !(R.map && R.map.track && M.trackName && R.map.track !== M.trackName)) return;   // tracé figé déjà en place
+    if (R.map && R.map.track) {   // autre circuit que celui du tracé en mémoire : on repart de zéro
+        if (M.trackName && M.trackName !== R.map.track) _liveMapResetTrailState();
+        M.trackName = R.map.track;
+    }
+    M.trail = trail.map(([x, z]) => ({ x, z }));
+    M.bounds = _liveMapBoundsOf(M.trail);
+    M.complete = true;
+    if (frozen) { M.frozen = true; _liveMapSaveTrailCache(); }
 }
 
 /* ── Lecture par le Mode Live ── */
