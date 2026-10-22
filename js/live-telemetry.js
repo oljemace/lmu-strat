@@ -9,9 +9,45 @@ window._liveMap = {
     pollTimer: null,
     trail: [],          // [{x,z}] positions successives de la voiture du joueur -> dessine le circuit
     bounds: null,        // {minX,maxX,minZ,maxZ} recalculé au fil de l'eau
+    trackName: null,     // nom du circuit du tracé en cours (pour invalider le cache si on change de circuit)
     carColors: {},       // id voiture -> couleur stable
     lastError: null,
 };
+
+/* Le tracé accumulé est sauvegardé dans localStorage (par navigateur) pour qu'un
+   rechargement de page ou une reconnexion (local OU à distance) retrouve
+   immédiatement le circuit déjà dessiné, au lieu de repartir d'une carte vide en
+   attendant d'avoir re-roulé un tour. Pas de dépendance réseau ni de session
+   partagée : juste la mémoire du dernier circuit vu dans CE navigateur. */
+const _LIVE_MAP_TRAIL_STORAGE_KEY = 'lmuLiveMapTrailCache';
+let _liveMapTrailSaveTick = 0;
+
+function _liveMapLoadTrailCache() {
+    try {
+        const raw = localStorage.getItem(_LIVE_MAP_TRAIL_STORAGE_KEY);
+        if (!raw) return;
+        const cached = JSON.parse(raw);
+        if (!cached || !Array.isArray(cached.trail) || cached.trail.length < 20 || !cached.bounds) return;
+        window._liveMap.trail = cached.trail;
+        window._liveMap.bounds = cached.bounds;
+        window._liveMap.trackName = cached.track || null;
+    } catch (e) { /* stockage indisponible (navigation privée, quota…) : on repart à vide, sans importance */ }
+}
+
+function _liveMapSaveTrailCache() {
+    // Écriture throttlée (~1 fois toutes les 5s au rythme de poll de 500ms) : le
+    // tracé peut grossir jusqu'à 20000 points sur une longue course, inutile de
+    // le resérialiser à chaque poll.
+    if (++_liveMapTrailSaveTick % 10 !== 0) return;
+    try {
+        if (window._liveMap.trail.length < 20 || !window._liveMap.bounds) return;
+        localStorage.setItem(_LIVE_MAP_TRAIL_STORAGE_KEY, JSON.stringify({
+            track: window._liveMap.trackName || null,
+            trail: window._liveMap.trail,
+            bounds: window._liveMap.bounds,
+        }));
+    } catch (e) { /* stockage indisponible : sans importance, juste pas de cache cette fois */ }
+}
 
 window._liveStats = {
     active: false,
@@ -34,6 +70,7 @@ function _liveMapColorFor(id) {
 function resetLiveMapTrail() {
     window._liveMap.trail = [];
     window._liveMap.bounds = null;
+    window._liveMap.trackName = null;
     _liveMapDraw({connected: false});
 }
 
@@ -57,6 +94,9 @@ function _liveMapStart() {
     window._liveStats.inFlight = false;
     const btn = document.getElementById('liveMapToggleBtn');
     if (btn) { btn.textContent = '⏸️ Déconnecter'; btn.style.background = 'rgba(255,68,102,0.2)'; btn.style.borderColor = '#ff4466'; btn.style.color = '#ff4466'; }
+    // Retrouve immédiatement le circuit déjà dessiné lors d'une précédente
+    // connexion dans ce navigateur, le temps que les premières positions arrivent.
+    if (!window._liveMap.bounds) _liveMapLoadTrailCache();
     // Source « à distance » : on lit Firebase (publié par le programme du pilote) au lieu du serveur local.
     const remote = typeof liveSourceIsRemote === 'function' && liveSourceIsRemote();
     if (remote) remoteLiveStart();
@@ -137,6 +177,14 @@ async function _liveMapPollOnce() {
 function _liveMapAccumulateTrail(data) {
     const player = (data.cars || []).find(c => c.isPlayer);
     if (!player) return;
+    // Le tracé en mémoire/cache venait peut-être d'un autre circuit (cache d'une
+    // session précédente, ou changement de pilote suivi à distance) : on repart
+    // de zéro plutôt que de mélanger deux circuits dans le même dessin.
+    if (data.track && window._liveMap.trackName && data.track !== window._liveMap.trackName) {
+        window._liveMap.trail = [];
+        window._liveMap.bounds = null;
+    }
+    if (data.track) window._liveMap.trackName = data.track;
     const trail = window._liveMap.trail;
     const last = trail[trail.length - 1];
     // n'ajouter un point que si la voiture a réellement bougé (évite d'accumuler à l'arrêt/pit)
@@ -149,6 +197,7 @@ function _liveMapAccumulateTrail(data) {
         b.minZ = Math.min(b.minZ, player.z); b.maxZ = Math.max(b.maxZ, player.z);
         window._liveMap.bounds = b;
     }
+    _liveMapSaveTrailCache();
 }
 
 function _liveMapDraw(data) {
@@ -171,12 +220,17 @@ function _liveMapDraw(data) {
     const pad = 30;
     const spanX = Math.max(1, b.maxX - b.minX);
     const spanZ = Math.max(1, b.maxZ - b.minZ);
-    const scale = Math.min((W - 2*pad) / spanX, (H - 2*pad) / spanZ);
+    // Échelle indépendante par axe (plutôt qu'un facteur unique min(X,Z)) pour que
+    // le tracé remplisse tout le canvas même quand le circuit est très étroit dans
+    // un sens — carte schématique, pas à l'échelle réelle, donc la légère
+    // déformation de forme est un compromis acceptable contre l'espace perdu.
+    const scaleX = (W - 2*pad) / spanX;
+    const scaleZ = (H - 2*pad) / spanZ;
     // Carte tournée à 180° (X et Z tous deux inversés) par rapport au repère
     // monde brut, pour matcher l'orientation du circuit vue en jeu.
     const toPx = (x, z) => {
-        const px = pad + (x - b.minX) * scale;
-        const py = pad + (b.maxZ - z) * scale;
+        const px = pad + (x - b.minX) * scaleX;
+        const py = pad + (b.maxZ - z) * scaleZ;
         return [px, py];
     };
 
