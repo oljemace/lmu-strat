@@ -6,9 +6,13 @@ function switchTab(tab) {
         b.classList.toggle('active', b.dataset.tab === tab));
     document.querySelectorAll('.tab-panel').forEach(p =>
         p.classList.toggle('active', p.id === `tab-${tab}`));
-    if (tab === 'circuits') {
-        renderCircuitTyreGrid();
-        refreshCircuitSelects();   // ← remplit le menu à chaque ouverture de l'onglet
+    if (tab === 'circuits' || tab === 'pace') {
+        if (tab === 'circuits') {
+            renderCircuitTyreGrid();
+            refreshCircuitSelects();   // ← remplit le menu à chaque ouverture de l'onglet
+        } else if (typeof renderPaceTab === 'function') {
+            renderPaceTab();
+        }
         // Masquer le contenu stratégie (switcher planification/live + sections)
         const switcher = document.getElementById('calcModeSwitcher');
         if (switcher) switcher.style.display = 'none';

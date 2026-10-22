@@ -1275,3 +1275,79 @@ button.chat-file span { font-size: 0.8em; color: #8e9ac0; }
 #teamChatForm textarea { flex: 1; resize: none; padding: 6px 8px; border-radius: 8px; border: 1px solid rgba(var(--fg-rgb),0.2); background: rgba(var(--fg-rgb),0.08); color: var(--text); font: inherit; }
 #teamChatForm button { padding: 0 12px; border-radius: 8px; border: 1px solid var(--accent); background: rgba(var(--accent-rgb),0.15); color: var(--accent); font-weight: 700; cursor: pointer; }
 #teamVoicePanel.docked .voice-head { position: sticky; top: 0; z-index: 1; background: #12303f; }
+
+/* ── Onglet Rythme (js/pace-analysis.js) ── */
+.pace-layout { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 900px) { .pace-layout { grid-template-columns: minmax(0, 1fr); } }
+.pace-side { display: flex; flex-direction: column; gap: 14px; }
+.pace-main { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.pace-card {
+    background: rgba(var(--fg-rgb),0.04);
+    border: 1px solid rgba(var(--fg-rgb),0.1);
+    border-radius: 12px;
+    padding: 14px 16px;
+    min-width: 0;
+}
+.pace-card-title { color: var(--accent); font-weight: bold; margin-bottom: 10px; }
+.pace-card-title .pace-muted { font-weight: normal; font-size: 0.85em; }
+.pace-muted { color: var(--text-4); font-size: 0.88em; }
+.pace-muted code, .pace-hint code { font-size: 0.95em; color: var(--text-3); word-break: break-all; }
+.pace-drop {
+    display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center;
+    padding: 18px 12px; border: 2px dashed rgba(var(--accent-rgb),0.4); border-radius: 10px;
+    cursor: pointer; color: var(--text-2); transition: background 0.15s, border-color 0.15s;
+}
+.pace-drop:hover, .pace-drop.drag { background: rgba(var(--accent-rgb),0.08); border-color: var(--accent); }
+.pace-hint { margin: 10px 0; line-height: 1.45; }
+.pace-field { display: flex; flex-direction: column; gap: 5px; margin-top: 10px; color: var(--text-2); font-size: 0.9em; }
+.pace-field input[type=text], .pace-field select, .pace-search {
+    padding: 7px 9px; border: 1px solid rgba(var(--fg-rgb),0.2); border-radius: 8px;
+    background: rgba(var(--fg-rgb),0.08); color: var(--text); font-size: 0.95em; width: 100%; box-sizing: border-box;
+}
+.pace-field input[type=range] { accent-color: var(--accent); width: 100%; }
+.pace-status { margin-top: 8px; font-size: 0.85em; color: var(--text-3); line-height: 1.5; word-break: break-word; }
+.pace-file { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid rgba(var(--fg-rgb),0.06); cursor: pointer; }
+.pace-file:first-child { border-top: none; }
+.pace-file-main { display: flex; flex-direction: column; flex: 1; min-width: 0; font-size: 0.9em; color: var(--text-2); }
+.pace-file-main span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pace-x, .pace-link {
+    background: none; border: none; color: var(--text-4); cursor: pointer; font-size: 0.85em; padding: 2px 6px; border-radius: 6px;
+}
+.pace-x:hover, .pace-link:hover { color: var(--text); background: rgba(var(--fg-rgb),0.08); }
+.pace-driver-list { max-height: 420px; overflow-y: auto; margin-top: 8px; padding-right: 4px; }
+.pace-group { margin-bottom: 8px; }
+.pace-group-head {
+    display: flex; justify-content: space-between; align-items: center; gap: 6px;
+    font-size: 0.8em; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.03em;
+    padding: 4px 0; border-bottom: 1px solid rgba(var(--fg-rgb),0.08);
+}
+.pace-group-head span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pace-group-head button {
+    flex-shrink: 0; background: rgba(var(--accent-rgb),0.1); border: 1px solid rgba(var(--accent-rgb),0.3);
+    color: var(--accent); border-radius: 6px; font-size: 0.85em; padding: 2px 7px; cursor: pointer; text-transform: none;
+}
+.pace-driver { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; padding: 4px 0; font-size: 0.9em; color: var(--text-2); cursor: pointer; }
+.pace-driver input, .pace-file input { accent-color: var(--accent); }
+.pace-legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 0.85em; color: var(--text-3); margin-bottom: 6px; }
+.pace-legend i { display: inline-block; width: 11px; height: 11px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; border: 1px solid rgba(0,0,0,0.6); }
+.pace-svg-wrap { overflow-x: auto; }
+.pace-svg { display: block; height: auto; max-width: none; }
+.pace-svg-fluid { width: 100%; min-width: 560px; max-height: 460px; }
+.pace-svg .pace-grid { stroke: rgba(var(--fg-rgb),0.1); stroke-width: 1; }
+.pace-svg .pace-tick { fill: var(--text-4); font-size: 11px; }
+.pace-svg .pace-xlabel { fill: var(--text-2); font-size: 12px; font-weight: 600; }
+.pace-svg .pace-box { fill: rgba(0,0,0,0.55); stroke: var(--text); stroke-width: 1; }
+.pace-svg .pace-box-line { stroke: var(--text); stroke-width: 1.2; }
+.pace-svg .pace-median { stroke: var(--text); stroke-width: 2.4; }
+.pace-svg .pace-dot { stroke: rgba(0,0,0,0.75); stroke-width: 1; }
+.pace-table-wrap { overflow-x: auto; margin-top: 10px; }
+.pace-table { width: 100%; border-collapse: collapse; font-size: 0.88em; }
+.pace-table th, .pace-table td { padding: 6px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid rgba(var(--fg-rgb),0.07); }
+.pace-table th { color: var(--text-4); font-weight: normal; }
+.pace-table td { color: var(--text-2); font-variant-numeric: tabular-nums; }
+.pace-table th:first-child, .pace-table td:first-child { text-align: left; }
+.pace-swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 8px; vertical-align: -1px; }
+.pace-empty { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; padding: 60px 20px; color: var(--text-2);
+    background: rgba(var(--fg-rgb),0.03); border: 1px dashed rgba(var(--fg-rgb),0.15); border-radius: 12px; }
+.pace-file-track { margin-top: 4px; padding: 3px 6px; border: 1px solid rgba(var(--fg-rgb),0.2); border-radius: 6px;
+    background: rgba(var(--fg-rgb),0.08); color: var(--text); font-size: 0.9em; max-width: 100%; }

@@ -691,6 +691,10 @@ function _updateLiveStandingsAndCharts(data) {
     window._liveStandingsFull = Array.isArray(data.standings) ? data.standings : [];
     _renderLiveStandings();
 
+    // Classement de la catégorie du joueur, à côté de la carte live
+    window._livePlayerRecentLaps = Array.isArray(data.recentLaps) ? data.recentLaps : [];
+    _renderLiveMapClassStandings();
+
     // Courbes d'évolution par tour + trace accélérateur/frein
     _updateLiveCharts(data);
 }
@@ -875,6 +879,81 @@ function _renderLiveStandings() {
         list = full.slice(Math.max(0, myIdx - _LIVE_STANDINGS_WINDOW), myIdx + _LIVE_STANDINGS_WINDOW + 1);
     }
     _setHtmlIfChanged(el, list.map(d => _liveStandingsRowHtml(d, `P${d.place ?? '—'}`, {showClassBadge: true})).join(''));
+}
+
+/* ── Classement de la catégorie du joueur, affiché à côté de la carte live ──
+   Même liste que "Grille complète" (window._liveStandingsFull), mais filtrée
+   sur la classe du joueur et enrichie de 3 colonnes "delta par tour" : pour
+   chacun des 3 derniers tours de CHAQUE voiture (d.lastLaps, voir
+   snapshot_live() dans collector/lmu_telemetry_logger.py), on cherche le tour
+   de MÊME numéro chez le joueur (data.recentLaps) et on affiche l'écart de
+   temps au tour (rouge = la voiture est plus rapide que vous sur ce tour,
+   vert = plus lente). */
+function _liveDeltaCellHtml(carLap, playerLapsByNum) {
+    const empty = '<td style="padding:3px 4px;text-align:right;color:var(--text-4);">—</td>';
+    if (!carLap || carLap.lapTime == null || carLap.num == null) return empty;
+    const pl = playerLapsByNum.get(carLap.num);
+    if (!pl || pl.lapTime == null) return empty;
+    const delta = carLap.lapTime - pl.lapTime;
+    const color = delta < -0.05 ? '#ff6666' : (delta > 0.05 ? '#66ff99' : 'var(--text-3)');
+    const txt = `${delta > 0 ? '+' : ''}${delta.toFixed(1)}`;
+    return `<td style="padding:3px 4px;text-align:right;color:${color};">${txt}</td>`;
+}
+
+function _liveClassStandingsRowHtml(d, posLabel, playerLapsByNum) {
+    const esc = _teamTelemetryEscapeHtml || (s => s);
+    const name = esc(d.driver || d.vehicle || '—');
+    let gap = '—', gapColor = '#aaa';
+    if (!d.isPlayer && d.gapToPlayer != null) {
+        gap = `${d.gapToPlayer > 0 ? '+' : ''}${d.gapToPlayer.toFixed(1)}s`;
+        gapColor = d.gapToPlayer > 0 ? '#ffaa66' : '#88ccff';
+    }
+    const ve = d.veCurrentPct != null ? `${d.veCurrentPct.toFixed(0)}%` : '—';
+    let stints = null;
+    if (d.isPlayer) {
+        const v = parseFloat(document.getElementById('liveStintsRestants')?.textContent);
+        stints = isNaN(v) ? null : v;
+    }
+    if (stints == null) stints = _liveCarStintsRemaining(d);
+    const stintsTxt = stints != null ? stints.toFixed(1) : '—';
+    const rowStyle = d.isPlayer ? 'background:rgba(var(--accent-rgb),0.12);' : '';
+    // 3 derniers tours connus, du plus ancien (T-2) au plus récent (Dernier) ;
+    // complété à gauche par "—" si la voiture n'a pas encore bouclé 3 tours.
+    const last3 = (Array.isArray(d.lastLaps) ? d.lastLaps : []).slice(-3);
+    while (last3.length < 3) last3.unshift(null);
+    const deltaCells = d.isPlayer
+        ? '<td style="padding:3px 4px;text-align:right;color:var(--text-4);">—</td>'.repeat(3)
+        : last3.map(l => _liveDeltaCellHtml(l, playerLapsByNum)).join('');
+    return `<tr style="${rowStyle}border-bottom:1px solid rgba(var(--fg-rgb),0.06);">
+        <td style="padding:3px 4px;color:var(--text-3);">${posLabel}</td>
+        <td style="padding:3px 4px;color:var(--text);text-align:left;">${name}${d.isPlayer ? ' ⭐' : ''}${d.inPits ? ' 🔧' : ''}</td>
+        <td style="padding:3px 4px;text-align:right;color:${gapColor};">${gap}</td>
+        <td style="padding:3px 4px;text-align:center;"><span style="display:inline-flex;gap:3px;align-items:center;justify-content:center;">${_liveCompoundBadge(d.leftCompound)}${_liveCompoundBadge(d.rightCompound)}</span></td>
+        <td style="padding:3px 4px;text-align:right;color:var(--text);">${ve}</td>
+        <td style="padding:3px 4px;text-align:right;color:var(--text);">${stintsTxt}</td>
+        ${deltaCells}
+    </tr>`;
+}
+
+function _renderLiveMapClassStandings() {
+    const el = document.getElementById('liveMapClassStandings');
+    if (!el) return;
+    const full = window._liveStandingsFull || [];
+    if (full.length === 0) return; // on laisse le message d'attente initial
+
+    const player = full.find(d => d.isPlayer);
+    const vclass = player ? player.vclass : null;
+    const titleEl = document.getElementById('liveMapClassTitle');
+    if (titleEl) titleEl.textContent = vclass ? `🏁 Classement ${vclass}` : '🏁 Classement catégorie';
+
+    const group = vclass ? full.filter(d => d.vclass === vclass) : full;
+    const playerLapsByNum = new Map();
+    (window._livePlayerRecentLaps || []).forEach(l => { if (l && l.num != null) playerLapsByNum.set(l.num, l); });
+
+    const html = group.length
+        ? group.map((d, i) => _liveClassStandingsRowHtml(d, `P${i + 1}`, playerLapsByNum)).join('')
+        : '<tr><td colspan="9" style="color:var(--text-4);padding:6px;white-space:normal;">En attente de télémétrie live.</td></tr>';
+    _setHtmlIfChanged(el, html);
 }
 
 /* N'écrit dans le DOM que si le HTML a réellement changé : évite de détruire et

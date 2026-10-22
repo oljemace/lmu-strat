@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calculateur de Stratégie - Endurance LMU</title>
     <link rel="stylesheet" href="css/themes.css?v=20261029c">
-    <link rel="stylesheet" href="css/styles.css?v=20261030a">
+    <link rel="stylesheet" href="css/styles.css?v=20261022p">
     <script src="js/appearance.js?v=20261029c"></script>
 
 </head>
@@ -211,6 +211,7 @@
 <div class="tab-bar" style="display:flex;gap:8px;margin-bottom:20px;border-bottom:2px solid rgba(var(--accent-rgb),0.2);padding-bottom:0;">
     <button class="tab-btn active" data-tab="strategy" onclick="switchTab('strategy')">🏁 Stratégie</button>
     <button class="tab-btn" data-tab="circuits" onclick="switchTab('circuits')">📚 Base Circuits</button>
+    <button class="tab-btn" data-tab="pace" onclick="switchTab('pace')">📊 Rythme</button>
 </div>
 
 <div id="tab-strategy" class="tab-panel active">
@@ -1228,6 +1229,27 @@
                         <div id="liveMapGameClock" style="color:var(--text);font-size:1.15em;font-weight:bold;">—</div>
                     </div>
                 </div>
+                <div style="flex:1 1 340px;min-width:300px;background:rgba(var(--fg-rgb),0.04);border:1px solid rgba(var(--fg-rgb),0.1);border-radius:10px;padding:10px 12px;overflow-x:auto;">
+                    <div id="liveMapClassTitle" style="color:var(--text-3);font-weight:bold;font-size:0.8em;margin-bottom:6px;">🏁 Classement catégorie</div>
+                    <table style="width:100%;border-collapse:collapse;font-size:0.78em;white-space:nowrap;">
+                        <thead>
+                            <tr style="color:var(--text-4);">
+                                <th style="text-align:left;padding:2px 4px;">#</th>
+                                <th style="text-align:left;padding:2px 4px;">Pilote</th>
+                                <th style="text-align:right;padding:2px 4px;">Écart</th>
+                                <th style="text-align:center;padding:2px 4px;">Gommes</th>
+                                <th style="text-align:right;padding:2px 4px;">EV</th>
+                                <th style="text-align:right;padding:2px 4px;">Stints</th>
+                                <th style="text-align:right;padding:2px 4px;">Δ T-2</th>
+                                <th style="text-align:right;padding:2px 4px;">Δ T-1</th>
+                                <th style="text-align:right;padding:2px 4px;">Δ Dern.</th>
+                            </tr>
+                        </thead>
+                        <tbody id="liveMapClassStandings">
+                            <tr><td colspan="9" style="color:var(--text-4);padding:6px;white-space:normal;">En attente de télémétrie live.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
             <div id="liveMapLegend" style="margin-top:10px;display:flex;flex-wrap:wrap;gap:10px;font-size:0.82em;color:var(--text-2);"></div>
         </details>
@@ -1599,6 +1621,72 @@
 
 </div>
 
+<!-- ══════════ PANNEAU RYTHME (js/pace-analysis.js) ══════════ -->
+<div id="tab-pace" class="tab-panel">
+    <div class="pace-layout">
+        <aside class="pace-side">
+            <div class="pace-card">
+                <div class="pace-card-title">Envois de l'équipe</div>
+                <div class="pace-hint pace-muted" style="margin-top:0;">
+                    Le connecteur envoie automatiquement les tours enregistrés (temps, usure) quand on le ferme.
+                </div>
+                <div id="paceTeamList"></div>
+            </div>
+
+            <div class="pace-card">
+                <div class="pace-card-title">Importer</div>
+                <label id="paceDropZone" class="pace-drop">
+                    <input type="file" id="paceFileInput" accept=".xml,.json" multiple hidden>
+                    <div style="font-size:1.6em;">📂</div>
+                    <div>Glisse ici les fichiers <b>XML</b> de résultats LMU ou les <b>JSON</b> du connecteur</div>
+                    <div class="pace-muted">ou clique pour les choisir</div>
+                </label>
+                <div class="pace-hint pace-muted">
+                    XML : <code>Le Mans Ultimate\UserData\Log\Results</code><br>
+                    En ligne, ces XML ne contiennent que les temps. L'usure vient des JSON du connecteur
+                    (dossier <code>telemetrie</code>) ou des sessions hors ligne.
+                </div>
+                <label class="pace-field">
+                    <span>Pilote des fichiers JSON</span>
+                    <input type="text" id="paceJsonDriver" placeholder="Ton nom dans LMU" maxlength="60">
+                </label>
+                <div id="paceImportStatus" class="pace-status"></div>
+            </div>
+
+            <div class="pace-card">
+                <div class="pace-card-title" style="display:flex;justify-content:space-between;align-items:center;">
+                    <span>Fichiers importés <span class="pace-muted">(ce navigateur)</span></span>
+                    <button type="button" class="pace-link" onclick="paceClearAll()">Tout retirer</button>
+                </div>
+                <div id="paceFileList"></div>
+            </div>
+
+            <div class="pace-card">
+                <div class="pace-card-title">Filtres</div>
+                <label class="pace-field">
+                    <span>Circuit</span>
+                    <select id="paceTrackSelect" onchange="paceSetTrack(this.value)"></select>
+                </label>
+                <label class="pace-field">
+                    <span>Catégorie</span>
+                    <select id="paceClassSelect" onchange="paceSetClass(this.value)"></select>
+                </label>
+                <label class="pace-field">
+                    <span>Tours retenus : jusqu'à <b id="paceThresholdValue">+4%</b> du meilleur tour</span>
+                    <input type="range" id="paceThreshold" min="0.5" max="15" step="0.5" oninput="paceSetThreshold(this.value)">
+                </label>
+            </div>
+
+            <div class="pace-card">
+                <div class="pace-card-title">Pilotes</div>
+                <input type="search" class="pace-search" placeholder="Rechercher un pilote ou une équipe" oninput="paceSetSearch(this.value)">
+                <div id="paceDriverList" class="pace-driver-list"></div>
+            </div>
+        </aside>
+        <section id="paceCharts" class="pace-main"></section>
+    </div>
+</div>
+
 <!-- ══════════ PANNEAU BASE CIRCUITS ══════════ -->
 <div id="tab-circuits" class="tab-panel">
     <div class="input-section" style="max-width:900px;margin:0 auto;">
@@ -1943,10 +2031,11 @@
 <script src="js/remote-live.js?v=20261019b"></script>
 <script src="js/timeline-zoom.js?v=20261021a"></script>
 <script src="js/tyres-wear.js?v=20261030a"></script>
-<script src="js/ui-tabs.js?v=20261013d"></script>
+<script src="js/ui-tabs.js?v=20261022a"></script>
 <script src="js/circuits-ui.js?v=20261020a"></script>
 <script src="js/circuits-db.js?v=20261022a"></script>
 <script src="js/live-telemetry.js?v=20261030a"></script>
+<script src="js/pace-analysis.js?v=20261022c"></script>
 
 
 
