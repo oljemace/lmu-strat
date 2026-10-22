@@ -1351,3 +1351,18 @@ button.chat-file span { font-size: 0.8em; color: #8e9ac0; }
     background: rgba(var(--fg-rgb),0.03); border: 1px dashed rgba(var(--fg-rgb),0.15); border-radius: 12px; }
 .pace-file-track { margin-top: 4px; padding: 3px 6px; border: 1px solid rgba(var(--fg-rgb),0.2); border-radius: 6px;
     background: rgba(var(--fg-rgb),0.08); color: var(--text); font-size: 0.9em; max-width: 100%; }
+.pace-seg { display: inline-flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+.pace-seg button {
+    padding: 4px 10px; border-radius: 6px; font-size: 0.82em; cursor: pointer;
+    background: rgba(var(--fg-rgb),0.06); border: 1px solid rgba(var(--fg-rgb),0.15); color: var(--text-3);
+}
+.pace-seg button.active { background: rgba(var(--accent-rgb),0.15); border-color: var(--accent); color: var(--accent); }
+.pace-svg .pace-dot { cursor: pointer; transition: r 0.08s; }
+.pace-svg .pace-dot.hover { r: 6.5; stroke: var(--text); stroke-width: 2; }
+.pace-tip {
+    position: fixed; z-index: 10000; pointer-events: none; max-width: 280px;
+    padding: 7px 10px; border-radius: 8px; font-size: 0.82em; line-height: 1.45;
+    background: var(--bar-bg); color: var(--text-2); border: 1px solid rgba(var(--fg-rgb),0.18);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.35); font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.pace-tip-title { font-weight: bold; color: var(--text); margin-bottom: 2px; }

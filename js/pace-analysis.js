@@ -29,6 +29,7 @@ let _pace = {
     jsonDriver: '',      // nom donné aux fichiers JSON du connecteur
     search: '',
     selectionTouched: false,
+    wearCorner: 'avg',   // courbe d'usure : 'avg' (moyenne des 4) ou FL / FR / RL / RR
     teamDisabled: {},    // envois de l'équipe décochés (id -> true)
     trackOverride: {},   // circuit corrigé à la main pour un envoi de l'équipe (id -> circuit)
 };
@@ -114,6 +115,7 @@ function paceParseTeamLaps(node, f) {
             pit: !!l.p,
             compound: paceCompoundKey(l.c),
             wear: w,
+            ve: paceVe(l.v, l.p),
         };
     });
 }
@@ -162,6 +164,10 @@ function paceCompoundKey(c) {
 }
 function paceCompoundLabel(k) {
     return { soft: 'Soft', medium: 'Medium', hard: 'Hard', wet: 'Pluie', inter: 'Inter' }[k] || 'Inconnue';
+}
+/** EV consommée sur un tour, en % ; null si absente, tour aux stands (recharge) ou valeur aberrante. */
+function paceVe(v, pit) {
+    return !pit && Number.isFinite(v) && v > 0 && v < 30 ? v : null;
 }
 function paceMean(a) { return a.length ? a.reduce((s, x) => s + x, 0) / a.length : null; }
 function paceSd(a) {
@@ -242,6 +248,8 @@ function paceParseXml(text, fileName) {
                     pit: a('pit') === '1',
                     compound: paceCompoundKey((a('fcompound') || '').split(',')[1]),
                     wear,
+                    // veUsed = fraction d'énergie virtuelle consommée sur le tour (0.043 = 4,3 %), hors ligne seulement.
+                    ve: paceVe(paceNum(a('veUsed')) != null ? paceNum(a('veUsed')) * 100 : null, a('pit') === '1'),
                 });
             }
         }
@@ -277,6 +285,7 @@ function paceParseJson(obj, fileName, driverName) {
             pit: !!l.pit,
             compound: paceCompoundKey(l.leftCompound),
             wear: valid ? { FL: w.FL, FR: w.FR, RL: w.RL, RR: w.RR } : null,
+            ve: paceVe(l.vePctUsed, l.pit),
         };
     });
     return [{
@@ -394,7 +403,11 @@ function paceBuildDrivers() {
         const src = d.xml.some(l => l.time) ? d.xml : d.json;
         d.timed = src.filter(l => l.time && !l.pit);
         d.best = d.timed.length ? Math.min(...d.timed.map(l => l.time)) : null;
-        d.wearLaps = all.filter(l => l.wear && !l.pit);
+        // Usure / EV : le connecteur (mesure native) de préférence, sinon le XML hors ligne — jamais les deux,
+        // sinon un même tour compterait deux fois.
+        const pick = has => (d.json.some(has) ? d.json : d.xml).filter(l => has(l) && !l.pit).sort((a, b) => a.num - b.num);
+        d.wearLaps = pick(l => l.wear);
+        d.veLaps = pick(l => l.ve != null);
         d.lapCount = all.length;
     }
     return drivers;
@@ -417,6 +430,10 @@ function paceStats(d) {
         best: d.best,
         wear,
         wearN: d.wearLaps.length,
+        veMean: paceMean(d.veLaps.map(l => l.ve)),
+        veMin: d.veLaps.length ? Math.min(...d.veLaps.map(l => l.ve)) : null,
+        veMax: d.veLaps.length ? Math.max(...d.veLaps.map(l => l.ve)) : null,
+        veN: d.veLaps.length,
     };
 }
 
@@ -609,18 +626,24 @@ function paceRenderCharts(drivers) {
             ${paceStatsTable(timed)}
         </div>
         <div class="pace-card">
-            <div class="pace-card-title">Tours triés <span class="pace-muted">— du plus rapide au plus lent</span></div>
-            <div class="pace-svg-wrap">${paceSortedSvg(timed)}</div>
+            <div class="pace-card-title">Temps au tour <span class="pace-muted">— dans l'ordre des tours, mêmes tours retenus que ci-dessus</span></div>
+            <div class="pace-svg-wrap">${paceLapTimeSvg(timed)}</div>
         </div>`;
     } else {
         html += '<div class="pace-card pace-muted">Aucun temps au tour valide pour ces pilotes.</div>';
     }
     const worn = rows.filter(r => r.s.wearN);
     html += `<div class="pace-card">
-        <div class="pace-card-title">Usure des pneus <span class="pace-muted">— % d'usure moyen par tour, hors tours aux stands</span></div>
-        ${worn.length ? `<div class="pace-svg-wrap">${paceWearSvg(worn)}</div>${paceWearTable(worn)}` :
+        <div class="pace-card-title">Usure des pneus <span class="pace-muted">— % d'usure par tour, hors tours aux stands</span></div>
+        ${worn.length ? `${paceWearCornerButtons()}<div class="pace-svg-wrap">${paceWearSvg(worn)}</div>${paceWearTable(worn)}` :
         `<div class="pace-muted" style="padding:10px 0;">Aucune donnée d'usure pour ces pilotes. Les XML des sessions en ligne n'en contiennent pas :
          importe les fichiers JSON du connecteur (dossier <code>telemetrie</code>) ou un XML d'une session hors ligne.</div>`}
+    </div>`;
+    const ve = rows.filter(r => r.s.veN);
+    html += `<div class="pace-card">
+        <div class="pace-card-title">Énergie virtuelle <span class="pace-muted">— % d'EV consommée par tour, hors tours aux stands</span></div>
+        ${ve.length ? `<div class="pace-svg-wrap">${paceVeSvg(ve)}</div>${paceVeTable(ve)}` :
+        `<div class="pace-muted" style="padding:10px 0;">Aucune donnée d'EV pour ces pilotes (même source que l'usure : connecteur ou XML hors ligne).</div>`}
     </div>`;
     wrap.innerHTML = html;
 }
@@ -635,16 +658,16 @@ function paceCompoundLegend(rows) {
 /* ── Axes ── */
 function paceNiceStep(range, target) {
     const raw = range / target;
-    const steps = [0.05, 0.1, 0.2, 0.25, 0.5, 1, 2, 5, 10, 20, 30, 60];
+    const steps = [0.01, 0.02, 0.05, 0.1, 0.2, 0.25, 0.5, 1, 2, 5, 10, 20, 30, 60];
     return steps.find(s => s >= raw) || 60;
 }
-function paceYAxis(min, max, y, x0, x1) {
+function paceYAxis(min, max, y, x0, x1, fmt = paceFmtLap) {
     const step = paceNiceStep(max - min, 6);
     let out = '';
     for (let v = Math.ceil(min / step) * step; v <= max + 1e-9; v += step) {
         const yy = y(v).toFixed(1);
         out += `<line x1="${x0}" x2="${x1}" y1="${yy}" y2="${yy}" class="pace-grid"/>
-                <text x="${x0 - 6}" y="${yy}" class="pace-tick" text-anchor="end" dominant-baseline="middle">${paceFmtLap(v)}</text>`;
+                <text x="${x0 - 6}" y="${yy}" class="pace-tick" text-anchor="end" dominant-baseline="middle">${fmt(v)}</text>`;
     }
     return out;
 }
@@ -691,8 +714,10 @@ function paceViolinSvg(rows) {
         r.s.push.forEach((l, j) => {
             const jitter = (((j * 7919) % 97) / 97 - 0.5) * half * 0.9;
             const fill = PACE_COMPOUND_COLORS[l.compound] || '#888';
-            svg += `<circle cx="${(cx + jitter).toFixed(1)}" cy="${y(l.time).toFixed(1)}" r="4.2" fill="${fill}" class="pace-dot">
-                <title>${paceEsc(r.d.name)} — tour ${l.num} : ${paceFmtLap(l.time)}${l.s1 ? `\nS1 ${l.s1.toFixed(3)} · S2 ${(l.s2 ?? 0).toFixed(3)} · S3 ${(l.s3 ?? 0).toFixed(3)}` : ''}\nGomme : ${paceCompoundLabel(l.compound)}</title></circle>`;
+            const tip = [r.d.name, `Tour ${l.num}`, `Temps : ${paceFmtLap(l.time)}`,
+                l.s1 ? `S1 ${l.s1.toFixed(3)} · S2 ${(l.s2 ?? 0).toFixed(3)} · S3 ${(l.s3 ?? 0).toFixed(3)}` : '',
+                `Gomme : ${paceCompoundLabel(l.compound)}`];
+            svg += `<circle cx="${(cx + jitter).toFixed(1)}" cy="${y(l.time).toFixed(1)}" r="4.2" fill="${fill}" class="pace-dot" ${paceTipAttr(tip, r.color)}/>`;
         });
         svg += `<text x="${cx}" y="${H - mb + 18}" class="pace-xlabel" text-anchor="middle">${paceEsc(paceShortName(r.d.name)).slice(0, 18)}</text>
                 <rect x="${cx - 14}" y="${H - mb + 28}" width="28" height="4" rx="2" fill="${r.color}"/>`;
@@ -715,63 +740,96 @@ function paceStatsTable(rows) {
         </tr>`).join('')}</tbody></table></div>`;
 }
 
-/* ── Tours triés ── */
-function paceSortedSvg(rows) {
-    const all = rows.flatMap(r => r.s.times);
-    const n = Math.max(...rows.map(r => r.s.times.length));
-    const pad = Math.max(0.1, (Math.max(...all) - Math.min(...all)) * 0.06);
-    const yMin = Math.min(...all) - pad, yMax = Math.max(...all) + pad;
-    const W = 760, H = 320, ml = 72, mr = 16, mt = 12, mb = 40;
-    const x = i => ml + (n <= 1 ? 0 : i / (n - 1)) * (W - ml - mr);
+/* ── Courbes par numéro de tour ── */
+/**
+ * Courbes en fonction du numéro de tour, une par pilote.
+ * series = [{ name, color, pts: [{ x: n° de tour, y, tip }] }] ; opt = { fmt, aria, zero (axe Y depuis 0) }.
+ */
+function paceLineSvg(series, opt) {
+    const pts = series.flatMap(s => s.pts);
+    if (!pts.length) return '';
+    const fmt = opt.fmt || (v => v.toFixed(2));
+    const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
+    const xMin = Math.min(...xs), xMax = Math.max(...xs);
+    let yMin = Math.min(...ys), yMax = Math.max(...ys);
+    const pad = Math.max((yMax - yMin) * 0.08, opt.minPad || 0.05);
+    yMin = opt.zero ? 0 : yMin - pad;
+    yMax += pad;
+    const W = 760, H = 320, ml = 72, mr = 16, mt = 30, mb = 40;
+    const x = v => ml + (xMax === xMin ? 0.5 : (v - xMin) / (xMax - xMin)) * (W - ml - mr);
     const y = v => mt + (yMax - v) / (yMax - yMin) * (H - mt - mb);
-    let svg = `<svg viewBox="0 0 ${W} ${H}" class="pace-svg pace-svg-fluid" role="img" aria-label="Tours triés par pilote">`;
-    svg += paceYAxis(yMin, yMax, y, ml, W - mr);
-    const xStep = paceNiceStep(n, 8) < 1 ? 1 : Math.round(paceNiceStep(n, 8));
-    for (let i = 0; i < n; i += xStep) {
-        svg += `<text x="${x(i).toFixed(1)}" y="${H - mb + 16}" class="pace-tick" text-anchor="middle">${i + 1}</text>`;
+    let svg = `<svg viewBox="0 0 ${W} ${H}" class="pace-svg pace-svg-fluid" role="img" aria-label="${paceEsc(opt.aria)}">`;
+    svg += paceYAxis(yMin, yMax, y, ml, W - mr, fmt);
+    const xStep = Math.max(1, Math.round(paceNiceStep(xMax - xMin, 10)));
+    for (let v = Math.ceil(xMin / xStep) * xStep; v <= xMax; v += xStep) {
+        svg += `<text x="${x(v).toFixed(1)}" y="${H - mb + 16}" class="pace-tick" text-anchor="middle">${v}</text>`;
     }
-    svg += `<text x="${(ml + W - mr) / 2}" y="${H - 6}" class="pace-tick" text-anchor="middle">Rang du tour (trié)</text>`;
-    rows.forEach(r => {
-        const pts = r.s.times.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
-        svg += `<polyline points="${pts}" fill="none" stroke="${r.color}" stroke-width="2.2" stroke-linejoin="round"/>`;
-        r.s.times.forEach((v, i) => {
-            svg += `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="2.6" fill="${r.color}"><title>${paceEsc(r.d.name)} — ${i + 1}e : ${paceFmtLap(v)}</title></circle>`;
+    svg += `<text x="${(ml + W - mr) / 2}" y="${H - 6}" class="pace-tick" text-anchor="middle">N° du tour</text>`;
+    series.forEach(s => {
+        const sorted = s.pts.slice().sort((a, b) => a.x - b.x);
+        svg += `<polyline points="${sorted.map(p => `${x(p.x).toFixed(1)},${y(p.y).toFixed(1)}`).join(' ')}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" stroke-opacity="0.9"/>`;
+        sorted.forEach(p => {
+            const tip = [s.name, `Tour ${p.x}`, `${opt.yName} : ${(opt.tipFmt || fmt)(p.y)}`].concat(p.extra || []);
+            svg += `<circle cx="${x(p.x).toFixed(1)}" cy="${y(p.y).toFixed(1)}" r="3.4" fill="${p.fill || s.color}" class="pace-dot" ${paceTipAttr(tip, s.color)}/>`;
         });
     });
-    // Légende pilotes
-    svg += rows.map((r, i) => `<g transform="translate(${ml + 8 + (i % 4) * 190}, ${mt + 8 + Math.floor(i / 4) * 16})">
-        <rect width="14" height="4" y="-2" rx="2" fill="${r.color}"/><text x="20" class="pace-tick" dominant-baseline="middle">${paceEsc(r.d.name).slice(0, 24)}</text></g>`).join('');
+    svg += series.map((s, i) => `<g transform="translate(${ml + 8 + (i % 4) * 170}, ${12 + Math.floor(i / 4) * 14})">
+        <rect width="14" height="4" y="-2" rx="2" fill="${s.color}"/><text x="20" class="pace-tick" dominant-baseline="middle">${paceEsc(s.name).slice(0, 22)}</text></g>`).join('');
     return svg + '</svg>';
 }
 
-/* ── Usure ── */
+/* ── Temps au tour, dans l'ordre (points à la couleur de la gomme) ── */
+function paceLapTimeSvg(rows) {
+    return paceLineSvg(rows.map(r => ({
+        name: r.d.name, color: r.color,
+        pts: r.s.push.map(l => ({
+            x: l.num, y: l.time, fill: PACE_COMPOUND_COLORS[l.compound] || r.color,
+            extra: [`Gomme : ${paceCompoundLabel(l.compound)}`],
+        })),
+    })), { fmt: paceFmtLap, yName: 'Temps', aria: 'Temps au tour par numéro de tour', minPad: 0.1 });
+}
+
+/* ── Usure par tour (un pneu ou la moyenne des quatre) ── */
+function paceWearCornerButtons() {
+    const opts = [['avg', 'Moyenne 4 pneus']].concat(PACE_CORNERS.map(k => [k, k]));
+    return `<div class="pace-seg">${opts.map(([k, label]) => `
+        <button type="button" class="${_pace.wearCorner === k ? 'active' : ''}" onclick="paceSetWearCorner('${k}')">${label}</button>`).join('')}</div>`;
+}
+function paceSetWearCorner(k) { _pace.wearCorner = k; paceSave(); renderPaceTab(); }
+
 function paceWearSvg(rows) {
-    const maxV = Math.max(0.05, ...rows.flatMap(r => PACE_CORNERS.map(k => r.s.wear[k] || 0))) * 1.15;
-    const slot = 150, ml = 56, mr = 16, mt = 26, mb = 44, H = 300;
-    const W = Math.max(560, ml + mr + slot * rows.length);
-    const step = (W - ml - mr) / rows.length;
-    const y = v => mt + (maxV - v) / maxV * (H - mt - mb);
-    let svg = `<svg viewBox="0 0 ${W} ${H}" class="pace-svg pace-svg-fluid" style="min-width:${Math.min(W, 140 + 110 * rows.length)}px" role="img" aria-label="Usure moyenne par tour et par pneu">`;
-    const tick = paceNiceStep(maxV, 5);
-    for (let v = 0; v <= maxV + 1e-9; v += tick) {
-        svg += `<line x1="${ml}" x2="${W - mr}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}" class="pace-grid"/>
-                <text x="${ml - 6}" y="${y(v).toFixed(1)}" class="pace-tick" text-anchor="end" dominant-baseline="middle">${v.toFixed(2)}%</text>`;
-    }
-    svg += PACE_CORNERS.map((k, i) => `<g transform="translate(${ml + 6 + i * 60}, 10)"><rect width="10" height="10" y="-5" rx="2" fill="${PACE_CORNER_COLORS[k]}"/>
-        <text x="15" class="pace-tick" dominant-baseline="middle">${k}</text></g>`).join('');
-    rows.forEach((r, i) => {
-        const cx = ml + step * (i + 0.5);
-        const bw = Math.min(22, step / 6);
-        PACE_CORNERS.forEach((k, j) => {
-            const v = r.s.wear[k] || 0;
-            const bx = cx + (j - 2) * (bw + 3);
-            svg += `<rect x="${bx.toFixed(1)}" y="${y(v).toFixed(1)}" width="${bw}" height="${(y(0) - y(v)).toFixed(1)}" rx="2" fill="${PACE_CORNER_COLORS[k]}">
-                <title>${paceEsc(r.d.name)} — ${k} : ${v.toFixed(3)}% / tour</title></rect>`;
-        });
-        svg += `<text x="${cx}" y="${H - mb + 18}" class="pace-xlabel" text-anchor="middle">${paceEsc(paceShortName(r.d.name)).slice(0, 18)}</text>
-                <rect x="${cx - 14}" y="${H - mb + 28}" width="28" height="4" rx="2" fill="${r.color}"/>`;
-    });
-    return svg + '</svg>';
+    const k = _pace.wearCorner;
+    const val = l => k === 'avg' ? paceMean(PACE_CORNERS.map(c => l.wear[c])) : l.wear[k];
+    const label = k === 'avg' ? 'moyenne' : k;
+    return paceLineSvg(rows.map(r => ({
+        name: r.d.name, color: r.color,
+        pts: r.d.wearLaps.map(l => ({
+            x: l.num, y: val(l),
+            extra: [PACE_CORNERS.map(c => `${c} ${l.wear[c].toFixed(2)}`).join(' · ')],
+        })),
+    })), { fmt: v => v.toFixed(2) + '%', tipFmt: v => v.toFixed(3) + ' %', yName: `Usure ${label}`,
+           aria: "Usure des pneus par numéro de tour", zero: true });
+}
+
+/* ── Énergie virtuelle par tour ── */
+function paceVeSvg(rows) {
+    return paceLineSvg(rows.map(r => ({
+        name: r.d.name, color: r.color,
+        pts: r.d.veLaps.map(l => ({ x: l.num, y: l.ve })),
+    })), { fmt: v => v.toFixed(1) + '%', tipFmt: v => v.toFixed(2) + ' %', yName: 'EV consommée', aria: "Énergie virtuelle consommée par numéro de tour", minPad: 0.1 });
+}
+
+function paceVeTable(rows) {
+    return `<div class="pace-table-wrap"><table class="pace-table">
+        <thead><tr><th>Pilote</th><th>EV moyenne / tour</th><th>Minimum</th><th>Maximum</th><th>Tours avec 100 % d'EV</th><th>Tours mesurés</th></tr></thead>
+        <tbody>${rows.map(r => `<tr>
+            <td><i class="pace-swatch" style="background:${r.color}"></i>${paceEsc(r.d.name)}</td>
+            <td>${r.s.veMean.toFixed(2)} %</td>
+            <td>${r.s.veMin.toFixed(2)} %</td>
+            <td>${r.s.veMax.toFixed(2)} %</td>
+            <td>${(100 / r.s.veMean).toFixed(1)}</td>
+            <td>${r.s.veN}</td>
+        </tr>`).join('')}</tbody></table></div>`;
 }
 
 function paceWearTable(rows) {
@@ -790,9 +848,68 @@ function paceWearTable(rows) {
         }).join('')}</tbody></table></div>`;
 }
 
+/* ══════════ ÉTIQUETTES AU SURVOL ══════════
+   Chaque point porte ses lignes dans data-tip (séparées par \n, la 1re en titre) ; une seule étiquette
+   flottante suit la souris (affichage immédiat, contrairement aux infobulles natives du navigateur). */
+function paceTipAttr(lines, color) {
+    return `data-tip="${paceEsc(lines.filter(Boolean).join('\n'))}" data-tip-color="${paceEsc(color || '')}"`;
+}
+
+function paceTipInit() {
+    const tip = document.createElement('div');
+    tip.id = 'paceTip';
+    tip.className = 'pace-tip';
+    tip.hidden = true;
+    document.body.appendChild(tip);
+    let current = null;
+    const place = e => {
+        const pad = 14, r = tip.getBoundingClientRect();
+        let left = e.clientX + pad, top = e.clientY + pad;
+        if (left + r.width > window.innerWidth - 8) left = e.clientX - r.width - pad;
+        if (top + r.height > window.innerHeight - 8) top = e.clientY - r.height - pad;
+        tip.style.left = Math.max(8, left) + 'px';
+        tip.style.top = Math.max(8, top) + 'px';
+    };
+    const show = (dot, e) => {
+        if (current && current !== dot) current.classList.remove('hover');
+        current = dot;
+        dot.classList.add('hover');
+        const [title, ...rest] = dot.dataset.tip.split('\n');
+        tip.textContent = '';
+        const h = document.createElement('div');
+        h.className = 'pace-tip-title';
+        h.textContent = title;
+        if (dot.dataset.tipColor) h.style.color = dot.dataset.tipColor;
+        tip.appendChild(h);
+        rest.forEach(line => {
+            const d = document.createElement('div');
+            d.textContent = line;
+            tip.appendChild(d);
+        });
+        tip.hidden = false;
+        place(e);
+    };
+    const hide = () => {
+        if (current) current.classList.remove('hover');
+        current = null;
+        tip.hidden = true;
+    };
+    document.addEventListener('mouseover', e => {
+        const dot = e.target.closest?.('#tab-pace [data-tip]');
+        if (dot) show(dot, e); else if (current) hide();
+    });
+    document.addEventListener('mousemove', e => { if (current) place(e); });
+    document.addEventListener('click', e => {          // écrans tactiles : un appui affiche l'étiquette
+        const dot = e.target.closest?.('#tab-pace [data-tip]');
+        if (dot) show(dot, e); else if (current) hide();
+    });
+    window.addEventListener('scroll', hide, { passive: true });
+}
+
 /* ══════════ INITIALISATION ══════════ */
 function initPaceTab() {
     paceLoad();
+    paceTipInit();
     const drop = document.getElementById('paceDropZone');
     const input = document.getElementById('paceFileInput');
     if (input) input.addEventListener('change', () => { paceImportFiles(input.files); input.value = ''; });
