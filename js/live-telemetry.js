@@ -1548,15 +1548,22 @@ function _drawDriverTraceChart(data) {
     ctx.clearRect(0, 0, W, H);
 
     const trackLength = data.trackLength || Math.max(1, ...Object.values(traces).filter(Array.isArray).flat().map(p => p[0]));
-    const padL = 10, padR = 10, padT = 10, padB = 16;
-    const midY = padT + (H - padT - padB) / 2;
+    const padL = 38, padR = 10, padT = 10, padB = 16;
     const toX = d => padL + Math.min(1, d / trackLength) * (W - padL - padR);
-    const toYThrottle = pct => midY - Math.max(0, Math.min(100, pct)) / 100 * (midY - padT);
-    const toYBrake = pct => midY + Math.max(0, Math.min(100, pct)) / 100 * (H - padB - midY);
+    // Accélérateur et frein sur le même axe 0 → 100 % (frein en positif, comme l'accélérateur)
+    const toY = pct => H - padB - Math.max(0, Math.min(100, pct)) / 100 * (H - padT - padB);
 
-    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
     ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(padL, midY); ctx.lineTo(W - padR, midY); ctx.stroke();
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    [0, 50, 100].forEach(pct => {
+        const y = toY(pct);
+        ctx.strokeStyle = pct === 0 ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.1)';
+        ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+        ctx.fillStyle = 'rgba(255,255,255,0.45)';
+        ctx.fillText(`${pct}%`, padL - 6, y);
+    });
 
     visibleKeys.forEach(key => {
         const pts = traces[key];
@@ -1568,7 +1575,7 @@ function _drawDriverTraceChart(data) {
         ctx.setLineDash([]);
         ctx.beginPath();
         pts.forEach((p, i) => {
-            const x = toX(p[0]), y = toYThrottle(p[1]);
+            const x = toX(p[0]), y = toY(p[1]);
             if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
         });
         ctx.stroke();
@@ -1576,7 +1583,7 @@ function _drawDriverTraceChart(data) {
         ctx.setLineDash([3, 2]);
         ctx.beginPath();
         pts.forEach((p, i) => {
-            const x = toX(p[0]), y = toYBrake(p[2]);
+            const x = toX(p[0]), y = toY(p[2]);
             if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
         });
         ctx.stroke();
@@ -1612,6 +1619,7 @@ function _updateLiveDriverTrace(data) {
 /* Chaque graphique n'est redessiné que s'il est à l'écran : un graphique masqué ou
    hors de la fenêtre est repris au plus tard 1 s après y être revenu. */
 function _updateLiveCharts(data) {
+    window._liveLastChartsData = data;
     const allLaps = Array.isArray(data.allLaps) ? data.allLaps : [];
     const partial = data.currentLapPartial || null;
     [['chartFuelEv', _drawFuelEvChart], ['chartTyreLife', _drawTyreLifeChart],
@@ -1621,6 +1629,78 @@ function _updateLiveCharts(data) {
     });
     _updateLiveDriverTrace(data);
 }
+
+/* ── Agrandir un graphique : la carte passe en plein écran (par-dessus la page) et le
+   canvas prend la résolution de sa nouvelle taille, pour un dessin net et lisible.
+   Fermeture : même bouton, touche Échap ou clic sur le fond. ── */
+function _liveChartRedrawAll() {
+    if (window._liveLastChartsData) _updateLiveCharts(window._liveLastChartsData);
+    else _resetLiveCharts();
+}
+
+function _liveChartFitCanvas(card) {
+    const canvas = card.querySelector('canvas.live-chart-canvas');
+    if (!canvas) return;
+    const r = canvas.getBoundingClientRect();
+    canvas.width = Math.max(300, Math.round(r.width));
+    canvas.height = Math.max(150, Math.round(r.height));
+}
+
+function toggleLiveChartExpand(card) {
+    const open = document.querySelector('.live-chart-card.live-chart-expanded');
+    if (open) {   // une seule carte agrandie à la fois : on referme d'abord
+        const canvas = open.querySelector('canvas.live-chart-canvas');
+        open.classList.remove('live-chart-expanded');
+        if (canvas) { canvas.width = +canvas.dataset.baseW; canvas.height = +canvas.dataset.baseH; }
+        open.querySelector('.live-chart-expand-btn')?.setAttribute('title', 'Agrandir');
+        document.getElementById('liveChartBackdrop')?.remove();
+        const spot = document.getElementById('liveChartExpandSpot');
+        if (spot) { spot.replaceWith(open); }
+        document.body.style.overflow = '';
+    }
+    if (card && card !== open) {
+        const canvas = card.querySelector('canvas.live-chart-canvas');
+        if (canvas && !canvas.dataset.baseW) { canvas.dataset.baseW = canvas.width; canvas.dataset.baseH = canvas.height; }
+        const backdrop = document.createElement('div');
+        backdrop.id = 'liveChartBackdrop';
+        backdrop.className = 'live-chart-backdrop';
+        backdrop.addEventListener('click', () => toggleLiveChartExpand(null));
+        document.body.appendChild(backdrop);
+        // La carte est déplacée sous <body> le temps de l'agrandissement (un parent avec
+        // transform / filtre fausserait le plein écran) ; un repère garde sa place d'origine.
+        const spot = document.createElement('div');
+        spot.id = 'liveChartExpandSpot';
+        spot.style.minHeight = card.offsetHeight + 'px';
+        card.replaceWith(spot);
+        document.body.appendChild(card);
+        card.classList.add('live-chart-expanded');
+        card.querySelector('.live-chart-expand-btn')?.setAttribute('title', 'Réduire (Échap)');
+        document.body.style.overflow = 'hidden';
+        _liveChartFitCanvas(card);
+    }
+    _liveChartRedrawAll();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.live-chart-card').forEach(card => {
+        if (!card.querySelector('canvas.live-chart-canvas') || card.querySelector('.live-chart-expand-btn')) return;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'live-chart-expand-btn';
+        btn.title = 'Agrandir';
+        btn.setAttribute('aria-label', 'Agrandir le graphique');
+        btn.textContent = '⛶';
+        btn.addEventListener('click', () => toggleLiveChartExpand(card));
+        card.appendChild(btn);
+    });
+});
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && document.querySelector('.live-chart-expanded')) toggleLiveChartExpand(null);
+});
+window.addEventListener('resize', () => {
+    const card = document.querySelector('.live-chart-card.live-chart-expanded');
+    if (card) { _liveChartFitCanvas(card); _liveChartRedrawAll(); }
+});
 
 function _resetLiveCharts() {
     ['chartFuelEv', 'chartTyreLife', 'chartLapTime', 'chartTyreTemp', 'chartOilWater', 'chartBrakeTemp', 'chartDriverTrace'].forEach(id => {
