@@ -977,14 +977,6 @@ function _updateLiveTelemetryExtras(data) {
     _setText('liveMapRainPct', data.rainingPct, '%');
     _setText('liveMapWetnessPct', data.trackWetnessPct, '%');
 
-    // Temps au tour : dernier tour bouclé par le joueur, et moyenne de SES 5
-    // derniers tours (recentLaps, déjà alimenté pour les autres moyennes
-    // glissantes du panneau live).
-    const lastLapEl = document.getElementById('liveMapLastLapTime');
-    if (lastLapEl) lastLapEl.textContent = _fmtSecondsShort(data.lastLapTime);
-    const avgLap5El = document.getElementById('liveMapFieldAvgLap5');
-    if (avgLap5El) avgLap5El.textContent = _fmtSecondsShort(_windowedLapAvg(data.recentLaps, 5, 'lapTime'));
-
     // Heure ingame (secondes depuis minuit, heure du jeu)
     const clockEl = document.getElementById('liveMapGameClock');
     if (clockEl) clockEl.textContent = data.gameClockSec != null && typeof formatClock === 'function'
@@ -1008,6 +1000,7 @@ function _updateLiveStandingsAndCharts(data) {
 
     // Classement de la catégorie du joueur, à côté de la carte live
     window._livePlayerRecentLaps = Array.isArray(data.recentLaps) ? data.recentLaps : [];
+    _liveTrackCarLaps(window._liveStandingsFull);
     if (_liveIsOnScreen(document.getElementById('liveMapClassStandings'))) _renderLiveMapClassStandings();
 
     // Courbes d'évolution par tour + trace accélérateur/frein
@@ -1200,14 +1193,14 @@ function _renderLiveStandings() {
    Même liste que "Grille complète" (window._liveStandingsFull), mais filtrée
    sur la classe du joueur et enrichie de 3 colonnes "delta par tour" : pour
    chacun des 3 derniers tours de CHAQUE voiture (d.lastLaps, voir
-   snapshot_live() dans collector/lmu_telemetry_logger.py), on cherche le tour
-   de MÊME numéro chez le joueur (data.recentLaps) et on affiche l'écart de
-   temps au tour (rouge = la voiture est plus rapide que vous sur ce tour,
-   vert = plus lente). */
-function _liveDeltaCellHtml(carLap, playerLapsByNum) {
+   snapshot_live() dans collector/lmu_telemetry_logger.py), on prend le tour de
+   même rang chez le joueur (son dernier face au dernier du joueur, etc.), quel
+   que soit le numéro du tour : une voiture avec un tour d'avance ou de retard
+   est comparée quand même. Rouge = la voiture est plus rapide que vous sur ce
+   tour, vert = plus lente. */
+function _liveDeltaCellHtml(carLap, pl) {
     const empty = '<td style="padding:3px 4px;text-align:right;color:var(--text-4);">—</td>';
-    if (!carLap || carLap.lapTime == null || carLap.num == null) return empty;
-    const pl = playerLapsByNum.get(carLap.num);
+    if (!carLap || carLap.lapTime == null) return empty;
     if (!pl || pl.lapTime == null) return empty;
     const delta = carLap.lapTime - pl.lapTime;
     const color = delta < -0.05 ? '#ff6666' : (delta > 0.05 ? '#66ff99' : 'var(--text-3)');
@@ -1215,7 +1208,28 @@ function _liveDeltaCellHtml(carLap, playerLapsByNum) {
     return `<td style="padding:3px 4px;text-align:right;color:${color};">${txt}</td>`;
 }
 
-function _liveClassStandingsRowHtml(d, posLabel, playerLapsByNum) {
+/* Secours quand le classement reçu n'a pas de d.lastLaps (connecteur antérieur
+   en mode à distance) : on reconstruit les 3 derniers tours de chaque voiture
+   en notant d.lastLapTime à chaque fois que son compteur de tours (d.lap)
+   avance. */
+window._liveCarLapHist = new Map();
+function _liveTrackCarLaps(standings) {
+    const hist = window._liveCarLapHist;
+    (standings || []).forEach(d => {
+        if (d.id == null || d.lap == null) return;
+        const h = hist.get(d.id);
+        if (!h || d.lap < h.lap) { hist.set(d.id, {lap: d.lap, laps: []}); return; }
+        if (d.lap > h.lap) {
+            if (d.lastLapTime > 0) {
+                h.laps.push({num: d.lap, lapTime: d.lastLapTime});
+                if (h.laps.length > 5) h.laps.shift();
+            }
+            h.lap = d.lap;
+        }
+    });
+}
+
+function _liveClassStandingsRowHtml(d, posLabel, playerLast3) {
     const esc = _teamTelemetryEscapeHtml || (s => s);
     const name = esc(d.driver || d.vehicle || '—');
     let gap = '—', gapColor = '#aaa';
@@ -1234,18 +1248,23 @@ function _liveClassStandingsRowHtml(d, posLabel, playerLapsByNum) {
     const rowStyle = d.isPlayer ? 'background:rgba(var(--accent-rgb),0.12);' : '';
     // 3 derniers tours connus, du plus ancien (T-2) au plus récent (Dernier) ;
     // complété à gauche par "—" si la voiture n'a pas encore bouclé 3 tours.
-    const last3 = (Array.isArray(d.lastLaps) ? d.lastLaps : []).slice(-3);
+    // Sans d.lastLaps, on prend l'historique reconstruit par la page.
+    const carLaps = Array.isArray(d.lastLaps) ? d.lastLaps : ((window._liveCarLapHist.get(d.id) || {}).laps || []);
+    const last3 = carLaps.slice(-3);
     while (last3.length < 3) last3.unshift(null);
     const deltaCells = d.isPlayer
         ? '<td style="padding:3px 4px;text-align:right;color:var(--text-4);">—</td>'.repeat(3)
-        : last3.map(l => _liveDeltaCellHtml(l, playerLapsByNum)).join('');
+        : last3.map((l, i) => _liveDeltaCellHtml(l, playerLast3[i])).join('');
     return `<tr style="${rowStyle}border-bottom:1px solid rgba(var(--fg-rgb),0.06);">
         <td style="padding:3px 4px;color:var(--text-3);">${posLabel}</td>
         <td style="padding:3px 4px;color:var(--text);text-align:left;">${name}${d.isPlayer ? ' ⭐' : ''}${d.inPits ? ' 🔧' : ''}</td>
         <td style="padding:3px 4px;text-align:right;color:${gapColor};">${gap}</td>
+        <td style="padding:3px 4px;text-align:right;color:var(--text-3);">${d.lap != null ? d.lap : '—'}</td>
         <td style="padding:3px 4px;text-align:center;"><span style="display:inline-flex;gap:3px;align-items:center;justify-content:center;">${_liveCompoundBadge(d.leftCompound)}${_liveCompoundBadge(d.rightCompound)}</span></td>
         <td style="padding:3px 4px;text-align:right;color:var(--text);">${ve}</td>
         <td style="padding:3px 4px;text-align:right;color:var(--text);">${stintsTxt}</td>
+        <td style="padding:3px 4px;text-align:right;color:var(--text);">${d.lastLapTime != null ? _fmtSecondsShort(d.lastLapTime) : '—'}</td>
+        <td style="padding:3px 4px;text-align:right;color:var(--text-3);">${d.avgLapTimeLast5 != null ? _fmtSecondsShort(d.avgLapTimeLast5) : '—'}</td>
         ${deltaCells}
     </tr>`;
 }
@@ -1262,12 +1281,15 @@ function _renderLiveMapClassStandings() {
     if (titleEl) titleEl.textContent = vclass ? `🏁 Classement ${vclass}` : '🏁 Classement catégorie';
 
     const group = vclass ? full.filter(d => d.vclass === vclass) : full;
-    const playerLapsByNum = new Map();
-    (window._livePlayerRecentLaps || []).forEach(l => { if (l && l.num != null) playerLapsByNum.set(l.num, l); });
+    // 3 derniers tours du joueur (data.recentLaps), sinon ceux reconstruits par la page.
+    let playerLaps = window._livePlayerRecentLaps || [];
+    if (!playerLaps.length && player) playerLaps = (window._liveCarLapHist.get(player.id) || {}).laps || [];
+    const playerLast3 = playerLaps.slice(-3);
+    while (playerLast3.length < 3) playerLast3.unshift(null);
 
     const html = group.length
-        ? group.map((d, i) => _liveClassStandingsRowHtml(d, `P${i + 1}`, playerLapsByNum)).join('')
-        : '<tr><td colspan="9" style="color:var(--text-4);padding:6px;white-space:normal;">En attente de télémétrie live.</td></tr>';
+        ? group.map((d, i) => _liveClassStandingsRowHtml(d, `P${i + 1}`, playerLast3)).join('')
+        : '<tr><td colspan="12" style="color:var(--text-4);padding:6px;white-space:normal;">En attente de télémétrie live.</td></tr>';
     _setHtmlIfChanged(el, html);
 }
 

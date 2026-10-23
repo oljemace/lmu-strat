@@ -1255,11 +1255,6 @@
                         <div style="display:flex;justify-content:space-between;padding:2px 0;font-size:0.82em;"><span style="color:var(--text-3);">Piste mouillée</span><span style="color:var(--text);font-weight:bold;" id="liveMapWetnessPct">—%</span></div>
                     </div>
                     <div style="background:rgba(var(--fg-rgb),0.04);border:1px solid rgba(var(--fg-rgb),0.1);border-radius:10px;padding:10px 12px;">
-                        <div style="color:#88ccff;font-weight:bold;font-size:0.8em;margin-bottom:6px;">⏱️ Temps au tour</div>
-                        <div style="display:flex;justify-content:space-between;padding:2px 0;font-size:0.82em;"><span style="color:var(--text-3);">Dernier (vous)</span><span style="color:var(--text);font-weight:bold;" id="liveMapLastLapTime">—</span></div>
-                        <div style="display:flex;justify-content:space-between;padding:2px 0;font-size:0.82em;"><span style="color:var(--text-3);">Moy. 5t (vous)</span><span style="color:var(--text);font-weight:bold;" id="liveMapFieldAvgLap5">—</span></div>
-                    </div>
-                    <div style="background:rgba(var(--fg-rgb),0.04);border:1px solid rgba(var(--fg-rgb),0.1);border-radius:10px;padding:10px 12px;">
                         <div style="color:var(--text-3);font-size:0.72em;text-transform:uppercase;letter-spacing:1px;">🕐 Heure ingame</div>
                         <div id="liveMapGameClock" style="color:var(--text);font-size:1.15em;font-weight:bold;">—</div>
                     </div>
@@ -1272,16 +1267,19 @@
                                 <th style="text-align:left;padding:2px 4px;">#</th>
                                 <th style="text-align:left;padding:2px 4px;">Pilote</th>
                                 <th style="text-align:right;padding:2px 4px;">Écart</th>
+                                <th style="text-align:right;padding:2px 4px;">Tours</th>
                                 <th style="text-align:center;padding:2px 4px;">Gommes</th>
                                 <th style="text-align:right;padding:2px 4px;">EV</th>
                                 <th style="text-align:right;padding:2px 4px;">Stints</th>
+                                <th style="text-align:right;padding:2px 4px;">Dernier</th>
+                                <th style="text-align:right;padding:2px 4px;">Moy. 5t</th>
                                 <th style="text-align:right;padding:2px 4px;">Δ T-2</th>
                                 <th style="text-align:right;padding:2px 4px;">Δ T-1</th>
                                 <th style="text-align:right;padding:2px 4px;">Δ Dern.</th>
                             </tr>
                         </thead>
                         <tbody id="liveMapClassStandings">
-                            <tr><td colspan="9" style="color:var(--text-4);padding:6px;white-space:normal;">En attente de télémétrie live.</td></tr>
+                            <tr><td colspan="12" style="color:var(--text-4);padding:6px;white-space:normal;">En attente de télémétrie live.</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -2068,13 +2066,13 @@
 <script src="js/team-voice.js?v=20261026j"></script>
 <script src="js/firebase-sync.js?v=20261030b"></script>
 <script src="js/team-telemetry.js?v=20261020a"></script>
-<script src="js/remote-live.js?v=20261019c"></script>
+<script src="js/remote-live.js?v=20261023a"></script>
 <script src="js/timeline-zoom.js?v=20261021a"></script>
 <script src="js/tyres-wear.js?v=20261030a"></script>
 <script src="js/ui-tabs.js?v=20261023b"></script>
 <script src="js/circuits-ui.js?v=20261020a"></script>
 <script src="js/circuits-db.js?v=20261023a"></script>
-<script src="js/live-telemetry.js?v=20261031b"></script>
+<script src="js/live-telemetry.js?v=20261031d"></script>
 <script src="js/pace-analysis.js?v=20261022e"></script>
 
 

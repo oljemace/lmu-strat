@@ -11,7 +11,8 @@
    ══════════════════════════════════════════════ */
 
 const REMOTE_STANDINGS_FIELDS = ['id', 'place', 'driver', 'vehicle', 'vclass', 'isPlayer', 'inPits', 'lap', 'gapToPlayer',
-    'lastLapTime', 'veCurrentPct', 'leftCompound', 'rightCompound', 'avgVePerLapLast5', 'avgLapTimeLast5'];
+    'lastLapTime', 'veCurrentPct', 'leftCompound', 'rightCompound', 'avgVePerLapLast5', 'avgLapTimeLast5',
+    'lastLaps'];
 const REMOTE_POSITION_FIELDS = ['id', 'x', 'z', 'place', 'inPits', 'lap', 'lapDist', 'isPlayer'];
 const REMOTE_STALE_MS = 15000;      // sans nouvelle donnée depuis ce délai : pilote considéré hors ligne
 const REMOTE_SOURCE_KEY = 'lmuLiveSource';
