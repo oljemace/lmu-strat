@@ -1052,18 +1052,23 @@ function _liveCompoundBadge(compound) {
 /* Couleur stable par catégorie (classe de véhicule), pour les en-têtes de
    groupe en "Grille complète", le badge de catégorie en "Proches" ET les
    marqueurs de la carte live (_liveMapDraw) — une seule source de vérité pour
-   que les deux panneaux restent cohérents. L'Hypercar est toujours rouge ;
-   les autres catégories reçoivent une couleur stable dans l'ordre où elles
-   apparaissent dans les données (1er classe vue = 1re couleur de la palette).
+   que les deux panneaux restent cohérents. Couleurs figées par nom de
+   catégorie (le jeu envoie p. ex. "Hyper", "GT3", "LMP2") : elles ne
+   dépendent pas de l'ordre d'arrivée des voitures, donc ne changent pas d'une
+   connexion à l'autre. Une catégorie inconnue prend une couleur tirée de son
+   nom (toujours la même pour le même nom).
 */
 function _liveClassColor(vclass) {
     const c = (vclass || '').toLowerCase();
-    if (c.includes('hypercar') || c.includes('lmh') || c.includes('gtp')) return '#ff3344';
-    if (!window._liveClassColors) window._liveClassColors = {};
-    const palette = ['#00aaff', '#00ff88', '#ffaa00', '#aa00ff', '#ffee00', '#ff66cc'];
-    const map = window._liveClassColors;
-    if (!map[vclass]) map[vclass] = palette[Object.keys(map).length % palette.length];
-    return map[vclass];
+    if (c.includes('hyper') || c.includes('lmh') || c.includes('lmdh') || c.includes('gtp')) return '#ff3344';
+    if (c.includes('gt3')) return '#00ff88';
+    if (c.includes('lmp2')) return '#00aaff';
+    if (c.includes('lmp3')) return '#aa00ff';
+    if (c.includes('gte')) return '#ffaa00';
+    const palette = ['#ffee00', '#ff66cc', '#66ffee', '#ff8844'];
+    let h = 0;
+    for (const ch of c) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    return palette[h % palette.length];
 }
 
 /* Stints restants d'une voiture adverse, même logique que le récapitulatif du
