@@ -1216,22 +1216,37 @@ function _liveDeltaCellHtml(carLap, pl) {
 /* Secours quand le classement reçu n'a pas de d.lastLaps (connecteur antérieur
    en mode à distance) : on reconstruit les 3 derniers tours de chaque voiture
    en notant d.lastLapTime à chaque fois que son compteur de tours (d.lap)
-   avance. */
-window._liveCarLapHist = new Map();
+   avance. L'historique est gardé dans le navigateur (sessionStorage, 15 min
+   max) pour qu'un rechargement de la page ne le vide pas. */
+const _LIVE_LAP_HIST_KEY = 'lmuLiveCarLapHist';
+window._liveCarLapHist = (() => {
+    try {
+        const s = JSON.parse(sessionStorage.getItem(_LIVE_LAP_HIST_KEY) || 'null');
+        if (s && Date.now() - s.ts < 15 * 60 * 1000) return new Map(s.entries);
+    } catch (e) { /* stockage indisponible : on repart de zéro */ }
+    return new Map();
+})();
 function _liveTrackCarLaps(standings) {
     const hist = window._liveCarLapHist;
+    let changed = false;
     (standings || []).forEach(d => {
         if (d.id == null || d.lap == null) return;
         const h = hist.get(d.id);
-        if (!h || d.lap < h.lap) { hist.set(d.id, {lap: d.lap, laps: []}); return; }
+        if (!h || d.lap < h.lap) { hist.set(d.id, {lap: d.lap, laps: []}); changed = true; return; }
         if (d.lap > h.lap) {
             if (d.lastLapTime > 0) {
                 h.laps.push({num: d.lap, lapTime: d.lastLapTime});
                 if (h.laps.length > 5) h.laps.shift();
             }
             h.lap = d.lap;
+            changed = true;
         }
     });
+    if (changed) {
+        try {
+            sessionStorage.setItem(_LIVE_LAP_HIST_KEY, JSON.stringify({ts: Date.now(), entries: [...hist]}));
+        } catch (e) { /* stockage indisponible : l'historique reste en mémoire */ }
+    }
 }
 
 function _liveClassStandingsRowHtml(d, posLabel, playerLast3) {
