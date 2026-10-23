@@ -1,3 +1,5 @@
+const _CIRC_SAFE_ID = /^[\w-]+$/;
+
 function saveCircuit() {
     const name = document.getElementById('circuitNameInput').value.trim();
     if (!name) { alert('Donnez un nom au circuit.'); return; }
@@ -387,8 +389,10 @@ function renderCircuitMatrix() {
     // ── Collecte des données ──
     // Toutes les voitures présentes dans la base
     const allCarIds = new Set();
+    // Les circuits sont saisis par les membres de l'équipe (Firebase) : identifiants
+    // limités à des caractères sûrs (ils finissent dans des onclick) et noms échappés.
     Object.values(_circuits).forEach(c => {
-        Object.keys(c.cars || {}).forEach(carId => allCarIds.add(carId));
+        Object.keys(c.cars || {}).forEach(carId => { if (_CIRC_SAFE_ID.test(carId)) allCarIds.add(carId); });
     });
 
     // Remplir le filtre voiture si vide
@@ -414,6 +418,7 @@ function renderCircuitMatrix() {
 
     // Circuits triés par nom
     const circuitEntries = Object.entries(_circuits)
+        .filter(([id]) => _CIRC_SAFE_ID.test(id))
         .sort((a, b) => (a[1].name || '').localeCompare(b[1].name || ''));
 
     if (circuitEntries.length === 0) {
@@ -509,14 +514,14 @@ function renderCircuitMatrix() {
                 font-size:0.85em;padding:8px 12px;text-align:center;
                 white-space:nowrap;border-bottom:2px solid rgba(var(--accent-rgb),0.3);
                 min-width:130px;">
-                🏁 ${c.name || '?'}
+                🏁 ${_teamTelemetryEscapeHtml(c.name || '?')}
             </th>`;
     });
     html += '</tr></thead><tbody>';
 
     // Lignes : une voiture = 3 lignes (S, M, H) + 1 ligne ⏱/🔋
     carIds.forEach((carId, carIdx) => {
-        const carLabel = LMU_HYPERCARS.find(c => c.id === carId)?.label || carId;
+        const carLabel = _teamTelemetryEscapeHtml(LMU_HYPERCARS.find(c => c.id === carId)?.label || carId);
         const rowBg    = carIdx % 2 === 0
             ? 'rgba(255,255,255,0.02)'
             : 'rgba(0,0,0,0.12)';

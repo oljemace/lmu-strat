@@ -125,10 +125,53 @@ function _liveMapStart() {
     _liveMapPollOnce();
     _liveStatsPollOnce();
     window._liveMap.pollTimer = setInterval(_liveMapPollOnce, 500);
-    // Télémétrie détaillée (pneus/freins/pédales/vitesse…) rafraîchie à 50Hz (20ms),
-    // alignée sur la fréquence de lecture par défaut du collecteur (--poll-hz 50).
-    // À distance les données n'arrivent que 2 fois par seconde : inutile d'interroger plus vite.
-    window._liveStats.pollTimer = setInterval(_liveStatsPollOnce, remote ? 250 : 20);
+    // Données complètes (grille, historique des tours, traces : plusieurs centaines de Ko)
+    // une fois par seconde ; à distance, elles arrivent 2 fois/s via Firebase.
+    window._liveStats.pollTimer = setInterval(_liveStatsPollOnce, remote ? 250 : 1000);
+    // Jauges instantanées (vitesse, pédales, températures…) : réponse légère /live?lite=1,
+    // 20 fois par seconde — en local seulement.
+    window._liveStats.gaugeInFlight = false;
+    if (!remote) window._liveStats.gaugeTimer = setInterval(_liveGaugesPollOnce, 50);
+}
+
+/* Vrai si l'élément est réellement affiché à l'écran : page au premier plan, pas
+   dans un onglet / un <details> fermé, et au moins en partie dans la fenêtre. Sert
+   à ne pas redessiner des graphiques que personne ne regarde. */
+function _liveIsOnScreen(el) {
+    if (!el || document.hidden) return false;
+    const shown = typeof el.checkVisibility === 'function'
+        ? el.checkVisibility() : el.getClientRects().length > 0;
+    if (!shown) return false;
+    const r = el.getBoundingClientRect();
+    return r.bottom > 0 && r.top < window.innerHeight && r.width > 0 && r.height > 0;
+}
+
+/* Jauges instantanées seules (/live?lite=1, ~1 Ko). Rien n'est demandé si aucune
+   jauge n'est à l'écran : les données complètes (1/s) les rafraîchissent de toute façon. */
+async function _liveGaugesPollOnce() {
+    const S = window._liveStats;
+    if (!S.active || S.gaugeInFlight) return;
+    if (!_liveIsOnScreen(document.getElementById('liveSpeedKmh'))
+        && !_liveIsOnScreen(document.getElementById('liveMapCanvas'))) return;
+    S.gaugeInFlight = true;
+    try {
+        const resp = await fetch(S.url + '?lite=1', {cache: 'no-store'});
+        if (!resp.ok) return;
+        const data = await resp.json();
+        if (!data.connected) return;
+        if (!data.lite) {
+            // Connecteur d'une version précédente : il renvoie tout à chaque fois. On arrête
+            // ce poll rapide (trop coûteux) ; les jauges suivent alors les données complètes (1/s).
+            clearInterval(S.gaugeTimer);
+            S.gaugeTimer = null;
+            return;
+        }
+        _updateLiveTelemetryExtras(data);
+    } catch (e) {
+        S.lastError = e;
+    } finally {
+        S.gaugeInFlight = false;
+    }
 }
 
 // Bouton « Lancer le connecteur » : le lien lmu-connecteur:// est déclaré par le connecteur à sa première ouverture.
@@ -147,6 +190,8 @@ function _liveMapStop() {
     window._liveStats.active = false;
     if (window._liveStats.pollTimer) clearInterval(window._liveStats.pollTimer);
     window._liveStats.pollTimer = null;
+    if (window._liveStats.gaugeTimer) clearInterval(window._liveStats.gaugeTimer);
+    window._liveStats.gaugeTimer = null;
     const btn = document.getElementById('liveMapToggleBtn');
     if (btn) { btn.textContent = '▶️ Connecter'; btn.style.background = 'rgba(var(--accent-rgb),0.2)'; btn.style.borderColor = 'var(--accent)'; btn.style.color = 'var(--accent)'; }
     const dot = document.getElementById('liveMapStatusDot');
@@ -173,8 +218,8 @@ async function _liveMapPollOnce() {
             const st = remoteStatusText();
             if (dot) dot.style.background = st.color;
             if (txt) txt.textContent = st.text;
-            if (rdata.connected) { _liveMapAccumulateTrail(rdata); _liveMapDraw(rdata); }
-            else _liveMapDraw({connected: false});
+            if (rdata.connected) { _liveMapAccumulateTrail(rdata); _liveMapDrawIfShown(rdata); }
+            else _liveMapDrawIfShown({connected: false});
             return;
         }
         const resp = await fetch(window._liveMap.url, {cache: 'no-store'});
@@ -188,13 +233,30 @@ async function _liveMapPollOnce() {
         if (dot) dot.style.background = 'var(--accent)';
         if (txt) txt.textContent = `✅ ${data.track || 'Circuit'} — ${data.numVehicles} voiture(s)`;
         _liveMapAccumulateTrail(data);
-        _liveMapDraw(data);
+        _liveMapDrawIfShown(data);
     } catch (e) {
         if (dot) dot.style.background = '#ff4466';
         if (txt) txt.textContent = '❌ Serveur local introuvable sur ce port. Lancez le connecteur LMU Stratégie sur le PC du jeu (ou lmu_telemetry_logger.py) et vérifiez le port.';
         window._liveMap.lastError = e;
     }
 }
+
+/* Le tracé continue d'être enregistré dans tous les cas ; seul le dessin est sauté
+   quand la carte n'est pas à l'écran (repli fermé, autre onglet, hors de la fenêtre). */
+function _liveMapDrawIfShown(data) {
+    window._liveMap.lastData = data;
+    if (_liveIsOnScreen(document.getElementById('liveMapCanvas'))) _liveMapDraw(data);
+}
+
+// À l'ouverture du repli « Carte live » : dessin immédiat avec les dernières positions reçues.
+document.getElementById('liveMapCanvas')?.closest('details')?.addEventListener('toggle', e => {
+    if (e.target.open && window._liveMap.lastData) {
+        requestAnimationFrame(() => {
+            _liveMapDraw(window._liveMap.lastData);
+            _renderLiveMapClassStandings();
+        });
+    }
+});
 
 function _liveMapAccumulateTrail(data) {
     const player = (data.cars || []).find(c => c.isPlayer);
@@ -378,7 +440,7 @@ function _liveMapDraw(data) {
         ctx.fillText(String(car.place || ''), px, py - 11);
         legendItems.push(`<span style="display:inline-flex;align-items:center;gap:4px;">
             <span style="width:9px;height:9px;border-radius:50%;background:${color};display:inline-block;"></span>
-            P${car.place || '?'} ${car.isPlayer ? '⭐' : ''} ${(car.driver || '').trim() || car.vehicle || '—'}
+            P${car.place || '?'} ${car.isPlayer ? '⭐' : ''} ${_teamTelemetryEscapeHtml((car.driver || '').trim() || car.vehicle || '—')}
         </span>`);
     });
     const legend = document.getElementById('liveMapLegend');
@@ -554,17 +616,11 @@ function _setRateStatus(elOrId, res, decimals) {
     el.textContent = decimals ? `${res.value.toFixed(decimals)}%/tour${src}` : src.trim();
 }
 
-// Les jauges instantanées (vitesse, pédales, températures/pressions pneus…)
-// sont rafraîchies à la pleine fréquence du poll (50Hz). Le reste (classement,
-// courbes, table des stints) n'a pas besoin de se redessiner 50x/seconde — on
-// ne le reconstruit qu'1 tick sur _LIVE_HEAVY_UPDATE_EVERY_N_TICKS (5Hz à 50Hz)
-// pour éviter de marteler le DOM inutilement.
-const _LIVE_HEAVY_UPDATE_EVERY_N_TICKS = 10;
-
+// Données complètes, 1 fois/s en local (2 fois/s à distance). Les jauges
+// instantanées sont en plus rafraîchies 20 fois/s par _liveGaugesPollOnce().
 async function _liveStatsPollOnce() {
     if (!window._liveStats.active) return;
-    // À 50Hz, une requête encore en vol (réponse serveur > 20ms, ex. grille
-    // complète sur une longue course) ne doit pas en empiler une nouvelle —
+    // Une requête encore en vol ne doit pas en empiler une nouvelle :
     // on saute simplement ce tick plutôt que d'accumuler des fetch concurrents.
     if (window._liveStats.inFlight) return;
     window._liveStats.inFlight = true;
@@ -588,8 +644,6 @@ async function _liveStatsPollOnce() {
 
         _updateLiveTelemetryExtras(data);
         window._liveStats.tickCount = (window._liveStats.tickCount || 0) + 1;
-        const isHeavyTick = remote || window._liveStats.tickCount % _LIVE_HEAVY_UPDATE_EVERY_N_TICKS === 0;
-        if (!isHeavyTick) return;
 
         const recentLaps = Array.isArray(data.recentLaps) ? data.recentLaps : [];
         const lapWindow   = parseInt(document.getElementById('liveLapTimeAvgWindow')?.value) || 5;
@@ -734,7 +788,7 @@ async function _liveStatsPollOnce() {
 
         // Classement + courbes : 1 fois par seconde suffit (reconstruction coûteuse)
         const _heavyNow = Date.now();
-        if (_heavyNow - (window._liveStats.lastStandingsMs || 0) >= 1000) {
+        if (_heavyNow - (window._liveStats.lastStandingsMs || 0) >= 900) {
             window._liveStats.lastStandingsMs = _heavyNow;
             _updateLiveStandingsAndCharts(data);
         }
@@ -747,7 +801,7 @@ async function _liveStatsPollOnce() {
         // à chaque recalcul ; à 5Hz la page entière se redessinait en permanence
         // (tremblements, scroll qui saute). Une fois toutes les 2s suffit largement.
         const _nowMs = Date.now();
-        if (typeof recalculateLive === 'function' && _nowMs - (window._liveStats.lastRecalcMs || 0) >= 2000) {
+        if (typeof recalculateLive === 'function' && _nowMs - (window._liveStats.lastRecalcMs || 0) >= 1900) {
             window._liveStats.lastRecalcMs = _nowMs;
             recalculateLive(true);
         }
@@ -846,16 +900,15 @@ function _updateLiveTelemetryExtras(data) {
 
 /* Classement (table + courbes) : plus coûteux à reconstruire (innerHTML de
    toute la grille, redessin canvas) que les jauges instantanées ci-dessus —
-   appelé à une cadence réduite même quand le fetch /live tourne à 50Hz,
-   voir _LIVE_HEAVY_UPDATE_EVERY_N_TICKS dans _liveStatsPollOnce(). */
+   au plus 1 fois/s, et seulement pour ce qui est à l'écran (_liveIsOnScreen). */
 function _updateLiveStandingsAndCharts(data) {
     // Ordre de course (Pilotes proches / Grille complète)
     window._liveStandingsFull = Array.isArray(data.standings) ? data.standings : [];
-    _renderLiveStandings();
+    if (_liveIsOnScreen(document.getElementById('liveNearbyDrivers'))) _renderLiveStandings();
 
     // Classement de la catégorie du joueur, à côté de la carte live
     window._livePlayerRecentLaps = Array.isArray(data.recentLaps) ? data.recentLaps : [];
-    _renderLiveMapClassStandings();
+    if (_liveIsOnScreen(document.getElementById('liveMapClassStandings'))) _renderLiveMapClassStandings();
 
     // Courbes d'évolution par tour + trace accélérateur/frein
     _updateLiveCharts(data);
@@ -1453,18 +1506,19 @@ function _drawDriverTraceChart(data) {
 
 function _updateLiveDriverTrace(data) {
     window._liveLastTraceData = data;
-    _drawDriverTraceChart(data);
+    if (_liveIsOnScreen(document.getElementById('chartDriverTrace'))) _drawDriverTraceChart(data);
 }
 
+/* Chaque graphique n'est redessiné que s'il est à l'écran : un graphique masqué ou
+   hors de la fenêtre est repris au plus tard 1 s après y être revenu. */
 function _updateLiveCharts(data) {
     const allLaps = Array.isArray(data.allLaps) ? data.allLaps : [];
     const partial = data.currentLapPartial || null;
-    _drawFuelEvChart(allLaps, partial);
-    _drawTyreLifeChart(allLaps, partial);
-    _drawLapTimeChart(allLaps, partial);
-    _drawTyreTempChart(allLaps, partial);
-    _drawOilWaterChart(allLaps, partial);
-    _drawBrakeTempChart(allLaps, partial);
+    [['chartFuelEv', _drawFuelEvChart], ['chartTyreLife', _drawTyreLifeChart],
+     ['chartLapTime', _drawLapTimeChart], ['chartTyreTemp', _drawTyreTempChart],
+     ['chartOilWater', _drawOilWaterChart], ['chartBrakeTemp', _drawBrakeTempChart]].forEach(([id, draw]) => {
+        if (_liveIsOnScreen(document.getElementById(id))) draw(allLaps, partial);
+    });
     _updateLiveDriverTrace(data);
 }
 
