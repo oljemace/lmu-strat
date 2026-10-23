@@ -6,12 +6,14 @@ function switchTab(tab) {
         b.classList.toggle('active', b.dataset.tab === tab));
     document.querySelectorAll('.tab-panel').forEach(p =>
         p.classList.toggle('active', p.id === `tab-${tab}`));
-    if (tab === 'circuits' || tab === 'pace') {
+    if (tab !== 'strategy') {
         if (tab === 'circuits') {
             renderCircuitTyreGrid();
             refreshCircuitSelects();   // ← remplit le menu à chaque ouverture de l'onglet
-        } else if (typeof renderPaceTab === 'function') {
+        } else if (tab === 'pace' && typeof renderPaceTab === 'function') {
             renderPaceTab();
+        } else if (tab === 'faq') {
+            loadFaq();
         }
         // Masquer le contenu stratégie (switcher planification/live + sections)
         const switcher = document.getElementById('calcModeSwitcher');
@@ -27,6 +29,46 @@ function switchTab(tab) {
         switchCalcMode(window._calcMode || 'planning');
     }
 }
+
+// Onglet FAQ : on reprend le contenu de faq.html (page publique, seule source du texte)
+// sans le bouton « Ouvrir la calculette », inutile ici.
+let _faqLoaded = false;
+async function loadFaq() {
+    if (_faqLoaded) return;
+    const box = document.getElementById('faqContent');
+    if (!box) return;
+    try {
+        const res = await fetch('faq.html', { cache: 'no-cache' });
+        if (!res.ok) throw new Error(res.status);
+        const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+        const main = doc.querySelector('main');
+        if (!main) throw new Error('contenu introuvable');
+        main.querySelectorAll('a[href="index.html"]').forEach(a => a.remove());
+        main.querySelectorAll('a[href^="http"]').forEach(a => { a.target = '_blank'; a.rel = 'noopener'; });
+        box.innerHTML = main.innerHTML;
+        _faqLoaded = true;
+    } catch (e) {
+        box.innerHTML = '<p class="faq-loading">FAQ indisponible pour le moment. '
+            + '<a href="faq.html" target="_blank" rel="noopener">L\'ouvrir dans une nouvelle page</a>.</p>';
+    }
+}
+
+// La colonne d'onglets démarre sous la barre de session, dont la hauteur varie
+// (retour à la ligne sur écran étroit).
+(function () {
+    function placeNav() {
+        const bar = document.getElementById('sessionBar');
+        if (bar) document.documentElement.style.setProperty('--nav-top', bar.offsetHeight + 'px');
+    }
+    function init() {
+        placeNav();
+        const bar = document.getElementById('sessionBar');
+        if (bar && window.ResizeObserver) new ResizeObserver(placeNav).observe(bar);
+        window.addEventListener('resize', placeNav);
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+    else init();
+})();
 
 /* ══════════════════════════════════════════════
    BASCULE PLANIFICATION / LIVE

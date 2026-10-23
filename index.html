@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calculateur de Stratégie - Endurance LMU</title>
     <link rel="stylesheet" href="css/themes.css?v=20261029c">
-    <link rel="stylesheet" href="css/styles.css?v=20261022r">
+    <link rel="stylesheet" href="css/styles.css?v=20261023c">
     <script src="js/appearance.js?v=20261029c"></script>
 
 </head>
@@ -208,10 +208,11 @@
 
 
     <!-- ══════════ ONGLETS ══════════ -->
-<div class="tab-bar" style="display:flex;gap:8px;margin-bottom:20px;border-bottom:2px solid rgba(var(--accent-rgb),0.2);padding-bottom:0;">
+<div class="tab-bar">
     <button class="tab-btn active" data-tab="strategy" onclick="switchTab('strategy')">🏁 Stratégie</button>
     <button class="tab-btn" data-tab="circuits" onclick="switchTab('circuits')">📚 Base Circuits</button>
     <button class="tab-btn" data-tab="pace" onclick="switchTab('pace')">📊 Rythme</button>
+    <button class="tab-btn tab-link" data-tab="faq" onclick="switchTab('faq')" title="Questions fréquentes : accès au site, installation et utilisation du connecteur.">❓ FAQ</button>
 </div>
 
 <div id="tab-strategy" class="tab-panel active">
@@ -1002,10 +1003,6 @@
                style="padding:8px 16px;background:rgba(var(--accent-rgb),0.2);border:1px solid var(--accent);border-radius:8px;color:var(--accent);font-weight:bold;text-decoration:none;cursor:pointer;">
                 ⬇️ Télécharger le connecteur
             </a>
-            <a href="faq.html" target="_blank" rel="noopener" title="Questions fréquentes : accès au site, installation et utilisation du connecteur."
-               style="padding:8px 16px;background:rgba(var(--fg-rgb),0.08);border:1px solid var(--text-4);border-radius:8px;color:var(--text-3);font-weight:bold;text-decoration:none;cursor:pointer;">
-                ❓ FAQ
-            </a>
             <button id="liveMapToggleBtn" onclick="toggleLiveMap()" style="padding:8px 16px;background:rgba(var(--accent-rgb),0.2);border:1px solid var(--accent);border-radius:8px;color:var(--accent);font-weight:bold;cursor:pointer;">
                 ▶️ Connecter
             </button>
@@ -1659,6 +1656,11 @@
 
 </div>
 
+<!-- ══════════ PANNEAU FAQ (contenu chargé depuis faq.html, voir js/ui-tabs.js) ══════════ -->
+<div id="tab-faq" class="tab-panel">
+    <div id="faqContent"><p class="faq-loading">Chargement de la FAQ…</p></div>
+</div>
+
 <!-- ══════════ PANNEAU RYTHME (js/pace-analysis.js) ══════════ -->
 <div id="tab-pace" class="tab-panel">
     <div class="pace-layout">
@@ -2069,7 +2071,7 @@
 <script src="js/remote-live.js?v=20261019b"></script>
 <script src="js/timeline-zoom.js?v=20261021a"></script>
 <script src="js/tyres-wear.js?v=20261030a"></script>
-<script src="js/ui-tabs.js?v=20261022a"></script>
+<script src="js/ui-tabs.js?v=20261023b"></script>
 <script src="js/circuits-ui.js?v=20261020a"></script>
 <script src="js/circuits-db.js?v=20261022a"></script>
 <script src="js/live-telemetry.js?v=20261030a"></script>
