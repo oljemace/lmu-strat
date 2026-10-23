@@ -65,6 +65,95 @@ function _liveMapResetTrailState() {
     M.cleanLaps = 0; M.lapPts = []; M.lapNum = null; M.lapSeen = false; M.lapPit = false;
 }
 
+/* ── Base partagée des tracés : trackMaps/{circuit}, commune à toutes les équipes ──
+   Le nom du circuit vient du jeu, identique pour tous : le premier qui boucle 3 tours
+   propres sur un circuit inconnu l'enregistre, les suivants le reçoivent dès l'arrivée
+   en piste. Le connecteur fait la même chose (SharedTrackMap, lmu_firebase_connector.py) ;
+   les règles n'acceptent qu'un seul envoi par circuit (l'auteur peut le refaire). */
+const LIVE_MAP_SHARED_RETRY_MS = 60000;
+window._liveMap.shared = {track: null, state: null, rec: null, nextTry: 0};
+
+/** Nom de circuit -> clé Firebase. DOIT rester identique à track_map_key (collecteur). */
+function _liveMapTrackKey(track) {
+    const key = String(track || '').trim().replace(/[.$#\[\]\/\x00-\x1f\x7f]/g, '_').slice(0, 120);
+    return key || null;
+}
+
+function _liveMapMarksComplete(marks) {
+    return Array.isArray(marks) && marks.length === 3 && marks.every(m => Array.isArray(m) && m.length === 2);
+}
+
+function _liveMapApplyShared(rec) {
+    const M = window._liveMap;
+    M.trail = rec.trail.map(([x, z]) => ({x, z}));
+    M.bounds = _liveMapBoundsOf(M.trail);
+    M.complete = true;
+    M.frozen = true;
+    M.lapPts = [];
+    _liveMapSaveTrailCache();
+}
+
+/** Lecture (une fois par circuit) puis, si le circuit est inconnu, envoi de notre tracé figé. */
+function _liveMapSyncShared(data) {
+    const M = window._liveMap, S = M.shared;
+    const key = _liveMapTrackKey(data.track);
+    const user = window._firebaseAuth && window._firebaseAuth.currentUser;
+    if (!key || !user || !window._firebaseDb || !window._firebaseGet || !window._firebaseRef) return;
+    if (S.track !== data.track) Object.assign(S, {track: data.track, state: 'unknown', rec: null, nextTry: 0});
+    if (S.state === 'present') {
+        if (!M.frozen) _liveMapApplyShared(S.rec);   // après un relais / une remise à zéro
+        return;
+    }
+    if (S.state !== 'unknown' && S.state !== 'absent') return;   // requête en cours, ou terminé
+    if (Date.now() < S.nextTry) return;
+    const nodeRef = window._firebaseRef(window._firebaseDb, `trackMaps/${key}`);
+    const retryLater = st => { if (S.track === data.track) { S.state = st; S.nextTry = Date.now() + LIVE_MAP_SHARED_RETRY_MS; } };
+
+    if (S.state === 'unknown') {
+        S.state = 'loading';
+        window._firebaseGet(nodeRef).then(snap => {
+            if (S.track !== data.track) return;
+            let rec = null;
+            try {
+                const v = snap.val();
+                const obj = v && typeof v.j === 'string' ? JSON.parse(v.j) : null;
+                if (obj && Array.isArray(obj.trail) && obj.trail.length >= 20) {
+                    rec = {trail: obj.trail, marks: _liveMapMarksComplete(obj.marks) ? obj.marks : null};
+                }
+            } catch (e) { rec = null; }
+            S.rec = rec;
+            S.state = rec ? 'present' : 'absent';
+            if (rec && M.trackName === data.track) {
+                _liveMapApplyShared(rec);
+                if (M.lastData) _liveMapDrawIfShown(M.lastData);
+            }
+        }).catch(e => {
+            if (String(e && e.message).toLowerCase().includes('permission')) { if (S.track === data.track) S.state = 'done'; }
+            else retryLater('unknown');
+        });
+        return;
+    }
+
+    // Circuit inconnu de la base : on envoie NOTRE tracé une fois figé, depuis le PC du pilote
+    // seulement (à distance, c'est son connecteur qui s'en charge, avec un tracé plus fin).
+    const marks = data.sectors && data.sectors.marks;
+    const canWrite = window._teamId && (window._teamRole === 'admin' || window._teamRole === 'driver');
+    const remote = window._liveRemote && window._liveRemote.active;
+    if (remote || !canWrite || !M.frozen || M.trackName !== data.track || !_liveMapMarksComplete(marks)) return;
+    S.state = 'saving';
+    const trail = M.trail.map(p => [Math.round(p.x * 10) / 10, Math.round(p.z * 10) / 10]);
+    window._firebaseSet(nodeRef, {
+        ts: window._firebaseServerTimestamp ? window._firebaseServerTimestamp() : Date.now(),
+        uid: user.uid, team: window._teamId,
+        j: JSON.stringify({track: data.track, trackLength: data.trackLength || null, trail, marks}),
+    }).then(() => {
+        if (S.track === data.track) { S.state = 'present'; S.rec = {trail, marks}; }
+    }).catch(e => {
+        if (String(e && e.message).toLowerCase().includes('permission')) { if (S.track === data.track) S.state = 'done'; }
+        else retryLater('absent');
+    });
+}
+
 function _liveMapBoundsOf(pts) {
     return {
         minX: Math.min(...pts.map(q => q.x)), maxX: Math.max(...pts.map(q => q.x)),
@@ -267,6 +356,7 @@ function _liveMapAccumulateTrail(data) {
     const M = window._liveMap;
     if (data.track && M.trackName && data.track !== M.trackName) _liveMapResetTrailState();
     if (data.track) M.trackName = data.track;
+    _liveMapSyncShared(data);
     if (M.frozen) return;   // tracé définitif : on n'y touche plus
 
     // Passage de ligne : le tour qui vient de finir, s'il est propre (début vu, aucun
@@ -370,6 +460,16 @@ function _liveMapDrawSectors(ctx, trail, toPx, sectors) {
     });
 }
 
+/** Bornes de secteurs du jeu, complétées par celles de la base partagée tant que le pilote
+ *  ne les a pas toutes franchies (les délimitations s'affichent alors dès l'arrivée en piste). */
+function _liveMapSectorsWithShared(data) {
+    const S = window._liveMap.shared;
+    const shared = S.track === data.track && S.rec && S.rec.marks;
+    const live = data.sectors;
+    if (!shared || (live && _liveMapMarksComplete(live.marks))) return live;
+    return Object.assign({colors: []}, live, {marks: shared});
+}
+
 function _liveMapDraw(data) {
     const canvas = document.getElementById('liveMapCanvas');
     if (!canvas) return;
@@ -417,7 +517,7 @@ function _liveMapDraw(data) {
         ctx.lineWidth = 6;
         ctx.lineJoin = 'round';
         _liveMapStrokeSmooth(ctx, trail.map(p => toPx(p.x, p.z)));
-        if (window._liveMap.complete) _liveMapDrawSectors(ctx, trail, toPx, data.sectors);
+        if (window._liveMap.complete) _liveMapDrawSectors(ctx, trail, toPx, _liveMapSectorsWithShared(data));
     }
 
     // Voitures
