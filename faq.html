@@ -77,10 +77,30 @@
   </details>
 
   <details>
-    <summary>Windows affiche « Windows a protégé votre ordinateur ». C'est normal ?</summary>
+    <summary>Windows ou Defender bloque le programme (« Windows a protégé votre ordinateur », virus détecté…). C'est normal ?</summary>
     <div>
-      <p>Oui : le programme n'est pas signé numériquement, donc Windows se méfie de tout nouveau fichier. Cliquez sur
-      <b>« Informations complémentaires »</b> puis <b>« Exécuter quand même »</b>. Votre antivirus peut aussi demander confirmation la première fois.</p>
+      <p>Oui : le programme n'est pas signé numériquement, donc Windows se méfie de tout nouveau fichier et peut le prendre à tort
+      pour un virus. Il est sans danger ; il suffit de l'autoriser <b>une seule fois</b>.</p>
+      <p><b>1. Écran bleu SmartScreen</b></p>
+      <ol>
+        <li>Cliquez sur <b>« Informations complémentaires »</b>.</li>
+        <li>Puis sur <b>« Exécuter quand même »</b>.</li>
+      </ol>
+      <p><b>2. Téléchargement bloqué ou fichier supprimé par Microsoft Defender</b></p>
+      <ol>
+        <li>Ouvrez <b>Sécurité Windows</b> → <b>Protection contre les virus et menaces</b>.</li>
+        <li>Sous « Paramètres de protection contre les virus et menaces », cliquez sur <b>« Gérer les paramètres »</b>.</li>
+        <li>Descendez jusqu'à <b>« Exclusions »</b> → <b>« Ajouter ou supprimer des exclusions »</b>.</li>
+        <li><b>« Ajouter une exclusion »</b> → <b>« Fichier »</b>, puis choisissez <code>LMU-Strategie-Connecteur.exe</code>
+        (ou <b>« Dossier »</b> et le dossier où vous l'avez placé, pour que les mises à jour passent aussi).</li>
+        <li>Si le fichier a été mis en quarantaine : <b>Protection contre les virus et menaces</b> → <b>« Historique de protection »</b> →
+        sélectionnez-le → <b>Actions</b> → <b>« Restaurer »</b>, puis retéléchargez-le si besoin.</li>
+      </ol>
+      <p><b>3. Fichier « bloqué » à l'ouverture</b></p>
+      <ol>
+        <li>Clic droit sur le fichier → <b>Propriétés</b>.</li>
+        <li>En bas de l'onglet « Général », cochez <b>« Débloquer »</b> → <b>OK</b>.</li>
+      </ol>
     </div>
   </details>
 

@@ -997,6 +997,15 @@
                style="padding:8px 16px;background:rgba(255,136,0,0.18);border:1px solid #ff8800;border-radius:8px;color:#ff8800;font-weight:bold;text-decoration:none;cursor:pointer;">
                 🚀 Lancer le connecteur
             </a>
+            <a href="https://github.com/oljemace/lmu-strat/releases/latest/download/LMU-Strategie-Connecteur.exe"
+               title="Télécharge la dernière version du connecteur LMU (Windows, rien à installer)."
+               style="padding:8px 16px;background:rgba(var(--accent-rgb),0.2);border:1px solid var(--accent);border-radius:8px;color:var(--accent);font-weight:bold;text-decoration:none;cursor:pointer;">
+                ⬇️ Télécharger le connecteur
+            </a>
+            <a href="faq.html" target="_blank" rel="noopener" title="Questions fréquentes : accès au site, installation et utilisation du connecteur."
+               style="padding:8px 16px;background:rgba(var(--fg-rgb),0.08);border:1px solid var(--text-4);border-radius:8px;color:var(--text-3);font-weight:bold;text-decoration:none;cursor:pointer;">
+                ❓ FAQ
+            </a>
             <button id="liveMapToggleBtn" onclick="toggleLiveMap()" style="padding:8px 16px;background:rgba(var(--accent-rgb),0.2);border:1px solid var(--accent);border-radius:8px;color:var(--accent);font-weight:bold;cursor:pointer;">
                 ▶️ Connecter
             </button>
@@ -1012,6 +1021,35 @@
             </button>
             <span id="liveMapStatusText" style="color:var(--text-3);font-size:0.82em;">Non connecté.</span>
         </div>
+
+        <details style="margin:-6px 0 16px 0;font-size:0.82em;color:var(--text-3);">
+            <summary style="cursor:pointer;color:#ffaa66;">🛡️ Windows bloque le programme ? Marche à suivre</summary>
+            <div style="padding:8px 4px 0 4px;line-height:1.5;">
+                <p style="margin:0 0 6px 0;">Le programme n'est pas signé numériquement : Windows peut donc le prendre à tort pour un virus. Il est sans danger,
+                il suffit de l'autoriser <b>une seule fois</b>.</p>
+                <p style="margin:0 0 4px 0;"><b>1. Écran bleu « Windows a protégé votre ordinateur » (SmartScreen)</b></p>
+                <ol style="margin:0 0 8px 18px;padding:0;">
+                    <li>Cliquez sur <b>« Informations complémentaires »</b>.</li>
+                    <li>Puis sur <b>« Exécuter quand même »</b>.</li>
+                </ol>
+                <p style="margin:0 0 4px 0;"><b>2. Téléchargement bloqué ou fichier supprimé par Microsoft Defender</b></p>
+                <ol style="margin:0 0 8px 18px;padding:0;">
+                    <li>Ouvrez <b>Sécurité Windows</b> → <b>Protection contre les virus et menaces</b>.</li>
+                    <li>Sous « Paramètres de protection contre les virus et menaces », cliquez sur <b>« Gérer les paramètres »</b>.</li>
+                    <li>Descendez jusqu'à <b>« Exclusions »</b> → <b>« Ajouter ou supprimer des exclusions »</b>.</li>
+                    <li><b>« Ajouter une exclusion »</b> → <b>« Fichier »</b>, puis choisissez <code>LMU-Strategie-Connecteur.exe</code>
+                        (ou <b>« Dossier »</b> et le dossier où vous l'avez placé, pour que les mises à jour passent aussi).</li>
+                    <li>Si le fichier a été mis en quarantaine : <b>Protection contre les virus et menaces</b> → <b>« Historique de protection »</b> →
+                        sélectionnez-le → <b>Actions</b> → <b>« Restaurer »</b>, puis retéléchargez-le si besoin.</li>
+                </ol>
+                <p style="margin:0 0 4px 0;"><b>3. Fichier « bloqué » à l'ouverture</b></p>
+                <ol style="margin:0 0 6px 18px;padding:0;">
+                    <li>Clic droit sur le fichier → <b>Propriétés</b>.</li>
+                    <li>En bas de l'onglet « Général », cochez <b>« Débloquer »</b> → <b>OK</b>.</li>
+                </ol>
+                <p style="margin:0;">Installation et utilisation du programme : voir la <a href="faq.html" target="_blank" rel="noopener" style="color:#ffaa66;">FAQ</a>.</p>
+            </div>
+        </details>
 
         <!-- ── Variables live pour la stratégie ── -->
         <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:16px;">
