@@ -348,6 +348,7 @@ document.getElementById('liveMapCanvas')?.closest('details')?.addEventListener('
 });
 
 function _liveMapAccumulateTrail(data) {
+    window._liveMap.lastPositions = data;   // part du tour parcourue par chaque voiture (fin de course estimée)
     const player = (data.cars || []).find(c => c.isPlayer);
     if (!player) return;
     // Le tracé en mémoire/cache venait peut-être d'un autre circuit (cache d'une
@@ -852,6 +853,7 @@ async function _liveStatsPollOnce() {
             // qu'on est en direct sur une séance réelle (retard au départ, essais,
             // qualifs…) — voir window._liveSessionTimeRemainingSec dans live-mode.js.
             window._liveSessionTimeRemainingSec = remaining;
+            window._liveSessionType = data.sessionType || null;
             if (durEl) {
                 const fmt = typeof formatDuration === 'function' ? formatDuration(remaining) : `${remaining}s`;
                 durEl.textContent = data.sessionType ? `${fmt} (${data.sessionType})` : fmt;
@@ -1110,15 +1112,71 @@ function _liveClassColor(vclass) {
     return palette[h % palette.length];
 }
 
-/* Stints restants d'une voiture adverse, même logique que le récapitulatif du
-   joueur (recalculateLive) : fraction du stint en cours (EV actuelle / conso
-   moyenne, plafonnée par le temps restant) + nombre entier de stints futurs
-   (recharge pleine, pit déduit du temps restant). Dérivé de la conso EV et du
-   temps au tour moyens sur 5 tours de la voiture ; null si données absentes. */
-function _liveCarStintsRemaining(d) {
+/* Part du tour en cours déjà parcourue par une voiture (0 = sur la ligne), d'après
+   les dernières positions reçues ; 0.5 si inconnue. */
+function _liveCarLapFraction(id) {
+    const pos = window._liveMap && window._liveMap.lastPositions;
+    const len = pos && pos.trackLength;
+    const car = pos && (pos.cars || []).find(c => c.id === id);
+    if (!car || !(len > 0) || car.lapDist == null) return 0.5;
+    return Math.min(0.999, Math.max(0, car.lapDist / len));
+}
+
+/* Arrêts encore nécessaires à une voiture pour tenir `horizonSec` secondes (même boucle
+   que les stints restants, sans la fraction du relais en cours). */
+function _liveCarStopsWithin(d, horizonSec) {
+    const s = _liveCarStintsRemaining(d, horizonSec);
+    return s == null ? 0 : Math.max(0, Math.ceil(s - 1e-6) - 1);
+}
+
+/* Fin de course estimée : une course au temps se termine quand le 1er AU GÉNÉRAL passe la
+   ligne après la fin du temps. Son rythme (moyenne sur 5 tours) et ses arrêts restants
+   fixent donc le nombre de tours de la course. Renvoie {finishSec (dans combien de
+   secondes il prend le drapeau), leaderLaps (tours qu'il aura bouclés)} ou null. */
+function _liveRaceFinish() {
+    const raceSec = window._liveSessionTimeRemainingSec;
+    const full = window._liveStandingsFull || [];
+    if (raceSec == null || isNaN(raceSec) || !full.length) return null;
+    const leader = full.reduce((a, b) => ((b.place || 999) < (a.place || 999) ? b : a), full[0]);
+    const lapL = leader.avgLapTimeLast5 > 0 ? leader.avgLapTimeLast5 : (leader.lastLapTime > 0 ? leader.lastLapTime : null);
+    if (!lapL) return null;
+    const pitLoss = _liveCarStopsWithin(leader, raceSec) * getPitDuration(0);
+    const toLine = (1 - _liveCarLapFraction(leader.id)) * lapL;
+    const k = Math.max(0, Math.ceil((raceSec - pitLoss - toLine) / lapL - 1e-9));
+    return { finishSec: toLine + k * lapL + pitLoss, leaderLaps: (leader.lap || 0) + 1 + k, leader };
+}
+
+/* Récapitulatif et plan Live : secondes avant que NOTRE voiture passe sous le drapeau, à
+   notre rythme `lapTime` (celui des champs Live). Course uniquement, sinon null. */
+function liveOurFlagHorizon(lapTime) {
+    if (!/^Course/.test(window._liveSessionType || '')) return null;
+    const me = (window._liveStandingsFull || []).find(d => d.isPlayer);
+    const fin = _liveRaceFinish();
+    if (!me || !fin || !(lapTime > 0)) return null;
+    return { sec: _liveCarFlagHorizon(Object.assign({}, me, { avgLapTimeLast5: lapTime }), fin), finish: fin };
+}
+
+/* Secondes avant qu'une voiture passe sous le drapeau : la ligne qu'elle franchit juste
+   après le 1er au général (à son propre rythme, moyenne sur 5 tours). Repli : temps restant. */
+function _liveCarFlagHorizon(d, finish) {
+    const raceSec = window._liveSessionTimeRemainingSec;
+    const lap = d.avgLapTimeLast5;
+    if (!finish || !(lap > 0)) return raceSec;
+    const toLine = (1 - _liveCarLapFraction(d.id)) * lap;
+    const m = Math.max(0, Math.ceil((finish.finishSec - toLine) / lap - 1e-9));
+    return toLine + m * lap;
+}
+
+/* Stints restants d'une voiture, même logique que le récapitulatif du joueur
+   (recalculateLive) : fraction du stint en cours (EV actuelle / conso moyenne,
+   plafonnée par le temps restant) + nombre entier de stints futurs (recharge pleine,
+   pit déduit du temps restant). Temps restant = jusqu'au drapeau de CETTE voiture
+   (voir _liveRaceFinish) ; conso EV et temps au tour = moyennes sur 5 tours de la
+   voiture. null si données absentes. */
+function _liveCarStintsRemaining(d, horizonSec) {
     const evPerLap = d.avgVePerLapLast5, lapTime = d.avgLapTimeLast5, ve = d.veCurrentPct;
     const evRefuel = parseFloat(document.getElementById('evRefuelPerStint')?.value);
-    const raceSec = window._liveSessionTimeRemainingSec;
+    const raceSec = horizonSec !== undefined ? horizonSec : _liveCarFlagHorizon(d, _liveRaceFinish());
     if (!(evPerLap > 0) || !(lapTime > 0) || ve == null || !(evRefuel > 0)
         || raceSec == null || isNaN(raceSec)) return null;
 
@@ -1152,12 +1210,12 @@ function _liveStandingsRowHtml(d, posLabel, opts) {
     const ve = d.veCurrentPct != null ? `${d.veCurrentPct.toFixed(1)}%` : '—';
     const veAvg = d.avgVePerLapLast5 != null ? `${d.avgVePerLapLast5.toFixed(2)}%` : '—';
     const avgLap = d.avgLapTimeLast5 != null ? _fmtSecondsShort(d.avgLapTimeLast5) : '—';
-    let stints = null;
-    if (d.isPlayer) {
+    // Même calcul pour toutes les voitures (la nôtre comprise) : jusqu'au drapeau, fixé par le 1er au général.
+    let stints = _liveCarStintsRemaining(d);
+    if (stints == null && d.isPlayer) {
         const v = parseFloat(document.getElementById('liveStintsRestants')?.textContent);
         stints = isNaN(v) ? null : v;
     }
-    if (stints == null) stints = _liveCarStintsRemaining(d);
     const stintsTxt = stints != null ? stints.toFixed(1) : '—';
     const rowStyle = d.isPlayer ? 'background:rgba(var(--accent-rgb),0.12);' : '';
     const classBadge = (opts && opts.showClassBadge && d.vclass)
@@ -1297,12 +1355,12 @@ function _liveClassStandingsRowHtml(d, posLabel, playerLast3) {
         gapColor = d.gapToPlayer > 0 ? '#ffaa66' : '#88ccff';
     }
     const ve = d.veCurrentPct != null ? `${d.veCurrentPct.toFixed(0)}%` : '—';
-    let stints = null;
-    if (d.isPlayer) {
+    // Même calcul pour toutes les voitures (la nôtre comprise) : jusqu'au drapeau, fixé par le 1er au général.
+    let stints = _liveCarStintsRemaining(d);
+    if (stints == null && d.isPlayer) {
         const v = parseFloat(document.getElementById('liveStintsRestants')?.textContent);
         stints = isNaN(v) ? null : v;
     }
-    if (stints == null) stints = _liveCarStintsRemaining(d);
     const stintsTxt = stints != null ? stints.toFixed(1) : '—';
     const rowStyle = d.isPlayer ? 'background:rgba(var(--accent-rgb),0.12);' : '';
     // 3 derniers tours connus, du plus ancien (T-2) au plus récent (Dernier) ;
@@ -1337,7 +1395,11 @@ function _renderLiveMapClassStandings() {
     const player = full.find(d => d.isPlayer);
     const vclass = player ? player.vclass : null;
     const titleEl = document.getElementById('liveMapClassTitle');
-    if (titleEl) titleEl.textContent = vclass ? `🏁 Classement ${vclass}` : '🏁 Classement catégorie';
+    if (titleEl) {
+        const fin = _liveRaceFinish();
+        titleEl.textContent = (vclass ? `🏁 Classement ${vclass}` : '🏁 Classement catégorie')
+            + (fin ? ` — drapeau estimé au tour ${fin.leaderLaps} du 1er au général (${(fin.leader.driver || '').trim() || 'P1'})` : '');
+    }
 
     const group = vclass ? full.filter(d => d.vclass === vclass) : full;
     // 3 derniers tours du joueur (data.recentLaps), sinon ceux reconstruits par la page.

@@ -70,7 +70,11 @@ function recalculateLive(silent) {
     // qualifs…) — il n'est gardé qu'en repli, pour le mode live "manuel" sans
     // connexion décrit dans le panneau ("Sans connexion, les champs restent
     // modifiables à la main").
-    const liveSessionRemaining = window._liveSessionTimeRemainingSec;
+    // En course, la fin n'est pas le temps à zéro mais notre passage sous le drapeau, qui suit
+    // celui du 1er au général (voir liveOurFlagHorizon dans live-telemetry.js) : même fin de
+    // course que la colonne « Stints » du classement.
+    const flag = (typeof liveOurFlagHorizon === 'function') ? liveOurFlagHorizon(liveLapTime) : null;
+    const liveSessionRemaining = flag ? flag.sec : window._liveSessionTimeRemainingSec;
     const hasLiveSessionTime   = liveSessionRemaining != null && !isNaN(liveSessionRemaining);
     const liveRaceSec = hasLiveSessionTime
         ? Math.max(0, liveSessionRemaining)
@@ -166,7 +170,8 @@ function recalculateLive(silent) {
 
     document.getElementById('liveRecalcNote').textContent =
         `Ancrage : ${formatClock(nowSec)} · EV : ${evCurrent.toFixed(1)}% · `
-      + `Fin prévue : ${formatClock(hasLiveSessionTime ? nowSec + liveRaceSec : raceEndSec)}`;
+      + `Fin prévue : ${formatClock(hasLiveSessionTime ? nowSec + liveRaceSec : raceEndSec)}`
+      + (flag ? ` · drapeau au tour ${flag.finish.leaderLaps} du 1er au général` : '');
 
     // Recalcul complet de la table et de la timeline (appelé plus haut, avant
     // le récapitulatif, dont les chiffres en dépendent).
