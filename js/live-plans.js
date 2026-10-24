@@ -139,7 +139,7 @@ function livePlansRestore() {
         if (d && Array.isArray(d.plans) && d.plans.length) {
             window._livePlans = d.plans.map(p => ({
                 id: String(p.id), name: String(p.name || ('Plan ' + p.id)),
-                pitState: p.pitState || {}, startTyres: p.startTyres || { left: 'none', right: 'none' },
+                pitState: _plansClone(p.pitState), startTyres: p.startTyres || { left: 'none', right: 'none' },
                 manualCount: p.manualCount || 0,
                 pitTotal: (typeof p.pitTotal === 'number') ? p.pitTotal : null,
                 pitsDone: p.pitsDone || 0
@@ -265,7 +265,7 @@ function livePlansApplyRemote(data) {
         .sort((a, b) => (a.order || 0) - (b.order || 0))
         .map(p => ({
             id: p.id, name: p.name || ('Plan ' + p.id),
-            pitState: p.pitState || {}, startTyres: p.startTyres || { left: 'none', right: 'none' },
+            pitState: _plansClone(p.pitState), startTyres: p.startTyres || { left: 'none', right: 'none' },
             manualCount: p.manualCount || 0,
             pitTotal: (typeof p.pitTotal === 'number') ? p.pitTotal : null,
             pitsDone: p.pitsDone || 0
@@ -387,7 +387,7 @@ function livePlansRender() {
 window._liveRacePits = null;
 
 function _liveShiftPlan(p, n) {
-    const ps = p.pitState || {};
+    const ps = _plansClone(p.pitState);
     const tyres = Object.assign({ left: 'none', right: 'none' }, p.startTyres);
     for (let k = 0; k < n; k++) {
         const first = ps[0];

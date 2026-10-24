@@ -26,7 +26,16 @@ window._plansDirty = new Set();  // plans à envoyer en entier
 window._plansDeleted = new Set(); // plans supprimés à retirer de Firebase
 window._dirtyRefPlan = false;    // plan de référence à renvoyer
 
-function _plansClone(o) { return JSON.parse(JSON.stringify(o || {})); }
+/* Copie profonde. Firebase renvoie un pitState aux clés 0, 1, 2… sous forme de tableau, avec
+   des trous pour les relais sans réglage ; copié, chaque trou devient null et fait planter le
+   calcul. Un tableau redevient donc un objet { index: relais } sans les trous. */
+function _plansClone(o) {
+    const c = JSON.parse(JSON.stringify(o || {}));
+    if (!Array.isArray(c)) return c;
+    const out = {};
+    c.forEach((v, i) => { if (v && typeof v === 'object') out[i] = v; });
+    return out;
+}
 function _planActive() { return window._plans.find(p => p.id === window._activePlanId) || window._plans[0]; }
 
 /* Mémorise le plan affiché, par session, dans ce navigateur */
@@ -200,7 +209,7 @@ function plansApplyRemote(data) {
         .sort((a, b) => (a.order || 0) - (b.order || 0))
         .map(p => ({
             id: p.id, name: p.name || ('Plan ' + p.id),
-            pitState: p.pitState || {}, startTyres: p.startTyres || { left: 'none', right: 'none' },
+            pitState: _plansClone(p.pitState), startTyres: p.startTyres || { left: 'none', right: 'none' },
             manualCount: p.manualCount || 0,
             pitTotal: (typeof p.pitTotal === 'number') ? p.pitTotal : null
         }));

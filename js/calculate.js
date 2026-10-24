@@ -88,7 +88,7 @@ function calculate(overrides) {
 
     // ── Purger les anciens "derniers stints" automatiques ──
     Object.keys(pitState).forEach(k => {
-        if (pitState[k]._autoLast) delete pitState[k];
+        if (!pitState[k] || pitState[k]._autoLast) delete pitState[k];
     });
 
     const lapTime          = ov.lapTime   || getLapTimeInSeconds();
