@@ -18,7 +18,7 @@
    sur le bon contexte.
 ══════════════════════════════════════════════════════════════════ */
 window._stateCtx = 'planning';
-window._livePlans = [];            // [{ id, name, pitState, startTyres, manualCount, pitTotal }]
+window._livePlans = [];            // [{ id, name, pitState, startTyres, manualCount, pitTotal, pitsDone }]
 window._liveActivePlanId = null;
 window._livePlanUi = null;         // null | 'rename' | 'delete' | 'recopy'
 window._livePlansDirty = new Set();    // plans Live à envoyer
@@ -81,7 +81,8 @@ function livePlansCopyFromPlanning() {
         pitState: _plansClone(p.pitState),
         startTyres: Object.assign({ left: 'none', right: 'none' }, p.startTyres),
         manualCount: 0,
-        pitTotal: (typeof p.pitTotal === 'number') ? p.pitTotal : null
+        pitTotal: (typeof p.pitTotal === 'number') ? p.pitTotal : null,
+        pitsDone: 0     // copie de la planification : son relais 1 est le 1er de la course
     }));
     window._liveActivePlanId = src.some(p => p.id === window._activePlanId) ? window._activePlanId : src[0].id;
     window._livePlanUi = null;
@@ -140,7 +141,8 @@ function livePlansRestore() {
                 id: String(p.id), name: String(p.name || ('Plan ' + p.id)),
                 pitState: p.pitState || {}, startTyres: p.startTyres || { left: 'none', right: 'none' },
                 manualCount: p.manualCount || 0,
-                pitTotal: (typeof p.pitTotal === 'number') ? p.pitTotal : null
+                pitTotal: (typeof p.pitTotal === 'number') ? p.pitTotal : null,
+                pitsDone: p.pitsDone || 0
             }));
             window._liveActivePlanId = window._livePlans.some(p => p.id === d.active) ? d.active : window._livePlans[0].id;
             window._manualStintCountLive = _liveActive().manualCount || 0;
@@ -179,8 +181,9 @@ function livePlansAdd(duplicate) {
     const src = _liveActive();
     const id = _liveNextId();
     window._livePlans.push(duplicate
-        ? { id, name: `${src.name} (copie)`, pitState: _plansClone(src.pitState), startTyres: _plansClone(src.startTyres), manualCount: src.manualCount || 0, pitTotal: src.pitTotal }
-        : { id, name: 'Plan ' + id, pitState: {}, startTyres: { left: 'none', right: 'none' }, manualCount: 0, pitTotal: null });
+        ? { id, name: `${src.name} (copie)`, pitState: _plansClone(src.pitState), startTyres: _plansClone(src.startTyres), manualCount: src.manualCount || 0, pitTotal: src.pitTotal, pitsDone: src.pitsDone || 0 }
+        : { id, name: 'Plan ' + id, pitState: {}, startTyres: { left: 'none', right: 'none' }, manualCount: 0, pitTotal: null,
+            pitsDone: window._liveRacePits || 0 });
     window._liveActivePlanId = id;
     window._livePlansDirty.add(id);
     window._dirtyLiveActive = true;
@@ -221,7 +224,8 @@ function livePlansRecopy(confirmed) {
 /* ── Firebase ── */
 function _liveRecord(p, i) {
     return { name: p.name, order: i, pitState: _plansClone(p.pitState), startTyres: _plansClone(p.startTyres),
-             manualCount: p.manualCount || 0, pitTotal: (typeof p.pitTotal === 'number') ? p.pitTotal : null };
+             manualCount: p.manualCount || 0, pitTotal: (typeof p.pitTotal === 'number') ? p.pitTotal : null,
+             pitsDone: p.pitsDone || 0 };
 }
 
 /* Mise à jour PARTIELLE : plans modifiés, supprimés, plan affiché */
@@ -263,7 +267,8 @@ function livePlansApplyRemote(data) {
             id: p.id, name: p.name || ('Plan ' + p.id),
             pitState: p.pitState || {}, startTyres: p.startTyres || { left: 'none', right: 'none' },
             manualCount: p.manualCount || 0,
-            pitTotal: (typeof p.pitTotal === 'number') ? p.pitTotal : null
+            pitTotal: (typeof p.pitTotal === 'number') ? p.pitTotal : null,
+            pitsDone: p.pitsDone || 0
         }));
     if (!list.length) return false;
     const local = new Map(window._livePlans.map(p => [p.id, p]));
@@ -368,3 +373,61 @@ function livePlansRender() {
     });
     livePlansRender();
 })();
+
+/* ══════════════════════════════════════════════════════════════════
+   AVANCE DES PLANS LIVE AU FIL DES ARRÊTS AUX STANDS
+   En Live, l'entrée 0 du plan est toujours le relais EN COURS. Chaque plan retient
+   combien d'arrêts de la course il a déjà absorbés (pitsDone) ; quand le jeu en
+   annonce plus (numPitstops, séance de course uniquement), on retire du plan les
+   relais terminés : l'entrée k+1 devient l'entrée k (pilote, arrêt, pneus).
+   Le compteur rend l'opération idempotente : plusieurs pages ouvertes sur la même
+   session ne décalent qu'une fois. Une page en lecture seule décale chez elle sans
+   rien envoyer ; la version de l'équipe, une fois avancée, est identique.
+══════════════════════════════════════════════════════════════════ */
+window._liveRacePits = null;
+
+function _liveShiftPlan(p, n) {
+    const ps = p.pitState || {};
+    const tyres = Object.assign({ left: 'none', right: 'none' }, p.startTyres);
+    for (let k = 0; k < n; k++) {
+        const first = ps[0];
+        // Pneus montés à cet arrêt : ce sont ceux du nouveau relais en cours.
+        if (first && first.stop) {
+            if (first.tyreLeft && first.tyreLeft !== 'none') tyres.left = first.tyreLeft;
+            if (first.tyreRight && first.tyreRight !== 'none') tyres.right = first.tyreRight;
+        }
+        const keys = Object.keys(ps).map(Number).filter(i => !isNaN(i)).sort((a, b) => a - b);
+        const next = {};
+        keys.forEach(i => { if (i >= 1) next[i - 1] = ps[i]; });
+        Object.keys(ps).forEach(i => delete ps[i]);
+        Object.assign(ps, next);
+    }
+    p.pitState = ps;
+    p.startTyres = tyres;
+}
+
+/* Appelé à chaque donnée live complète (live-telemetry.js). */
+function livePlansSyncPits(data) {
+    if (!data || !/^Course/.test(data.sessionType || '')) return;
+    const pits = Number(data.numPitstops);
+    if (!Number.isFinite(pits) || pits < 0) return;
+    window._liveRacePits = pits;
+    if (!window._livePlans.length) return;
+    if (window._stateCtx === 'live') liveSnapshot();
+    const canWrite = !(typeof liveRemoteReadOnly === 'function' && liveRemoteReadOnly());
+    let changed = false;
+    window._livePlans.forEach(p => {
+        const done = p.pitsDone || 0;
+        if (pits === done) return;
+        // Moins d'arrêts que retenus : nouvelle course, on repart de ce compteur sans décaler.
+        if (pits > done) _liveShiftPlan(p, pits - done);
+        p.pitsDone = pits;
+        if (canWrite) window._livePlansDirty.add(p.id);
+        changed = true;
+    });
+    if (!changed) return;
+    if (window._stateCtx === 'live') _liveLoadIntoState(_liveActive());
+    livePlansPersist();
+    livePlansRender();
+    if (canWrite) _livePush();
+}

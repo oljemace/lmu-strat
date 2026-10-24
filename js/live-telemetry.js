@@ -743,6 +743,8 @@ async function _liveStatsPollOnce() {
         window._liveVehicleName = data.vehicleName || window._liveVehicleName || null;
 
         _updateLiveTelemetryExtras(data);
+        // Plans Live : retirer les relais terminés (arrêts aux stands de la course).
+        if (typeof livePlansSyncPits === 'function') livePlansSyncPits(data);
         window._liveStats.tickCount = (window._liveStats.tickCount || 0) + 1;
 
         const recentLaps = Array.isArray(data.recentLaps) ? data.recentLaps : [];
