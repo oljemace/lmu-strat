@@ -107,7 +107,8 @@ function _remoteSubscribe(driverId) {
     R.unsub = window._firebaseOnValue(streamRef, snap => {
         const v = snap.val() || {};
         R.parts = { live: _remoteParse(v.live), laps: _remoteParse(v.laps),
-                    standings: _remoteParse(v.standings), positions: _remoteParse(v.positions) };
+                    standings: _remoteParse(v.standings), positions: _remoteParse(v.positions),
+                    trace: _remoteParse(v.trace) };
         _remoteRebuild();
     });
 }
@@ -129,6 +130,7 @@ function _remoteRebuild() {
         lastLapTrace: laps.lastLapTrace || [], bestSessionLapTrace: laps.bestSessionLapTrace || [],
         bestEventLapTrace: laps.bestEventLapTrace || [], currentLapTrace: [],
         standings,
+        raceTrace: (p.trace && p.trace.obj) || null,   // passages sur la ligne (graphique des écarts)
     });
     R.statsVer++;
 

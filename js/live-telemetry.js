@@ -483,7 +483,6 @@ function _liveMapDraw(data) {
         ctx.font = '14px sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText('En attente de données de position… (roulez 3 tours propres pour dessiner le circuit)', W/2, H/2);
-        document.getElementById('liveMapLegend').innerHTML = '';
         return;
     }
 
@@ -520,31 +519,61 @@ function _liveMapDraw(data) {
         if (window._liveMap.complete) _liveMapDrawSectors(ctx, trail, toPx, _liveMapSectorsWithShared(data));
     }
 
-    // Voitures
-    const legendItems = [];
-    (data.cars || []).forEach(car => {
+    // Voitures : la nôtre en dernier, pour qu'elle passe toujours au-dessus des autres
+    const cars = (data.cars || []).slice().sort((a, b) => (a.isPlayer ? 1 : 0) - (b.isPlayer ? 1 : 0));
+    cars.forEach(car => {
         const [px, py] = toPx(car.x, car.z);
         const color = _liveClassColor(car.vclass) || _liveMapColorFor(car.id);
+        if (car.isPlayer) { _liveMapDrawPlayer(ctx, px, py, color, car, W); return; }
         ctx.beginPath();
-        ctx.arc(px, py, car.isPlayer ? 8 : 6, 0, Math.PI * 2);
+        ctx.arc(px, py, 6, 0, Math.PI * 2);
         ctx.fillStyle = color;
         ctx.fill();
-        if (car.isPlayer) {
-            ctx.strokeStyle = '#fff';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-        }
-        ctx.fillStyle = '#fff';
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
         ctx.font = 'bold 10px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(String(car.place || ''), px, py - 11);
-        legendItems.push(`<span style="display:inline-flex;align-items:center;gap:4px;">
-            <span style="width:9px;height:9px;border-radius:50%;background:${color};display:inline-block;"></span>
-            P${car.place || '?'} ${car.isPlayer ? '⭐' : ''} ${_teamTelemetryEscapeHtml((car.driver || '').trim() || car.vehicle || '—')}
-        </span>`);
+        ctx.fillText(String(car.place || ''), px, py - 10);
     });
-    const legend = document.getElementById('liveMapLegend');
-    if (legend) legend.innerHTML = legendItems.join('');
+}
+
+/* Notre voiture : halo doré, pastille plus grosse et étiquette « ⭐ P2 Pilote ». */
+function _liveMapDrawPlayer(ctx, px, py, color, car, W) {
+    const glow = ctx.createRadialGradient(px, py, 4, px, py, 26);
+    glow.addColorStop(0, 'rgba(255,215,0,0.55)');
+    glow.addColorStop(1, 'rgba(255,215,0,0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(px, py, 26, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(px, py, 15, 0, Math.PI * 2);
+    ctx.strokeStyle = '#ffd700';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(px, py, 9, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    const name = ((car.driver || '').trim() || car.vehicle || '').split(/\s+/).slice(-1)[0];
+    const text = `★ P${car.place || '?'}${name ? ' ' + name : ''}`;
+    ctx.font = 'bold 12px sans-serif';
+    const tw = ctx.measureText(text).width + 12;
+    const bx = Math.max(2, Math.min(W - tw - 2, px - tw / 2));
+    const by = py - 42 < 2 ? py + 20 : py - 42;
+    ctx.fillStyle = 'rgba(0,0,0,0.8)';
+    ctx.strokeStyle = '#ffd700';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(bx, by, tw, 20, 6); else ctx.rect(bx, by, tw, 20);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#ffd700';
+    ctx.textAlign = 'center';
+    ctx.fillText(text, bx + tw / 2, by + 14);
 }
 
 /* ────────────────────────────────────────────────────────────
@@ -1009,6 +1038,9 @@ function _updateLiveStandingsAndCharts(data) {
     window._livePlayerRecentLaps = Array.isArray(data.recentLaps) ? data.recentLaps : [];
     _liveTrackCarLaps(window._liveStandingsFull);
     if (_liveIsOnScreen(document.getElementById('liveMapClassStandings'))) _renderLiveMapClassStandings();
+
+    // Graphique des écarts au 1er de la catégorie, tour par tour (race-trace.js)
+    if (typeof raceTraceIngest === 'function') raceTraceIngest(data);
 
     // Courbes d'évolution par tour + trace accélérateur/frein
     _updateLiveCharts(data);
