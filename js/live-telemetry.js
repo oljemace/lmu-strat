@@ -844,8 +844,13 @@ async function _liveStatsPollOnce() {
         if (notEditing(evInput) && data.veCurrentPct != null) evInput.value = data.veCurrentPct.toFixed(1);
 
         // ── Tours réalisés ──
+        // Tours de la voiture dans la séance en cours, donnés par le jeu (colonne
+        // « Tours » du classement). data.lapsCompleted des connecteurs avant 1.1.15
+        // comptait aussi les tours d'essais/qualifs faits depuis le lancement de l'exe.
         const lapsInput = document.getElementById('liveLapsCompleted');
-        if (notEditing(lapsInput) && data.lapsCompleted != null) lapsInput.value = data.lapsCompleted;
+        const me = Array.isArray(data.standings) ? data.standings.find(d => d.isPlayer) : null;
+        const lapsDone = me && me.lap != null ? me.lap : data.lapsCompleted;
+        if (notEditing(lapsInput) && lapsDone != null) lapsInput.value = lapsDone;
 
         // ── Temps au tour réel (moyenne sur la fenêtre choisie) ──
         if (avgLapTime != null) {
