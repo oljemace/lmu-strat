@@ -137,6 +137,8 @@ function paceLoad() {
         const raw = localStorage.getItem(PACE_STORE_KEY);
         if (raw) Object.assign(_pace, JSON.parse(raw));
     } catch (e) { /* stockage indisponible : on repart de zéro */ }
+    // La case de recherche repart vide à chaque chargement : un filtre gardé en mémoire masquerait des pilotes.
+    _pace.search = '';
 }
 
 /* ── Petits utilitaires ── */
