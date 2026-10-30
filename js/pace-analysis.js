@@ -191,6 +191,51 @@ function paceShortName(name) {
 
 /* ══════════ LECTURE DES FICHIERS ══════════ */
 
+/**
+ * Changements de pilote du journal de la session (<Stream><DriverChange>), groupés par slot.
+ * Les <Swap> de chaque voiture sont souvent faux en ligne (relais oubliés) : le journal fait foi.
+ */
+function paceDriverChanges(sess) {
+    const stream = Array.from(sess.children).find(c => c.tagName === 'Stream');
+    const bySlot = new Map();
+    if (!stream) return bySlot;
+    for (const el of Array.from(stream.children)) {
+        if (el.tagName !== 'DriverChange') continue;
+        const m = el.textContent.match(/Slot=(\d+)\s+Vehicle="(.*?)"\s+Old="(.*?)"\s+New="(.*?)"\s*$/);
+        const et = paceNum(el.getAttribute('et'));
+        if (!m || et == null) continue;
+        if (!bySlot.has(m[1])) bySlot.set(m[1], []);
+        bySlot.get(m[1]).push({ et, veh: m[2], old: m[3].trim(), new: m[4].trim() });
+    }
+    bySlot.forEach(list => list.sort((a, b) => a.et - b.et));
+    return bySlot;
+}
+
+/**
+ * Pour une voiture du XML : fonction (et d'un tour) → pilote au volant quand le tour s'est terminé.
+ * La voiture est retrouvée par son véhicule et son dernier pilote (le XML ne donne pas son slot).
+ * Avant le premier changement connu, on garde le pilote sortant de ce changement.
+ */
+function paceDriverAtWheel(changes, vehName, finalName) {
+    let list = null;
+    for (const l of changes.values()) {
+        const last = l[l.length - 1];
+        if (last.veh === vehName && last.new === finalName) {
+            if (list) return null;   // deux voitures possibles : on ne devine pas
+            list = l;
+        }
+    }
+    if (!list) return null;
+    return et => {
+        let who = list[0].old;
+        for (const c of list) {
+            if (c.et >= et) break;
+            who = c.new;
+        }
+        return who;
+    };
+}
+
 /** XML de résultats LMU / rFactor 2 → une entrée par session contenant des pilotes. */
 function paceParseXml(text, fileName) {
     // Le DOCTYPE déclare une entité interne : on l'enlève, inutile ici.
@@ -206,11 +251,13 @@ function paceParseXml(text, fileName) {
     for (const sess of Array.from(rr.children)) {
         const drivers = Array.from(sess.children).filter(c => c.tagName === 'Driver');
         if (!drivers.length) continue;
+        const changes = paceDriverChanges(sess);
         const laps = [];
         for (const d of drivers) {
             const kids = Array.from(d.children);
             const get = tag => kids.find(c => c.tagName === tag)?.textContent?.trim() || '';
             const name = get('Name');
+            const atWheel = paceDriverAtWheel(changes, get('VehName'), name);
             const team = get('TeamName');
             const carNum = get('CarNumber');
             const car = get('CarType') || get('VehName');
@@ -225,6 +272,7 @@ function paceParseXml(text, fileName) {
                 const a = n => l.getAttribute(n);
                 const num = parseInt(a('num'), 10);
                 const swap = swaps.find(s => num >= s.start && num <= s.end);
+                const lapEt = paceNum(a('et'));
                 // Usure : l'XML donne la fraction RESTANTE de chaque pneu (1 = neuf).
                 let wear = null;
                 const cur = a('twfl') != null ? {
@@ -241,10 +289,10 @@ function paceParseXml(text, fileName) {
                 }
                 if (cur) prevWear = cur;
                 laps.push({
-                    driver: swap?.name || name,
+                    driver: (atWheel && lapEt != null && atWheel(lapEt)) || swap?.name || name,
                     team, carNum, car, cls,
                     num,
-                    et: paceNum(a('et')),
+                    et: lapEt,
                     time: paceNum(l.textContent),
                     s1: paceNum(a('s1')), s2: paceNum(a('s2')), s3: paceNum(a('s3')),
                     pit: a('pit') === '1',
