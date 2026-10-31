@@ -1452,6 +1452,74 @@ button.chat-file span { font-size: 0.8em; color: #8e9ac0; }
 }
 .pace-tip-title { font-weight: bold; color: var(--text); margin-bottom: 2px; }
 
+/* ── Onglet Palmarès (js/driver-history.js) — reprend les styles de l'onglet Rythme ── */
+.hist-dir-btn { display: block; text-align: center; margin-top: 8px; padding: 6px; border: 1px solid rgba(var(--accent-rgb),0.3); color: var(--accent); }
+.hist-store { display: flex; flex-direction: column; gap: 3px; font-size: 0.9em; color: var(--text-2); }
+.hist-types { display: flex; flex-wrap: wrap; gap: 12px; }
+.hist-types label { display: flex; align-items: center; gap: 5px; cursor: pointer; color: var(--text-2); }
+.hist-types input { accent-color: var(--accent); }
+.pace-seg button:disabled { opacity: 0.4; cursor: not-allowed; }
+.pace-svg .hist-month-line { stroke: rgba(var(--fg-rgb),0.22); stroke-width: 1; stroke-dasharray: 3 4; }
+.pace-svg .hist-month-label { fill: var(--text-3); font-size: 11px; font-weight: 600; }
+.pace-svg .hist-sub { font-size: 10px; }
+.pace-svg .hist-lap { stroke-width: 0.6; }
+.pace-svg .hist-lap.hover { r: 5; }
+.pace-svg .hist-mean { stroke: var(--text); stroke-width: 1.6; }
+.pace-svg .hist-mean-line, .pace-svg .hist-trend-line { pointer-events: none; }
+.pace-svg .hist-trend-line { stroke-opacity: 0.85; }
+.hist-key-line::before, .hist-key-dash::before {
+    content: ''; display: inline-block; width: 22px; height: 0; margin-right: 6px; vertical-align: middle;
+    border-top: 2px solid var(--text-3);
+}
+.hist-key-dash::before { border-top-style: dashed; }
+.pace-table td.hist-better { color: #51cf66; }
+.pace-table td.hist-worse { color: #ff6b6b; }
+.hist-palmares { max-height: 520px; overflow-y: auto; }
+.pace-table td.hist-cut { max-width: 240px; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── Base Circuits : import depuis les XML de résultats (js/circuit-xml-import.js) ── */
+.cxi-box { margin: 4px 0 18px; border: 1px solid rgba(var(--accent-rgb),0.3); border-radius: 10px; background: rgba(var(--accent-rgb),0.05); }
+.cxi-box.drag { border-color: var(--accent); background: rgba(var(--accent-rgb),0.12); }
+.cxi-box > summary { cursor: pointer; padding: 10px 14px; color: var(--accent); font-weight: bold; user-select: none; }
+.cxi-box > summary .cxi-muted { font-weight: normal; }
+.cxi-body { padding: 0 14px 14px; display: flex; flex-direction: column; gap: 10px; }
+.cxi-muted { color: var(--text-4); font-size: 0.85em; }
+.cxi-muted code { color: var(--text-3); word-break: break-all; }
+.cxi-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.cxi-btn {
+    display: inline-block; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 0.88em; margin: 0;
+    background: rgba(var(--accent-rgb),0.12); border: 1px solid rgba(var(--accent-rgb),0.4); color: var(--accent);
+}
+.cxi-btn:hover { background: rgba(var(--accent-rgb),0.2); }
+.cxi-status { font-size: 0.85em; color: var(--text-3); }
+.cxi-status:empty { display: none; }
+.cxi-controls { display: flex; flex-wrap: wrap; gap: 10px; }
+.cxi-controls label { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 180px; margin: 0; font-size: 0.85em; color: var(--text-3); }
+.cxi-controls select {
+    padding: 6px 8px; border: 1px solid rgba(var(--fg-rgb),0.2); border-radius: 8px;
+    background: rgba(var(--fg-rgb),0.08); color: var(--text); font-size: 0.95em;
+}
+.cxi-list-head { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px; font-size: 0.85em; color: var(--text-3); }
+.cxi-link { background: none; border: none; color: var(--accent); cursor: pointer; font-size: 0.95em; padding: 0 4px; }
+#cxiSessions { max-height: 360px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+.cxi-sess { border-top: 1px solid rgba(var(--fg-rgb),0.08); padding-top: 6px; }
+.cxi-sess-head { font-size: 0.85em; font-weight: bold; color: var(--text-2); margin-bottom: 2px; }
+.cxi-sess-head .cxi-muted { font-weight: normal; margin-left: 6px; }
+.cxi-entry { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; column-gap: 8px; padding: 4px 0; margin: 0; cursor: pointer; font-size: 0.85em; color: var(--text-2); }
+.cxi-entry input { accent-color: var(--accent); margin-top: 3px; }
+.cxi-entry-main { display: flex; flex-wrap: wrap; gap: 6px; }
+.cxi-entry-stats { grid-column: 2; color: var(--text-3); font-variant-numeric: tabular-nums; }
+.cxi-table { width: 100%; border-collapse: collapse; font-size: 0.85em; }
+.cxi-table th, .cxi-table td { padding: 5px 8px; text-align: right; border-bottom: 1px solid rgba(var(--fg-rgb),0.08); font-variant-numeric: tabular-nums; }
+.cxi-table th { color: var(--text-4); font-weight: normal; }
+.cxi-table th:first-child, .cxi-table td:first-child { text-align: left; color: var(--text-2); }
+.cxi-table td b { color: var(--accent); }
+.cxi-apply { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 8px; }
+.cxi-apply .btn-calculate { margin-top: 0; width: auto; }
+@keyframes cxiFlash { from { box-shadow: 0 0 0 3px rgba(var(--accent-rgb),0.7); } to { box-shadow: 0 0 0 0 rgba(var(--accent-rgb),0); } }
+.cxi-flash { animation: cxiFlash 1.6s ease-out; }
+.hist-palmares thead th { position: sticky; top: 0; background: var(--bar-bg); }
+
 /* ── Écart au 1er de la catégorie, tour par tour (js/race-trace.js) ── */
 .race-trace {
     margin-top: 14px;

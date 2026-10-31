@@ -12,6 +12,8 @@ function switchTab(tab) {
             refreshCircuitSelects();   // ← remplit le menu à chaque ouverture de l'onglet
         } else if (tab === 'pace' && typeof renderPaceTab === 'function') {
             renderPaceTab();
+        } else if (tab === 'history' && typeof renderHistoryTab === 'function') {
+            renderHistoryTab();
         } else if (tab === 'faq') {
             loadFaq();
         }

@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calculateur de Stratégie - Endurance LMU</title>
     <link rel="stylesheet" href="css/themes.css?v=20261029c">
-    <link rel="stylesheet" href="css/styles.css?v=20261024c">
+    <link rel="stylesheet" href="css/styles.css?v=20261031b">
     <script src="js/appearance.js?v=20261029c"></script>
 
 </head>
@@ -212,6 +212,7 @@
     <button class="tab-btn active" data-tab="strategy" onclick="switchTab('strategy')">🏁 Stratégie</button>
     <button class="tab-btn" data-tab="circuits" onclick="switchTab('circuits')">📚 Base Circuits</button>
     <button class="tab-btn" data-tab="pace" onclick="switchTab('pace')">📊 Rythme</button>
+    <button class="tab-btn" data-tab="history" onclick="switchTab('history')" title="Évolution du rythme de chaque pilote dans le temps, par circuit et par voiture.">🏆 Palmarès</button>
     <button class="tab-btn tab-link" data-tab="faq" onclick="switchTab('faq')" title="Questions fréquentes : accès au site, installation et utilisation du connecteur.">❓ FAQ</button>
 </div>
 
@@ -1702,9 +1703,10 @@
     <div class="pace-layout">
         <aside class="pace-side">
             <div class="pace-card">
-                <div class="pace-card-title">Envois de l'équipe</div>
+                <div class="pace-card-title">Anciens envois de l'équipe</div>
                 <div class="pace-hint pace-muted" style="margin-top:0;">
-                    Le connecteur envoie automatiquement les tours enregistrés (temps, usure) quand on le ferme.
+                    Tours envoyés par les anciennes versions du connecteur. Il n'envoie plus rien : importe les JSON
+                    de son dossier <code>telemetrie</code> ci-dessous.
                 </div>
                 <div id="paceTeamList"></div>
             </div>
@@ -1763,6 +1765,84 @@
     </div>
 </div>
 
+<!-- ══════════ PANNEAU PALMARÈS (js/driver-history.js) ══════════ -->
+<div id="tab-history" class="tab-panel">
+    <div class="pace-layout">
+        <aside class="pace-side">
+            <div class="pace-card">
+                <div class="pace-card-title">Importer les résultats</div>
+                <label id="histDropZone" class="pace-drop">
+                    <input type="file" id="histFileInput" accept=".xml" multiple hidden>
+                    <div style="font-size:1.6em;">📂</div>
+                    <div>Glisse ici le dossier <b>Results</b> ou des fichiers <b>XML</b></div>
+                    <div class="pace-muted">ou clique pour choisir des fichiers</div>
+                </label>
+                <label class="pace-link hist-dir-btn">
+                    <input type="file" id="histDirInput" webkitdirectory multiple hidden>
+                    📁 Choisir le dossier entier
+                </label>
+                <div class="pace-hint pace-muted">
+                    <code>Le Mans Ultimate\UserData\Log\Results</code><br>
+                    Seuls les nouveaux fichiers sont lus : réimporte le dossier après chaque soirée de course.
+                    Les données restent dans ce navigateur.
+                </div>
+                <div id="histImportStatus" class="pace-status"></div>
+            </div>
+
+            <div class="pace-card">
+                <div class="pace-card-title" style="display:flex;justify-content:space-between;align-items:center;">
+                    <span>Données <span class="pace-muted">(ce navigateur)</span></span>
+                    <button type="button" class="pace-link" onclick="histClearAll()">Tout effacer</button>
+                </div>
+                <div id="histStore"></div>
+            </div>
+
+            <div class="pace-card">
+                <div class="pace-card-title">Filtres</div>
+                <label class="pace-field">
+                    <span>Circuit (tracé)</span>
+                    <select id="histCourseSelect" onchange="histSet('course', this.value)"></select>
+                </label>
+                <label class="pace-field">
+                    <span>Catégorie</span>
+                    <select id="histClassSelect" onchange="histSet('cls', this.value)"></select>
+                </label>
+                <label class="pace-field">
+                    <span>Voiture</span>
+                    <select id="histCarSelect" onchange="histSet('car', this.value)"></select>
+                </label>
+                <div class="pace-field">
+                    <span>Sessions</span>
+                    <div id="histTypes" class="hist-types"></div>
+                </div>
+                <label class="pace-field">
+                    <span>Période</span>
+                    <select id="histPeriodSelect" onchange="histSet('months', this.value)"></select>
+                </label>
+                <div class="pace-field">
+                    <span>Regrouper par</span>
+                    <div id="histGroupSeg" class="pace-seg"></div>
+                </div>
+                <div class="pace-field">
+                    <span>Mesure</span>
+                    <div id="histMeasureSeg" class="pace-seg"></div>
+                </div>
+                <label class="pace-field">
+                    <span>Tours retenus : jusqu'à <b id="histThresholdValue">+4%</b> du meilleur tour de la session</span>
+                    <input type="range" id="histThreshold" min="0.5" max="15" step="0.5" oninput="histSet('threshold', this.value)">
+                </label>
+            </div>
+
+            <div class="pace-card">
+                <div class="pace-card-title">Pilotes</div>
+                <input type="search" class="pace-search" placeholder="Rechercher un pilote" oninput="histSetSearch(this.value)">
+                <div id="histDriverList" class="pace-driver-list"></div>
+            </div>
+        </aside>
+        <section id="histCharts" class="pace-main"></section>
+    </div>
+</div>
+
 <!-- ══════════ PANNEAU BASE CIRCUITS ══════════ -->
 <div id="tab-circuits" class="tab-panel">
     <div class="input-section" style="max-width:900px;margin:0 auto;">
@@ -1781,6 +1861,29 @@
             <select id="circCarSelect" style="width:100%;padding:8px;border:2px solid rgba(var(--fg-rgb),0.2);
                        border-radius:8px;background:rgba(var(--fg-rgb),0.1);color:var(--text);font-size:1em;" onchange="onCircCarChange()"><option value="">— Choisir une voiture —</option><optgroup label="LMH"><option value="toyota_gr010">Toyota GR010 Hybrid</option><option value="ferrari_499p">Ferrari 499P</option><option value="peugeot_9x8_2024">Peugeot 9X8 (2024)</option><option value="aston_valkyrie">Aston Martin Valkyrie AMR-LMH</option><option value="glickenhaus_007">Glickenhaus SCG 007</option><option value="isotta_tipo6">Isotta Fraschini Tipo 6</option><option value="vanwall_680">Vanwall Vandervell 680</option></optgroup><optgroup label="LMDh"><option value="porsche_963">Porsche 963</option><option value="cadillac_vseriesr">Cadillac V-Series.R</option><option value="bmw_mhybridv8">BMW M Hybrid V8</option><option value="alpine_a424">Alpine A424</option><option value="lamborghini_sc63">Lamborghini SC63</option><option value="genesis_gmr001">Genesis GMR-001</option></optgroup></select>
         </div>
+
+        <!-- Mise à jour depuis les XML de résultats LMU (js/circuit-xml-import.js) -->
+        <details id="cxiBox" class="cxi-box">
+            <summary>📥 Mettre à jour depuis les résultats LMU <span class="cxi-muted">(usure 4 pneus, EV par tour, temps moyen)</span></summary>
+            <div class="cxi-body">
+                <div class="cxi-muted">
+                    Dossier <code>Le Mans Ultimate\UserData\Log\Results</code>. Seules les sessions les plus récentes du tracé et de la
+                    voiture choisis sont lues, et seulement celles qui contiennent l'usure ou l'EV (sessions hors ligne, ou serveurs qui
+                    les rendent visibles). Tu coches celles qui comptent, puis tu appliques les moyennes à l'éditeur.
+                </div>
+                <div class="cxi-actions">
+                    <button type="button" class="cxi-btn" onclick="cxiPickFolder()">📁 Choisir le dossier Results</button>
+                    <button type="button" class="cxi-btn" id="cxiRescanBtn" onclick="cxiRescan()" hidden>🔄 Relire le dossier</button>
+                    <label class="cxi-btn">📄 Fichiers XML<input type="file" id="cxiFileInput" accept=".xml" multiple hidden></label>
+                    <input type="file" id="cxiDirInput" webkitdirectory multiple hidden>
+                    <span class="cxi-muted">ou glisse le dossier ici</span>
+                </div>
+                <div id="cxiStatus" class="cxi-status"></div>
+                <div id="cxiControls"></div>
+                <div id="cxiSessions"></div>
+                <div id="cxiPreview"></div>
+            </div>
+        </details>
 
         <div class="input-group">
             <label>⏱️ Temps au tour de référence (M:SS.d)</label>
@@ -2107,12 +2210,14 @@
 <script src="js/remote-live.js?v=20261024c"></script>
 <script src="js/timeline-zoom.js?v=20261021a"></script>
 <script src="js/tyres-wear.js?v=20261030a"></script>
-<script src="js/ui-tabs.js?v=20261023b"></script>
+<script src="js/ui-tabs.js?v=20261031a"></script>
 <script src="js/circuits-ui.js?v=20261020a"></script>
 <script src="js/circuits-db.js?v=20261023a"></script>
 <script src="js/live-telemetry.js?v=20261024e"></script>
 <script src="js/race-trace.js?v=20261024c"></script>
-<script src="js/pace-analysis.js?v=20261022e"></script>
+<script src="js/pace-analysis.js?v=20261031b"></script>
+<script src="js/driver-history.js?v=20261031a"></script>
+<script src="js/circuit-xml-import.js?v=20261031a"></script>
 
 
 

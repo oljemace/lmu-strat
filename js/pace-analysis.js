@@ -6,7 +6,7 @@
      que pour les sessions HORS LIGNE : les XML « Multiplayer » ne les contiennent pas.
    • JSON du connecteur (dossier « telemetrie ») : usure par tour et par pneu, temps au tour.
      Le pilote n'y est pas enregistré : on le demande à l'import.
-   • Envois automatiques du connecteur (collector/lmu_pace_upload.py, à sa fermeture) : lus en direct sous
+   • Envois des anciennes versions du connecteur (retirés depuis) : lus en direct sous
      teams/{équipe}/paceIndex (liste légère) puis paceData (tours, chargés seulement pour le circuit affiché).
    Les fichiers importés à la main restent dans ce navigateur (localStorage) : ils ne sont pas partagés.
    ══════════════════════════════════════════════ */
@@ -100,7 +100,7 @@ function paceTeamLoadVisible(teamFiles) {
     }
 }
 
-/** paceData/{uid}/{run} = {ts, j} ; j = [{n, t, p, w:[FL,FR,RL,RR], c, f, v}] (voir lmu_pace_upload._compact_lap). */
+/** paceData/{uid}/{run} = {ts, j} ; j = [{n, t, p, w:[FL,FR,RL,RR], c, f, v}] (format des anciens envois du connecteur). */
 function paceParseTeamLaps(node, f) {
     let arr = [];
     try { arr = JSON.parse(node?.j || '[]'); } catch (e) { return []; }
@@ -238,6 +238,9 @@ function paceDriverAtWheel(changes, vehName, finalName) {
 
 /** XML de résultats LMU / rFactor 2 → une entrée par session contenant des pilotes. */
 function paceParseXml(text, fileName) {
+    // Le jeu laisse parfois quelques octets parasites après la balise de fin : on les coupe.
+    const end = text.lastIndexOf('</rFactorXML>');
+    if (end >= 0) text = text.slice(0, end + '</rFactorXML>'.length);
     // Le DOCTYPE déclare une entité interne : on l'enlève, inutile ici.
     const doc = new DOMParser().parseFromString(text.replace(/<!DOCTYPE[\s\S]*?\]>/, ''), 'application/xml');
     if (doc.getElementsByTagName('parsererror').length) throw new Error('XML illisible');
@@ -565,7 +568,7 @@ function paceRenderTeamFiles(teamFiles) {
     if (_paceTeam.error) { el.innerHTML = `<div class="pace-muted">${paceEsc(_paceTeam.error)}</div>`; return; }
     if (!window._teamId) { el.innerHTML = '<div class="pace-muted">Connecte-toi à ton équipe pour voir ses envois.</div>'; return; }
     if (!teamFiles.length) {
-        el.innerHTML = '<div class="pace-muted">Aucun envoi pour l\'instant. Le connecteur envoie les tours enregistrés quand on le ferme.</div>';
+        el.innerHTML = '<div class="pace-muted">Aucun ancien envoi. Le connecteur n\'envoie plus les tours : importe les JSON de son dossier <code>telemetrie</code> ci-dessous.</div>';
         return;
     }
     const me = window._firebaseAuth?.currentUser?.uid;
@@ -944,13 +947,15 @@ function paceTipInit() {
         current = null;
         tip.hidden = true;
     };
+    // Partagée avec l'onglet Palmarès (js/driver-history.js).
+    const sel = '#tab-pace [data-tip], #tab-history [data-tip]';
     document.addEventListener('mouseover', e => {
-        const dot = e.target.closest?.('#tab-pace [data-tip]');
+        const dot = e.target.closest?.(sel);
         if (dot) show(dot, e); else if (current) hide();
     });
     document.addEventListener('mousemove', e => { if (current) place(e); });
     document.addEventListener('click', e => {          // écrans tactiles : un appui affiche l'étiquette
-        const dot = e.target.closest?.('#tab-pace [data-tip]');
+        const dot = e.target.closest?.(sel);
         if (dot) show(dot, e); else if (current) hide();
     });
     window.addEventListener('scroll', hide, { passive: true });
